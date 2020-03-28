@@ -4,11 +4,11 @@ package name.nkonev.r2dbcmigrate;
 public abstract class FilenameParser {
 
     public static class MigrationInfo {
-        private long version;
+        private int version;
         private String description;
         private boolean splitByLine;
 
-        public MigrationInfo(long version, String description, boolean splitByLine) {
+        public MigrationInfo(int version, String description, boolean splitByLine) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
@@ -18,7 +18,7 @@ public abstract class FilenameParser {
             return description;
         }
 
-        public long getVersion() {
+        public int getVersion() {
             return version;
         }
 
@@ -54,9 +54,9 @@ public abstract class FilenameParser {
         }
     }
 
-    private static long getVersion(String vPart) {
+    private static int getVersion(String vPart) {
         String v = vPart.replace("V", "");
-        return Long.parseLong(v);
+        return Integer.parseInt(v);
     }
 
     private static String getDescription(String descriptionPart) {

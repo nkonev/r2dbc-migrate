@@ -125,12 +125,9 @@ public class R2dbcMigrateApplication {
                         LOGGER.warn("Retrying to get database connection");
                     }))
                     .flatMapMany(connection -> {
-
                         Publisher<? extends Result> createInternalTables = connection.createBatch()
-                                .add("create table if not exists migrations (id int, description text)").execute();
-                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = Flux.from(createInternalTables)
-                                .flatMap(o -> Flux.from(o.getRowsUpdated()).switchIfEmpty(Mono.just(0)))
-                                .map(integer -> Tuples.of(integer, getInternalTablesCreation()));
+                                .add("create table if not exists migrations (id int primary key, description text)").execute();
+                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = addMigrationInfoToResult(getInternalTablesCreation(), createInternalTables);
 
                         Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
                             LOGGER.debug("Reading {}", resource);
@@ -139,14 +136,22 @@ public class R2dbcMigrateApplication {
                             return Tuples.of(resource, migrationInfo);
                         });
 
-                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = fileResources.flatMap(resourceTuple -> {
-                            Resource resource = resourceTuple.getT1();
-                            FilenameParser.MigrationInfo migrationInfo = resourceTuple.getT2();
+                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = fileResources.flatMap(fileResourceTuple -> {
+                            Resource resource = fileResourceTuple.getT1();
+                            FilenameParser.MigrationInfo migrationInfo = fileResourceTuple.getT2();
 
                             Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
-                            Flux<? extends Result> migrationResults = Flux.from(migrateResultPublisher);
-                            return addMigrationInfoToResult(migrationInfo, migrationResults);
+                            Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
+
+                            Publisher<? extends Result> migrationUp = connection
+                                    .createStatement("insert into migrations(id, description) values ($1, $2)")
+                                    .bind("$1", migrationInfo.getVersion())
+                                    .bind("$2", migrationInfo.getDescription())
+                                    .execute();
+                            Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> updateInternalsFlux = addMigrationInfoToResult(getInternalTablesUpdate(migrationInfo), migrationUp);
+                            return migrationResult.concatWith(updateInternalsFlux);
                         });
+
                         return internalsCreation.concatWith(rowsAffectedByMigration);
                     })
                     .doOnEach(tuple2Signal -> {
@@ -162,9 +167,9 @@ public class R2dbcMigrateApplication {
     }
 
     private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> addMigrationInfoToResult(
-            FilenameParser.MigrationInfo migrationInfo, Flux<? extends Result> migrateResultPublisher
+            FilenameParser.MigrationInfo migrationInfo, Publisher<? extends Result> migrateResultPublisher
     ) {
-        return migrateResultPublisher.flatMap(r -> Flux.from(r.getRowsUpdated())
+        return Flux.from(migrateResultPublisher).flatMap(r -> Flux.from(r.getRowsUpdated())
                 .switchIfEmpty(Mono.just(0))
                 .map(rowsUpdated -> Tuples.of(rowsUpdated, migrationInfo))
         );
@@ -172,6 +177,10 @@ public class R2dbcMigrateApplication {
 
     private FilenameParser.MigrationInfo getInternalTablesCreation() {
         return new FilenameParser.MigrationInfo(0, "Internal tables creation", false);
+    }
+
+    private FilenameParser.MigrationInfo getInternalTablesUpdate(FilenameParser.MigrationInfo migrationInfo) {
+        return new FilenameParser.MigrationInfo(0, "Internal tables update '"+migrationInfo.getDescription()+"'", false);
     }
 
     private Publisher<? extends Result> getMigrateResultPublisher(R2DBCConfigurationProperties properties,
