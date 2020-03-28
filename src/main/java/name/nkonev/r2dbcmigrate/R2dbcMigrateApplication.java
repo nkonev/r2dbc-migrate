@@ -5,7 +5,6 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,6 +12,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -20,13 +21,12 @@ import reactor.retry.Backoff;
 import reactor.retry.Retry;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD;
 import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
-import static java.time.Duration.ofMillis;
 
 // https://github.com/spring-projects/spring-data-r2dbc
 // https://spring.io/blog/2019/12/06/spring-data-r2dbc-goes-ga
@@ -45,6 +45,16 @@ public class R2dbcMigrateApplication {
         private String url;
         private String user;
         private String password;
+        private long connectionMaxRetries;
+        private String resourcesPath;
+
+        public String getResourcesPath() {
+            return resourcesPath;
+        }
+
+        public void setResourcesPath(String resourcesPath) {
+            this.resourcesPath = resourcesPath;
+        }
 
         public String getUrl() {
             return url;
@@ -69,6 +79,15 @@ public class R2dbcMigrateApplication {
         public void setPassword(String password) {
             this.password = password;
         }
+
+        public long getConnectionMaxRetries() {
+            return connectionMaxRetries;
+        }
+
+        public void setConnectionMaxRetries(long connectionMaxRetries) {
+            this.connectionMaxRetries = connectionMaxRetries;
+        }
+
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrateApplication.class);
@@ -90,22 +109,39 @@ public class R2dbcMigrateApplication {
         SpringApplication.run(R2dbcMigrateApplication.class, args);
     }
 
+    private static Flux<Resource> getResources(String resourcesPath) {
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Resource[] resources;
+        try {
+            resources = resolver.getResources(resourcesPath);
+        } catch (IOException e) {
+            return Flux.error(new RuntimeException("Error during get resources from '" + resourcesPath + "'", e));
+        }
+        return Flux.just(resources);
+    }
+
     @Bean
-    public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCConfigurationProperties properties, @Value("file:/home/nkonev/javaWorkspace/r2dbc-migrate/migrations/postgresql/*") Resource[] resources) {
+    public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCConfigurationProperties properties) {
         LOGGER.info("Got connectionFactory");
         return (args) -> {
             Mono.from(connectionFactory.create())
-                    .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(500).doOnRetry(objectRetryContext -> {
+                    .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
                         LOGGER.warn("Retrying to get database connection to url {}", properties.getUrl());
                     }))
                     .flatMapMany(connection -> {
-                        Flux<Resource> resourceFlux = Flux.just(resources).doOnNext(resource -> {
+                        Flux<Resource> resourceFlux = getResources(properties.getResourcesPath()).doOnNext(resource -> {
                             LOGGER.debug("Processing {}", resource);
                             FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
                             LOGGER.info("Got {}", migrationInfo);
                         });
-                        //connection.createStatement("CREATE TABLE IF NOT EXISTS customer (id SERIAL PRIMARY KEY, first_name VARCHAR(255), last_name VARCHAR(255))").execute();
-                        return resourceFlux;
+                        return resourceFlux.flatMap(resource -> {
+                            try(InputStream inputStream = resource.getInputStream()) {
+                                String sql = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+                                return connection.createStatement(sql).execute();
+                            } catch (IOException e) {
+                                return Flux.error(new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e));
+                            }
+                        });
                     })
                     .blockLast();
 
