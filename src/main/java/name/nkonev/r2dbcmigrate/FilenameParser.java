@@ -1,7 +1,7 @@
 package name.nkonev.r2dbcmigrate;
 
 
-public class FilenameParser {
+public abstract class FilenameParser {
 
     public static class MigrationInfo {
         private String description;
