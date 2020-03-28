@@ -47,9 +47,6 @@ public class R2dbcMigrateApplication {
 
     @ConfigurationProperties("r2dbc")
     static class R2DBCConfigurationProperties {
-        private String url;
-        private String user;
-        private String password;
         private long connectionMaxRetries;
         private String resourcesPath;
         private int chunkSize;
@@ -60,30 +57,6 @@ public class R2dbcMigrateApplication {
 
         public void setResourcesPath(String resourcesPath) {
             this.resourcesPath = resourcesPath;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public String getUser() {
-            return user;
-        }
-
-        public void setUser(String user) {
-            this.user = user;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
         }
 
         public long getConnectionMaxRetries() {
@@ -104,19 +77,6 @@ public class R2dbcMigrateApplication {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrateApplication.class);
-
-    @Bean
-    public ConnectionFactory connectionFactory(R2DBCConfigurationProperties properties) {
-        ConnectionFactoryOptions baseOptions = ConnectionFactoryOptions.parse(properties.getUrl());
-        ConnectionFactoryOptions.Builder ob = ConnectionFactoryOptions.builder().from(baseOptions);
-        if (!StringUtils.isEmpty(properties.getUser())) {
-            ob = ob.option(USER, properties.getUser());
-        }
-        if (!StringUtils.isEmpty(properties.getPassword())) {
-            ob = ob.option(PASSWORD, properties.getPassword());
-        }
-        return ConnectionFactories.get(ob.build());
-    }
 
     public static void main(String[] args) {
         SpringApplication.run(R2dbcMigrateApplication.class, args);
@@ -162,7 +122,7 @@ public class R2dbcMigrateApplication {
         return (args) -> {
             Mono.from(connectionFactory.create())
                     .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
-                        LOGGER.warn("Retrying to get database connection to url {}", properties.getUrl());
+                        LOGGER.warn("Retrying to get database connection");
                     }))
                     .flatMapMany(connection -> {
                         Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> resources = getResources(properties.getResourcesPath()).map(resource -> {
