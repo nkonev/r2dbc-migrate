@@ -1,0 +1,28 @@
+package name.nkonev.r2dbcmigrate;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+
+class FilenameParserTest {
+
+    @Test
+    void testSplit() {
+        String s = "V5__create_customers__split.sql";
+        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        Assertions.assertEquals(5, migrationInfo.getVersion());
+        Assertions.assertEquals("create customers", migrationInfo.getDescription());
+        Assertions.assertTrue(migrationInfo.isSplitByLine());
+    }
+
+    @Test
+    void test() {
+        String s = "V5__create_customers.sql";
+        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        Assertions.assertEquals(5, migrationInfo.getVersion());
+        Assertions.assertEquals("create customers", migrationInfo.getDescription());
+        Assertions.assertFalse(migrationInfo.isSplitByLine());
+    }
+
+
+}
