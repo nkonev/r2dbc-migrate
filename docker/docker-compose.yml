@@ -1,0 +1,44 @@
+# This file used for both developer and demo purposes.
+# It contains environment
+version: '3.2'
+
+services:
+  # https://hub.docker.com/_/microsoft-mssql-server
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2017-CU19-ubuntu-16.04
+    restart: unless-stopped
+    # https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-configure-environment-variables?view=sql-server-2017
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: "yourStrong(!)Password"
+      MSSQL_COLLATION: cyrillic_general_ci_as
+    ports:
+      - 1434:1433
+    volumes:
+      # linux performance fix https://github.com/microsoft/mssql-docker/issues/355#issuecomment-530063302
+      - ./mssql.conf:/var/opt/mssql/mssql.conf
+      - mssql_data_dir:/var/opt/mssql
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "1"
+  postgresql:
+    image: postgres:12.2
+    restart: unless-stopped
+    ports:
+      - 25433:5432
+    environment:
+      - POSTGRES_PASSWORD=postgresqlPassword
+    volumes:
+      - ./postgresql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - postgresql_data_dir:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "1"
+
+volumes:
+  mssql_data_dir:
+  postgresql_data_dir:

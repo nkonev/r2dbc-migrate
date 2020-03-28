@@ -4,13 +4,13 @@ package name.nkonev.r2dbcmigrate;
 public abstract class FilenameParser {
 
     public static class MigrationInfo {
-        private String description;
         private long version;
+        private String description;
         private boolean splitByLine;
 
-        public MigrationInfo(String description, long version, boolean splitByLine) {
-            this.description = description;
+        public MigrationInfo(long version, String description, boolean splitByLine) {
             this.version = version;
+            this.description = description;
             this.splitByLine = splitByLine;
         }
 
@@ -25,6 +25,15 @@ public abstract class FilenameParser {
         public boolean isSplitByLine() {
             return splitByLine;
         }
+
+        @Override
+        public String toString() {
+            return "MigrationInfo{" +
+                    "version=" + version +
+                    ", description='" + description + '\'' +
+                    ", splitByLine=" + splitByLine +
+                    '}';
+        }
     }
 
     public static MigrationInfo getMigrationInfo(String filename) {
@@ -36,10 +45,10 @@ public abstract class FilenameParser {
         String[] array = substring.split("__");
         if (array.length == 3 && array[2].equals("split")) {
             // modifiers: split
-            return new MigrationInfo(getDescription(array[1]), getVersion(array[0]), true);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), true);
         } else if (array.length == 2) {
             // no split
-            return new MigrationInfo(getDescription(array[1]), getVersion(array[0]), false);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false);
         } else {
             throw new RuntimeException("Invalid file name '" + filename + "'");
         }
