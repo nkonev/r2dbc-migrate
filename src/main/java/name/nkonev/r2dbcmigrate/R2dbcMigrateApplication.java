@@ -1,8 +1,7 @@
 package name.nkonev.r2dbcmigrate;
 
-import io.r2dbc.spi.ConnectionFactories;
-import io.r2dbc.spi.ConnectionFactory;
-import io.r2dbc.spi.ConnectionFactoryOptions;
+import io.r2dbc.spi.*;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -19,11 +18,17 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.retry.Backoff;
 import reactor.retry.Retry;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Scanner;
+import java.util.stream.BaseStream;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD;
 import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
@@ -47,6 +52,7 @@ public class R2dbcMigrateApplication {
         private String password;
         private long connectionMaxRetries;
         private String resourcesPath;
+        private int chunkSize;
 
         public String getResourcesPath() {
             return resourcesPath;
@@ -88,6 +94,13 @@ public class R2dbcMigrateApplication {
             this.connectionMaxRetries = connectionMaxRetries;
         }
 
+        public int getChunkSize() {
+            return chunkSize;
+        }
+
+        public void setChunkSize(int chunkSize) {
+            this.chunkSize = chunkSize;
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrateApplication.class);
@@ -120,6 +133,29 @@ public class R2dbcMigrateApplication {
         return Flux.just(resources);
     }
 
+    private static Flux<String> fromPath(Path path) {
+        return Flux.using(() -> Files.lines(path),
+                Flux::fromStream,
+                BaseStream::close
+        );
+    }
+
+    private static Flux<String> fromResource(Resource resource) {
+        try {
+            return fromPath(resource.getFile().toPath());
+        } catch (IOException e) {
+            return Flux.error(new RuntimeException("Error during get resources from '" + resource + "'", e));
+        }
+    }
+
+    private static String getString(Resource resource) {
+        try(InputStream inputStream = resource.getInputStream()) {
+            return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e);
+        }
+    }
+
     @Bean
     public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCConfigurationProperties properties) {
         LOGGER.info("Got connectionFactory");
@@ -129,17 +165,24 @@ public class R2dbcMigrateApplication {
                         LOGGER.warn("Retrying to get database connection to url {}", properties.getUrl());
                     }))
                     .flatMapMany(connection -> {
-                        Flux<Resource> resourceFlux = getResources(properties.getResourcesPath()).doOnNext(resource -> {
+                        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> resources = getResources(properties.getResourcesPath()).map(resource -> {
                             LOGGER.debug("Processing {}", resource);
                             FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
                             LOGGER.info("Got {}", migrationInfo);
+                            return Tuples.of(resource, migrationInfo);
                         });
-                        return resourceFlux.flatMap(resource -> {
-                            try(InputStream inputStream = resource.getInputStream()) {
-                                String sql = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
-                                return connection.createStatement(sql).execute();
-                            } catch (IOException e) {
-                                return Flux.error(new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e));
+
+                        return resources.flatMap(resourceTuple -> {
+                            Resource resource = resourceTuple.getT1();
+                            FilenameParser.MigrationInfo migrationInfo = resourceTuple.getT2();
+                            if (migrationInfo.isSplitByLine()) {
+                                return fromResource(resource).buffer(properties.getChunkSize()).flatMap(strings -> {
+                                    Batch batch = connection.createBatch();
+                                    strings.forEach(batch::add);
+                                    return batch.execute();
+                                });
+                            } else {
+                                return connection.createStatement(getString(resource)).execute();
                             }
                         });
                     })
