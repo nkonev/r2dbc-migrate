@@ -149,7 +149,7 @@ public class R2dbcMigrateApplication {
     }
 
     private static String getString(Resource resource) {
-        try(InputStream inputStream = resource.getInputStream()) {
+        try (InputStream inputStream = resource.getInputStream()) {
             return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e);
@@ -168,27 +168,46 @@ public class R2dbcMigrateApplication {
                         Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> resources = getResources(properties.getResourcesPath()).map(resource -> {
                             LOGGER.debug("Processing {}", resource);
                             FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-                            LOGGER.info("Got {}", migrationInfo);
+                            LOGGER.info("Processing {}", migrationInfo);
                             return Tuples.of(resource, migrationInfo);
                         });
 
                         return resources.flatMap(resourceTuple -> {
                             Resource resource = resourceTuple.getT1();
                             FilenameParser.MigrationInfo migrationInfo = resourceTuple.getT2();
-                            if (migrationInfo.isSplitByLine()) {
-                                return fromResource(resource).buffer(properties.getChunkSize()).flatMap(strings -> {
-                                    Batch batch = connection.createBatch();
-                                    strings.forEach(batch::add);
-                                    return batch.execute();
-                                });
-                            } else {
-                                return connection.createStatement(getString(resource)).execute();
-                            }
+
+                            Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
+                            return Flux
+                                    .from(migrateResultPublisher)
+                                    .flatMap(r -> Flux.from(r.getRowsUpdated())
+                                            .switchIfEmpty(Mono.just(0))
+                                            .map(rowsUpdated -> Tuples.of(rowsUpdated, migrationInfo))
+                                    );
                         });
+                    })
+                    .doOnEach(tuple2Signal -> {
+                        if (tuple2Signal.hasValue()) {
+                            Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
+                            LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
+                        }
                     })
                     .blockLast();
 
             LOGGER.info("End of migration");
         };
+    }
+
+    private Publisher<? extends Result> getMigrateResultPublisher(R2DBCConfigurationProperties properties,
+                                                                  Connection connection, Resource resource,
+                                                                  FilenameParser.MigrationInfo migrationInfo) {
+        if (migrationInfo.isSplitByLine()) {
+            return fromResource(resource).buffer(properties.getChunkSize()).flatMap(strings -> {
+                Batch batch = connection.createBatch();
+                strings.forEach(batch::add);
+                return batch.execute();
+            });
+        } else {
+            return connection.createStatement(getString(resource)).execute();
+        }
     }
 }
