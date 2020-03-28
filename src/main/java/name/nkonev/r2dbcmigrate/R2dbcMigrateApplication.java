@@ -125,25 +125,29 @@ public class R2dbcMigrateApplication {
                         LOGGER.warn("Retrying to get database connection");
                     }))
                     .flatMapMany(connection -> {
-                        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> resources = getResources(properties.getResourcesPath()).map(resource -> {
-                            LOGGER.debug("Processing {}", resource);
+
+                        Publisher<? extends Result> createInternalTables = connection.createBatch()
+                                .add("create table if not exists migrations (id int, description text)").execute();
+                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = Flux.from(createInternalTables)
+                                .flatMap(o -> Flux.from(o.getRowsUpdated()).switchIfEmpty(Mono.just(0)))
+                                .map(integer -> Tuples.of(integer, getInternalTablesCreation()));
+
+                        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
+                            LOGGER.debug("Reading {}", resource);
                             FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-                            LOGGER.info("Processing {}", migrationInfo);
+                            LOGGER.info("Reading {}", migrationInfo);
                             return Tuples.of(resource, migrationInfo);
                         });
 
-                        return resources.flatMap(resourceTuple -> {
+                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = fileResources.flatMap(resourceTuple -> {
                             Resource resource = resourceTuple.getT1();
                             FilenameParser.MigrationInfo migrationInfo = resourceTuple.getT2();
 
                             Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
-                            return Flux
-                                    .from(migrateResultPublisher)
-                                    .flatMap(r -> Flux.from(r.getRowsUpdated())
-                                            .switchIfEmpty(Mono.just(0))
-                                            .map(rowsUpdated -> Tuples.of(rowsUpdated, migrationInfo))
-                                    );
+                            Flux<? extends Result> migrationResults = Flux.from(migrateResultPublisher);
+                            return addMigrationInfoToResult(migrationInfo, migrationResults);
                         });
+                        return internalsCreation.concatWith(rowsAffectedByMigration);
                     })
                     .doOnEach(tuple2Signal -> {
                         if (tuple2Signal.hasValue()) {
@@ -155,6 +159,19 @@ public class R2dbcMigrateApplication {
 
             LOGGER.info("End of migration");
         };
+    }
+
+    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> addMigrationInfoToResult(
+            FilenameParser.MigrationInfo migrationInfo, Flux<? extends Result> migrateResultPublisher
+    ) {
+        return migrateResultPublisher.flatMap(r -> Flux.from(r.getRowsUpdated())
+                .switchIfEmpty(Mono.just(0))
+                .map(rowsUpdated -> Tuples.of(rowsUpdated, migrationInfo))
+        );
+    }
+
+    private FilenameParser.MigrationInfo getInternalTablesCreation() {
+        return new FilenameParser.MigrationInfo(0, "Internal tables creation", false);
     }
 
     private Publisher<? extends Result> getMigrateResultPublisher(R2DBCConfigurationProperties properties,
