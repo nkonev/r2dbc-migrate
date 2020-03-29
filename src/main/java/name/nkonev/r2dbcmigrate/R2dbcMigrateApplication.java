@@ -1,8 +1,5 @@
 package name.nkonev.r2dbcmigrate;
 
-import io.r2dbc.mssql.MssqlConnectionFactory;
-import io.r2dbc.pool.ConnectionPool;
-import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -42,15 +39,31 @@ import java.util.stream.BaseStream;
 // https://simonbasle.github.io/2017/10/file-reading-in-reactor/
 // https://r2dbc.io/spec/0.8.1.RELEASE/spec/html/
 // https://www.infoq.com/news/2018/10/springone-r2dbc/
-@EnableConfigurationProperties(R2dbcMigrateApplication.R2DBCConfigurationProperties.class)
+@EnableConfigurationProperties(R2dbcMigrateApplication.R2DBCMigrationProperties.class)
 @SpringBootApplication
 public class R2dbcMigrateApplication {
 
+    public enum Dialect {
+        POSTGRESQL,
+        MSSQL
+    }
+
     @ConfigurationProperties("r2dbc")
-    static class R2DBCConfigurationProperties {
+    public static class R2DBCMigrationProperties {
         private long connectionMaxRetries;
         private String resourcesPath;
         private int chunkSize;
+        private Dialect dialect;
+
+        public R2DBCMigrationProperties() {
+        }
+
+        public R2DBCMigrationProperties(long connectionMaxRetries, String resourcesPath, int chunkSize, Dialect dialect) {
+            this.connectionMaxRetries = connectionMaxRetries;
+            this.resourcesPath = resourcesPath;
+            this.chunkSize = chunkSize;
+            this.dialect = dialect;
+        }
 
         public String getResourcesPath() {
             return resourcesPath;
@@ -74,6 +87,14 @@ public class R2dbcMigrateApplication {
 
         public void setChunkSize(int chunkSize) {
             this.chunkSize = chunkSize;
+        }
+
+        public Dialect getDialect() {
+            return dialect;
+        }
+
+        public void setDialect(Dialect dialect) {
+            this.dialect = dialect;
         }
     }
 
@@ -118,17 +139,17 @@ public class R2dbcMigrateApplication {
     }
 
 
-    private SqlQueries getSqlQueries(ConnectionFactory connectionFactory) {
-        ConnectionFactory unwrap = connectionFactory;
-        if (connectionFactory instanceof ConnectionPool) {
-            unwrap = ((ConnectionPool) connectionFactory).unwrap();
+    private SqlQueries getSqlQueries(R2DBCMigrationProperties properties) {
+        if (properties.getDialect() == null) {
+            throw new RuntimeException("Dialect cannot be null");
         }
-        if (unwrap instanceof MssqlConnectionFactory) {
-            return new MSSqlQueries();
-        } else if (unwrap instanceof PostgresqlConnectionFactory) {
-            return new PostgreSqlQueries();
-        } else {
-            throw new RuntimeException("Unsupported type of connection factory: " + unwrap);
+        switch (properties.getDialect()) {
+            case POSTGRESQL:
+                return new PostgreSqlQueries();
+            case MSSQL:
+                return new MSSqlQueries();
+            default:
+                throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
         }
     }
 
@@ -190,7 +211,7 @@ public class R2dbcMigrateApplication {
         }
     }
 
-    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, R2DBCConfigurationProperties properties) {
+    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, R2DBCMigrationProperties properties) {
         Batch createInternals = connection.createBatch();
         sqlQueries.createInternalTables().forEach(createInternals::add);
         Publisher<? extends Result> createInternalTables = createInternals.execute();
@@ -227,10 +248,10 @@ public class R2dbcMigrateApplication {
 
     // TODO think about closing
     @Bean
-    public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCConfigurationProperties properties) {
-        SqlQueries sqlQueries = getSqlQueries(connectionFactory);
+    public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCMigrationProperties properties) {
+        SqlQueries sqlQueries = getSqlQueries(properties);
 
-        LOGGER.info("Got connectionFactory, detected {}", sqlQueries.getClass());
+        LOGGER.info("Got connectionFactory, instantiated {}", sqlQueries.getClass());
         return (args) -> {
             Mono.from(connectionFactory.create())
                     .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
@@ -287,7 +308,7 @@ public class R2dbcMigrateApplication {
         return new FilenameParser.MigrationInfo(0, "Internal tables update '" + migrationInfo.getDescription() + "'", false, true);
     }
 
-    private Publisher<? extends Result> getMigrateResultPublisher(R2DBCConfigurationProperties properties,
+    private Publisher<? extends Result> getMigrateResultPublisher(R2DBCMigrationProperties properties,
                                                                   Connection connection, Resource resource,
                                                                   FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
