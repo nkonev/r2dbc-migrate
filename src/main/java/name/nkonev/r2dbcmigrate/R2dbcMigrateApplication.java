@@ -43,7 +43,8 @@ import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
 // https://spring.io/blog/2018/12/07/reactive-programming-and-relational-databases
 // https://www.baeldung.com/r2dbc
 // https://simonbasle.github.io/2017/10/file-reading-in-reactor/
-// https://r2dbc.io/spec/0.8.0.M8/spec/html/
+// https://r2dbc.io/spec/0.8.1.RELEASE/spec/html/
+// https://www.infoq.com/news/2018/10/springone-r2dbc/
 @EnableConfigurationProperties(R2dbcMigrateApplication.R2DBCConfigurationProperties.class)
 @SpringBootApplication
 public class R2dbcMigrateApplication {
@@ -190,6 +191,41 @@ public class R2dbcMigrateApplication {
         }
     }
 
+    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, R2DBCConfigurationProperties properties)  {
+        Publisher<? extends Result> createInternalTables = connection.createBatch()
+                .add(sqlQueries.createInternalTables()).execute();
+        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = addMigrationInfoToResult(getInternalTablesCreation(), createInternalTables);
+
+        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
+            LOGGER.debug("Reading {}", resource);
+            FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
+            LOGGER.info("Reading {}", migrationInfo);
+            return Tuples.of(resource, migrationInfo);
+        });
+
+        Mono<Integer> max = getMaxOrZero(sqlQueries, connection);
+        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = max.flatMapMany(maxMigrationNumber -> {
+            LOGGER.info("Database version is {}", maxMigrationNumber);
+            return fileResources
+                    .filter(objects -> objects.getT2().getVersion() > maxMigrationNumber)
+                    .flatMap(fileResourceTuple -> {
+                        Resource resource = fileResourceTuple.getT1();
+                        FilenameParser.MigrationInfo migrationInfo = fileResourceTuple.getT2();
+
+                        Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
+                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
+
+                        Publisher<? extends Result> migrationUp = sqlQueries
+                                .createInsertMigrationStatement(connection, migrationInfo)
+                                .execute();
+                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> updateInternalsFlux = addMigrationInfoToResult(getInternalTablesUpdate(migrationInfo), migrationUp);
+                        return migrationResult.concatWith(updateInternalsFlux);
+                    });
+        });
+        return internalsCreation.concatWith(rowsAffectedByMigration);
+    }
+
+    // TODO think about closing
     @Bean
     public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCConfigurationProperties properties) {
         SqlQueries sqlQueries = getSqlQueries(connectionFactory);
@@ -200,50 +236,21 @@ public class R2dbcMigrateApplication {
                     .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
                         LOGGER.warn("Retrying to get database connection");
                     }))
-                    .flatMapMany(connection -> {
-                        Publisher<? extends Result> createInternalTables = connection.createBatch()
-                                .add(sqlQueries.createInternalTables()).execute();
-                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = addMigrationInfoToResult(getInternalTablesCreation(), createInternalTables);
-
-                        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
-                            LOGGER.debug("Reading {}", resource);
-                            FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-                            LOGGER.info("Reading {}", migrationInfo);
-                            return Tuples.of(resource, migrationInfo);
-                        });
-
-                        Mono<Integer> max = getMaxOrZero(sqlQueries, connection);
-                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = max.flatMapMany(maxMigrationNumber -> {
-                            LOGGER.info("Database version is {}", maxMigrationNumber);
-                            return fileResources
-                                    .filter(objects -> objects.getT2().getVersion() > maxMigrationNumber)
-                                    .flatMap(fileResourceTuple -> {
-                                        Resource resource = fileResourceTuple.getT1();
-                                        FilenameParser.MigrationInfo migrationInfo = fileResourceTuple.getT2();
-
-                                        Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
-                                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
-
-                                        Publisher<? extends Result> migrationUp = sqlQueries
-                                                .createInsertMigrationStatement(connection, migrationInfo)
-                                                .execute();
-                                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> updateInternalsFlux = addMigrationInfoToResult(getInternalTablesUpdate(migrationInfo), migrationUp);
-                                        return migrationResult.concatWith(updateInternalsFlux);
-                                    });
-                        });
-
-                        return internalsCreation.concatWith(rowsAffectedByMigration);
-                    })
-                    .doOnEach(tuple2Signal -> {
-                        if (tuple2Signal.hasValue()) {
-                            Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
-                            if (!objects.getT2().isInternal()){
-                                LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
-                            } else if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
-                            }
-                        }
-                    })
+                    .flatMapMany(connection -> Mono.from(connection.beginTransaction())
+                            .thenMany(doWork(connection, sqlQueries, properties))
+                            .doOnEach(tuple2Signal -> {
+                                if (tuple2Signal.hasValue()) {
+                                    Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
+                                    if (!objects.getT2().isInternal()){
+                                        LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
+                                    } else if (LOGGER.isDebugEnabled()) {
+                                        LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
+                                    }
+                                }
+                            })
+                            .then(Mono.from(connection.commitTransaction()))
+                            .doFinally((st) -> connection.close())
+                    )
                     .blockLast();
 
             LOGGER.info("End of migration");
