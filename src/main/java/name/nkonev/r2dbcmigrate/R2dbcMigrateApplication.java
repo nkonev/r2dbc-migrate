@@ -16,7 +16,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.retry.Backoff;
@@ -30,11 +29,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Scanner;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.BaseStream;
-
-import static io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD;
-import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
 
 // https://github.com/spring-projects/spring-data-r2dbc
 // https://spring.io/blog/2019/12/06/spring-data-r2dbc-goes-ga
@@ -136,7 +133,7 @@ public class R2dbcMigrateApplication {
     }
 
     interface SqlQueries {
-        String createInternalTables();
+        List<String> createInternalTables();
 
         String getMaxMigration();
 
@@ -146,8 +143,8 @@ public class R2dbcMigrateApplication {
     static class PostgreSqlQueries implements SqlQueries {
 
         @Override
-        public String createInternalTables() {
-            return "create table if not exists migrations (id int primary key, description text)";
+        public List<String> createInternalTables() {
+            return Arrays.asList("create table if not exists migrations (id int primary key, description text)");
         }
 
         @Override
@@ -171,8 +168,8 @@ public class R2dbcMigrateApplication {
     static class MSSqlQueries implements SqlQueries {
 
         @Override
-        public String createInternalTables() {
-            return "IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='migrations' and xtype='U') create table migrations (id int primary key, description text)";
+        public List<String> createInternalTables() {
+            return Arrays.asList("if not exists (select * from sysobjects where name='migrations' and xtype='U') create table migrations (id int primary key, description text)");
         }
 
         @Override
@@ -194,8 +191,9 @@ public class R2dbcMigrateApplication {
     }
 
     private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, R2DBCConfigurationProperties properties) {
-        Publisher<? extends Result> createInternalTables = connection.createBatch()
-                .add(sqlQueries.createInternalTables()).execute();
+        Batch createInternals = connection.createBatch();
+        sqlQueries.createInternalTables().forEach(createInternals::add);
+        Publisher<? extends Result> createInternalTables = createInternals.execute();
         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = addMigrationInfoToResult(getInternalTablesCreation(), createInternalTables);
 
         Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
