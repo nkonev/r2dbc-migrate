@@ -137,7 +137,9 @@ public class R2dbcMigrateApplication {
 
     interface SqlQueries {
         String createInternalTables();
+
         String getMaxMigration();
+
         Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo);
     }
 
@@ -191,7 +193,7 @@ public class R2dbcMigrateApplication {
         }
     }
 
-    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, R2DBCConfigurationProperties properties)  {
+    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, R2DBCConfigurationProperties properties) {
         Publisher<? extends Result> createInternalTables = connection.createBatch()
                 .add(sqlQueries.createInternalTables()).execute();
         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = addMigrationInfoToResult(getInternalTablesCreation(), createInternalTables);
@@ -236,22 +238,22 @@ public class R2dbcMigrateApplication {
                     .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
                         LOGGER.warn("Retrying to get database connection");
                     }))
-                    .flatMapMany(connection -> Mono.from(connection.beginTransaction())
-                            .thenMany(doWork(connection, sqlQueries, properties))
-                            .doOnEach(tuple2Signal -> {
-                                if (tuple2Signal.hasValue()) {
-                                    Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
-                                    if (!objects.getT2().isInternal()){
-                                        LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
-                                    } else if (LOGGER.isDebugEnabled()) {
-                                        LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
-                                    }
-                                }
-                            })
-                            .then(Mono.from(connection.commitTransaction()))
-                            .doFinally((st) -> connection.close())
-                    )
-                    .blockLast();
+                    .flatMapMany(
+                            connection -> Mono.from(connection.beginTransaction())
+                                    .thenMany(doWork(connection, sqlQueries, properties))
+                                    .doOnEach(tuple2Signal -> {
+                                        if (tuple2Signal.hasValue()) {
+                                            Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
+                                            if (!objects.getT2().isInternal()) {
+                                                LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
+                                            } else if (LOGGER.isDebugEnabled()) {
+                                                LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
+                                            }
+                                        }
+                                    })
+                                    .then(Mono.from(connection.commitTransaction()))
+                                    .doFinally((st) -> connection.close())
+                    ).blockLast();
 
             LOGGER.info("End of migration");
         };
@@ -283,7 +285,7 @@ public class R2dbcMigrateApplication {
     }
 
     private FilenameParser.MigrationInfo getInternalTablesUpdate(FilenameParser.MigrationInfo migrationInfo) {
-        return new FilenameParser.MigrationInfo(0, "Internal tables update '"+migrationInfo.getDescription()+"'", false, true);
+        return new FilenameParser.MigrationInfo(0, "Internal tables update '" + migrationInfo.getDescription() + "'", false, true);
     }
 
     private Publisher<? extends Result> getMigrateResultPublisher(R2DBCConfigurationProperties properties,
