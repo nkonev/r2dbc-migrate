@@ -246,7 +246,6 @@ public class R2dbcMigrateApplication {
         return internalsCreation.concatWith(rowsAffectedByMigration);
     }
 
-    // TODO think about closing
     @Bean
     public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCMigrationProperties properties) {
         SqlQueries sqlQueries = getSqlQueries(properties);
