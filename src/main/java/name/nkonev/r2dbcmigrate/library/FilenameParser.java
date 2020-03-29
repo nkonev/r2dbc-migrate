@@ -1,4 +1,4 @@
-package name.nkonev.r2dbcmigrate;
+package name.nkonev.r2dbcmigrate.library;
 
 
 public abstract class FilenameParser {

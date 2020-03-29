@@ -1,22 +1,13 @@
-package name.nkonev.r2dbcmigrate;
+package name.nkonev.r2dbcmigrate.library;
 
-import io.r2dbc.spi.*;
+import io.r2dbc.spi.Batch;
+import io.r2dbc.spi.Connection;
+import io.r2dbc.spi.Result;
+import io.r2dbc.spi.Statement;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.r2dbc.ConnectionFactoryBuilder;
-import org.springframework.boot.autoconfigure.r2dbc.ConnectionFactoryOptionsBuilderCustomizer;
-import org.springframework.boot.autoconfigure.r2dbc.EmbeddedDatabaseConnection;
-import org.springframework.boot.autoconfigure.r2dbc.R2dbcProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
@@ -25,7 +16,6 @@ import reactor.retry.Backoff;
 import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -34,28 +24,18 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.BaseStream;
-import java.util.stream.Collectors;
 
-// https://github.com/spring-projects/spring-data-r2dbc
-// https://spring.io/blog/2019/12/06/spring-data-r2dbc-goes-ga
-// https://medium.com/w-logs/jdbc-for-spring-webflux-spring-data-r2dbc-99690208cfeb
-// https://www.infoq.com/news/2018/10/springone-r2dbc/
-// https://spring.io/blog/2018/12/07/reactive-programming-and-relational-databases
-// https://www.baeldung.com/r2dbc
-// https://simonbasle.github.io/2017/10/file-reading-in-reactor/
-// https://r2dbc.io/spec/0.8.1.RELEASE/spec/html/
-// https://www.infoq.com/news/2018/10/springone-r2dbc/
-@EnableConfigurationProperties(R2dbcMigrateApplication.MigrateProperties.class)
-@SpringBootApplication
-public class R2dbcMigrateApplication {
+public class R2dbcMigrate {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
 
     public enum Dialect {
         POSTGRESQL,
         MSSQL
     }
 
-    @ConfigurationProperties("r2dbc.migrate")
     public static class MigrateProperties {
         private long connectionMaxRetries = 500;
         private String resourcesPath;
@@ -136,12 +116,6 @@ public class R2dbcMigrateApplication {
                     ", validationRetryDelay=" + validationRetryDelay +
                     '}';
         }
-    }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrateApplication.class);
-
-    public static void main(String[] args) {
-        SpringApplication.run(R2dbcMigrateApplication.class, args);
     }
 
     private static Flux<Resource> getResources(String resourcesPath) {
@@ -286,36 +260,16 @@ public class R2dbcMigrateApplication {
         return internalsCreation.concatWith(rowsAffectedByMigration);
     }
 
-    // copy-paste from org.springframework.boot.autoconfigure.r2dbc.ConnectionFactoryConfigurations
-    protected static ConnectionFactory createConnectionFactory(R2dbcProperties properties, ClassLoader classLoader,
-                                                               List<ConnectionFactoryOptionsBuilderCustomizer> optionsCustomizers) {
-        return ConnectionFactoryBuilder.of(properties, () -> EmbeddedDatabaseConnection.get(classLoader))
-                .configure((options) -> {
-                    for (ConnectionFactoryOptionsBuilderCustomizer optionsCustomizer : optionsCustomizers) {
-                        optionsCustomizer.customize(options);
-                    }
-                }).build();
-    }
-
-    // Connection supplier creating new Connection from new ConnectionFactory.
-    // It's intentionally behaviour, see explanation below.
-    protected static Mono<Connection> connectionSupplier(R2dbcProperties properties, ResourceLoader resourceLoader, ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers) {
-        LOGGER.debug("Supplying connection");
-        return Mono.from(createConnectionFactory(properties, resourceLoader.getClassLoader(), customizers.orderedStream().collect(Collectors.toList())).create());
-    }
-
-    @Bean
-    public CommandLineRunner demo(R2dbcProperties r2dbcProperties, ResourceLoader resourceLoader,
-                                  ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers,
+    public Flux<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
                                   MigrateProperties properties) {
         LOGGER.info("Configuration is {}", properties);
         SqlQueries sqlQueries = getSqlQueries(properties);
 
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
-        return (args) -> {
+        return
             // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
             // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
-            Mono.defer(() -> connectionSupplier(r2dbcProperties, resourceLoader, customizers))
+            Mono.defer(connectionSupplier)
                     .log("Creating test connection")
                     .flatMap(testConnection -> Mono.from(testConnection.createStatement(properties.getValidationQuery()).execute()).doFinally(signalType -> testConnection.close()))
                     .timeout(properties.getValidationQueryTimeout())
@@ -324,7 +278,7 @@ public class R2dbcMigrateApplication {
                     }))
                     .doOnSuccess(o -> LOGGER.info("Successfully got result of test query"))
                     // here we opens new connection and make all migration stuff
-                    .then(connectionSupplier(r2dbcProperties, resourceLoader, customizers))
+                    .then(connectionSupplier.get())
                     .log("Make migration work")
                     .flatMapMany(
                             connection -> Mono.from(connection.beginTransaction())
@@ -342,10 +296,7 @@ public class R2dbcMigrateApplication {
                                     })
                                     .then(Mono.from(connection.commitTransaction()))
                                     .doFinally((st) -> connection.close())
-                    ).blockLast();
-
-            LOGGER.info("End of migration");
-        };
+                    );
     }
 
     private Mono<Integer> getMaxOrZero(SqlQueries sqlQueries, Connection connection) {
@@ -390,4 +341,5 @@ public class R2dbcMigrateApplication {
             return connection.createStatement(getString(resource)).execute();
         }
     }
+
 }
