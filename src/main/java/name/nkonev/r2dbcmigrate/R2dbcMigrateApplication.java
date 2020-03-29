@@ -137,7 +137,7 @@ public class R2dbcMigrateApplication {
     interface SqlQueries {
         String createInternalTables();
         String getMaxMigration();
-        String insertMigration();
+        Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo);
     }
 
     static class PostgreSqlQueries implements SqlQueries {
@@ -152,9 +152,16 @@ public class R2dbcMigrateApplication {
             return "select max(id) from migrations;";
         }
 
-        @Override
         public String insertMigration() {
             return "insert into migrations(id, description) values ($1, $2)";
+        }
+
+        @Override
+        public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
+            return connection
+                    .createStatement(insertMigration())
+                    .bind("$1", migrationInfo.getVersion())
+                    .bind("$2", migrationInfo.getDescription());
         }
     }
 
@@ -162,17 +169,24 @@ public class R2dbcMigrateApplication {
 
         @Override
         public String createInternalTables() {
-            return "create table if not exists migrations (id int primary key, description text)";
+            return "IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='migrations' and xtype='U') create table migrations (id int primary key, description text)";
         }
 
         @Override
         public String getMaxMigration() {
-            return "select max(id) from migrations;";
+            return "select max(id) as max from migrations";
+        }
+
+        public String insertMigration() {
+            return "insert into migrations(id, description) values (@id, @descr)";
         }
 
         @Override
-        public String insertMigration() {
-            return "insert into migrations(id, description) values ($1, $2)";
+        public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
+            return connection
+                    .createStatement(insertMigration())
+                    .bind("@id", migrationInfo.getVersion())
+                    .bind("@descr", migrationInfo.getDescription());
         }
     }
 
@@ -209,10 +223,8 @@ public class R2dbcMigrateApplication {
                                         Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
                                         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
 
-                                        Publisher<? extends Result> migrationUp = connection
-                                                .createStatement(sqlQueries.insertMigration())
-                                                .bind("$1", migrationInfo.getVersion())
-                                                .bind("$2", migrationInfo.getDescription())
+                                        Publisher<? extends Result> migrationUp = sqlQueries
+                                                .createInsertMigrationStatement(connection, migrationInfo)
                                                 .execute();
                                         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> updateInternalsFlux = addMigrationInfoToResult(getInternalTablesUpdate(migrationInfo), migrationUp);
                                         return migrationResult.concatWith(updateInternalsFlux);
@@ -236,8 +248,12 @@ public class R2dbcMigrateApplication {
     private Mono<Integer> getMaxOrZero(SqlQueries sqlQueries, Connection connection) {
         return Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
                 .flatMap(o -> Mono.from(o.map((row, rowMetadata) -> {
-                    Integer integer = row.get("max", Integer.class);
-                    return integer != null ? integer : 0;
+                    if (rowMetadata.getColumnNames().contains("max")) { // mssql check
+                        Integer integer = row.get("max", Integer.class);
+                        return integer != null ? integer : 0;
+                    } else {
+                        return 0;
+                    }
                 }))).switchIfEmpty(Mono.just(0)).cache();
     }
 
