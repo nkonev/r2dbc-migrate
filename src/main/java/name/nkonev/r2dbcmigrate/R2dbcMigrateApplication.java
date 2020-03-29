@@ -1,20 +1,28 @@
 package name.nkonev.r2dbcmigrate;
 
+import io.netty.handler.timeout.TimeoutException;
 import io.r2dbc.spi.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.r2dbc.ConnectionFactoryBuilder;
+import org.springframework.boot.autoconfigure.r2dbc.ConnectionFactoryOptionsBuilderCustomizer;
+import org.springframework.boot.autoconfigure.r2dbc.EmbeddedDatabaseConnection;
+import org.springframework.boot.autoconfigure.r2dbc.R2dbcProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.retry.Backoff;
 import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
@@ -28,7 +36,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.BaseStream;
+import java.util.stream.Collectors;
 
 // https://github.com/spring-projects/spring-data-r2dbc
 // https://spring.io/blog/2019/12/06/spring-data-r2dbc-goes-ga
@@ -54,15 +64,11 @@ public class R2dbcMigrateApplication {
         private String resourcesPath;
         private int chunkSize;
         private Dialect dialect;
+        private String validationQuery = "select 1";
+        private Duration validationQueryTimeout = Duration.ofSeconds(5);
+        private Duration delayBetweenRetries = Duration.ofSeconds(1);
 
         public R2DBCMigrationProperties() {
-        }
-
-        public R2DBCMigrationProperties(long connectionMaxRetries, String resourcesPath, int chunkSize, Dialect dialect) {
-            this.connectionMaxRetries = connectionMaxRetries;
-            this.resourcesPath = resourcesPath;
-            this.chunkSize = chunkSize;
-            this.dialect = dialect;
         }
 
         public String getResourcesPath() {
@@ -95,6 +101,30 @@ public class R2dbcMigrateApplication {
 
         public void setDialect(Dialect dialect) {
             this.dialect = dialect;
+        }
+
+        public String getValidationQuery() {
+            return validationQuery;
+        }
+
+        public void setValidationQuery(String validationQuery) {
+            this.validationQuery = validationQuery;
+        }
+
+        public Duration getValidationQueryTimeout() {
+            return validationQueryTimeout;
+        }
+
+        public void setValidationQueryTimeout(Duration validationQueryTimeout) {
+            this.validationQueryTimeout = validationQueryTimeout;
+        }
+
+        public Duration getDelayBetweenRetries() {
+            return delayBetweenRetries;
+        }
+
+        public void setDelayBetweenRetries(Duration delayBetweenRetries) {
+            this.delayBetweenRetries = delayBetweenRetries;
         }
     }
 
@@ -220,7 +250,7 @@ public class R2dbcMigrateApplication {
         Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
             LOGGER.debug("Reading {}", resource);
             FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-            LOGGER.info("Reading {}", migrationInfo);
+            LOGGER.info("From {} parsed metadata {}", resource, migrationInfo);
             return Tuples.of(resource, migrationInfo);
         });
 
@@ -246,16 +276,45 @@ public class R2dbcMigrateApplication {
         return internalsCreation.concatWith(rowsAffectedByMigration);
     }
 
+    // copy-paste from org.springframework.boot.autoconfigure.r2dbc.ConnectionFactoryConfigurations
+    protected static ConnectionFactory createConnectionFactory(R2dbcProperties properties, ClassLoader classLoader,
+                                                               List<ConnectionFactoryOptionsBuilderCustomizer> optionsCustomizers) {
+        return ConnectionFactoryBuilder.of(properties, () -> EmbeddedDatabaseConnection.get(classLoader))
+                .configure((options) -> {
+                    for (ConnectionFactoryOptionsBuilderCustomizer optionsCustomizer : optionsCustomizers) {
+                        optionsCustomizer.customize(options);
+                    }
+                }).build();
+    }
+
+    // Connection supplier creating new Connection from new ConnectionFactory.
+    // It's intentionally behaviour, see explanation below.
+    protected static Mono<Connection> connectionSupplier(R2dbcProperties properties, ResourceLoader resourceLoader, ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers) {
+        LOGGER.debug("Supplying connection");
+        return Mono.from(createConnectionFactory(properties, resourceLoader.getClassLoader(), customizers.orderedStream().collect(Collectors.toList())).create());
+    }
+
     @Bean
-    public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCMigrationProperties properties) {
+    public CommandLineRunner demo(R2dbcProperties r2dbcProperties, ResourceLoader resourceLoader,
+                                  ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers,
+                                  R2DBCMigrationProperties properties) {
         SqlQueries sqlQueries = getSqlQueries(properties);
 
-        LOGGER.info("Got connectionFactory, instantiated {}", sqlQueries.getClass());
+        LOGGER.info("Instantiated {}", sqlQueries.getClass());
         return (args) -> {
-            Mono.from(connectionFactory.create())
-                    .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
-                        LOGGER.warn("Retrying to get database connection");
+            // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
+            // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
+            Mono.defer(() -> connectionSupplier(r2dbcProperties, resourceLoader, customizers))
+                    .log("Creating test connection")
+                    .flatMap(testConnection -> Mono.from(testConnection.createStatement(properties.getValidationQuery()).execute()).doFinally(signalType -> testConnection.close()))
+                    .timeout(properties.getValidationQueryTimeout())
+                    .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getDelayBetweenRetries())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
+                        LOGGER.warn("Retrying to get database connection due {}: {}", objectRetryContext.exception().getClass(), objectRetryContext.exception().getMessage());
                     }))
+                    .doOnSuccess(o -> LOGGER.info("Successfully got result of test query"))
+                    // here we opens new connection and make all migration stuff
+                    .then(connectionSupplier(r2dbcProperties, resourceLoader, customizers))
+                    .log("Make migration work")
                     .flatMapMany(
                             connection -> Mono.from(connection.beginTransaction())
                                     .thenMany(connection.setAutoCommit(false))
