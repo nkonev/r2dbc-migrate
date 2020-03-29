@@ -1,5 +1,8 @@
 package name.nkonev.r2dbcmigrate;
 
+import io.r2dbc.mssql.MssqlConnectionFactory;
+import io.r2dbc.pool.ConnectionPool;
+import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -116,8 +119,67 @@ public class R2dbcMigrateApplication {
         }
     }
 
+
+    private SqlQueries getSqlQueries(ConnectionFactory connectionFactory) {
+        ConnectionFactory unwrap = connectionFactory;
+        if (connectionFactory instanceof ConnectionPool) {
+            unwrap = ((ConnectionPool) connectionFactory).unwrap();
+        }
+        if (unwrap instanceof MssqlConnectionFactory) {
+            return new MSSqlQueries();
+        } else if (unwrap instanceof PostgresqlConnectionFactory) {
+            return new PostgreSqlQueries();
+        } else {
+            throw new RuntimeException("Unsupported type of connection factory: " + unwrap);
+        }
+    }
+
+    interface SqlQueries {
+        String createInternalTables();
+        String getMaxMigration();
+        String insertMigration();
+    }
+
+    static class PostgreSqlQueries implements SqlQueries {
+
+        @Override
+        public String createInternalTables() {
+            return "create table if not exists migrations (id int primary key, description text)";
+        }
+
+        @Override
+        public String getMaxMigration() {
+            return "select max(id) from migrations;";
+        }
+
+        @Override
+        public String insertMigration() {
+            return "insert into migrations(id, description) values ($1, $2)";
+        }
+    }
+
+    static class MSSqlQueries implements SqlQueries {
+
+        @Override
+        public String createInternalTables() {
+            return "create table if not exists migrations (id int primary key, description text)";
+        }
+
+        @Override
+        public String getMaxMigration() {
+            return "select max(id) from migrations;";
+        }
+
+        @Override
+        public String insertMigration() {
+            return "insert into migrations(id, description) values ($1, $2)";
+        }
+    }
+
     @Bean
     public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCConfigurationProperties properties) {
+        SqlQueries sqlQueries = getSqlQueries(connectionFactory);
+
         LOGGER.info("Got connectionFactory");
         return (args) -> {
             Mono.from(connectionFactory.create())
@@ -126,7 +188,7 @@ public class R2dbcMigrateApplication {
                     }))
                     .flatMapMany(connection -> {
                         Publisher<? extends Result> createInternalTables = connection.createBatch()
-                                .add("create table if not exists migrations (id int primary key, description text)").execute();
+                                .add(sqlQueries.createInternalTables()).execute();
                         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = addMigrationInfoToResult(getInternalTablesCreation(), createInternalTables);
 
                         Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
@@ -136,11 +198,7 @@ public class R2dbcMigrateApplication {
                             return Tuples.of(resource, migrationInfo);
                         });
 
-                        Mono<Integer> max = Mono.from(connection.createStatement("select max(id) from migrations;").execute())
-                                .flatMap(o -> Mono.from(o.map((row, rowMetadata) -> {
-                                    Integer integer = row.get("max", Integer.class);
-                                    return integer != null ? integer : 0;
-                                }))).switchIfEmpty(Mono.just(0)).cache();
+                        Mono<Integer> max = getMaxOrZero(sqlQueries, connection);
                         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = max.flatMapMany(maxMigrationNumber -> {
                             return fileResources
                                     .filter(objects -> objects.getT2().getVersion() > maxMigrationNumber)
@@ -152,7 +210,7 @@ public class R2dbcMigrateApplication {
                                         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
 
                                         Publisher<? extends Result> migrationUp = connection
-                                                .createStatement("insert into migrations(id, description) values ($1, $2)")
+                                                .createStatement(sqlQueries.insertMigration())
                                                 .bind("$1", migrationInfo.getVersion())
                                                 .bind("$2", migrationInfo.getDescription())
                                                 .execute();
@@ -173,6 +231,14 @@ public class R2dbcMigrateApplication {
 
             LOGGER.info("End of migration");
         };
+    }
+
+    private Mono<Integer> getMaxOrZero(SqlQueries sqlQueries, Connection connection) {
+        return Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
+                .flatMap(o -> Mono.from(o.map((row, rowMetadata) -> {
+                    Integer integer = row.get("max", Integer.class);
+                    return integer != null ? integer : 0;
+                }))).switchIfEmpty(Mono.just(0)).cache();
     }
 
     private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> addMigrationInfoToResult(
