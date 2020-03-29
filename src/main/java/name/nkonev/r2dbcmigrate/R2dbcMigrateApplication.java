@@ -149,7 +149,7 @@ public class R2dbcMigrateApplication {
 
         @Override
         public String getMaxMigration() {
-            return "select max(id) from migrations;";
+            return "select max(id) from migrations";
         }
 
         public String insertMigration() {
