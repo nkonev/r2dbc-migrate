@@ -1,6 +1,5 @@
 package name.nkonev.r2dbcmigrate;
 
-import io.netty.handler.timeout.TimeoutException;
 import io.r2dbc.spi.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -22,7 +21,6 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.retry.Backoff;
 import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
@@ -36,7 +34,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
 
@@ -49,7 +46,7 @@ import java.util.stream.Collectors;
 // https://simonbasle.github.io/2017/10/file-reading-in-reactor/
 // https://r2dbc.io/spec/0.8.1.RELEASE/spec/html/
 // https://www.infoq.com/news/2018/10/springone-r2dbc/
-@EnableConfigurationProperties(R2dbcMigrateApplication.R2DBCMigrationProperties.class)
+@EnableConfigurationProperties(R2dbcMigrateApplication.MigrateProperties.class)
 @SpringBootApplication
 public class R2dbcMigrateApplication {
 
@@ -59,16 +56,16 @@ public class R2dbcMigrateApplication {
     }
 
     @ConfigurationProperties("r2dbc.migrate")
-    public static class R2DBCMigrationProperties {
+    public static class MigrateProperties {
         private long connectionMaxRetries = 500;
         private String resourcesPath;
         private int chunkSize = 1000;
         private Dialect dialect;
         private String validationQuery = "select 1";
         private Duration validationQueryTimeout = Duration.ofSeconds(5);
-        private Duration delayBetweenRetries = Duration.ofSeconds(1);
+        private Duration validationRetryDelay = Duration.ofSeconds(1);
 
-        public R2DBCMigrationProperties() {
+        public MigrateProperties() {
         }
 
         public String getResourcesPath() {
@@ -119,12 +116,25 @@ public class R2dbcMigrateApplication {
             this.validationQueryTimeout = validationQueryTimeout;
         }
 
-        public Duration getDelayBetweenRetries() {
-            return delayBetweenRetries;
+        public Duration getValidationRetryDelay() {
+            return validationRetryDelay;
         }
 
-        public void setDelayBetweenRetries(Duration delayBetweenRetries) {
-            this.delayBetweenRetries = delayBetweenRetries;
+        public void setValidationRetryDelay(Duration validationRetryDelay) {
+            this.validationRetryDelay = validationRetryDelay;
+        }
+
+        @Override
+        public String toString() {
+            return "MigrateProperties{" +
+                    "connectionMaxRetries=" + connectionMaxRetries +
+                    ", resourcesPath='" + resourcesPath + '\'' +
+                    ", chunkSize=" + chunkSize +
+                    ", dialect=" + dialect +
+                    ", validationQuery='" + validationQuery + '\'' +
+                    ", validationQueryTimeout=" + validationQueryTimeout +
+                    ", validationRetryDelay=" + validationRetryDelay +
+                    '}';
         }
     }
 
@@ -169,7 +179,7 @@ public class R2dbcMigrateApplication {
     }
 
 
-    private SqlQueries getSqlQueries(R2DBCMigrationProperties properties) {
+    private SqlQueries getSqlQueries(MigrateProperties properties) {
         if (properties.getDialect() == null) {
             throw new RuntimeException("Dialect cannot be null");
         }
@@ -241,7 +251,7 @@ public class R2dbcMigrateApplication {
         }
     }
 
-    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, R2DBCMigrationProperties properties) {
+    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
         Batch createInternals = connection.createBatch();
         sqlQueries.createInternalTables().forEach(createInternals::add);
         Publisher<? extends Result> createInternalTables = createInternals.execute();
@@ -297,7 +307,8 @@ public class R2dbcMigrateApplication {
     @Bean
     public CommandLineRunner demo(R2dbcProperties r2dbcProperties, ResourceLoader resourceLoader,
                                   ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers,
-                                  R2DBCMigrationProperties properties) {
+                                  MigrateProperties properties) {
+        LOGGER.info("Configuration is {}", properties);
         SqlQueries sqlQueries = getSqlQueries(properties);
 
         LOGGER.info("Instantiated {}", sqlQueries.getClass());
@@ -308,7 +319,7 @@ public class R2dbcMigrateApplication {
                     .log("Creating test connection")
                     .flatMap(testConnection -> Mono.from(testConnection.createStatement(properties.getValidationQuery()).execute()).doFinally(signalType -> testConnection.close()))
                     .timeout(properties.getValidationQueryTimeout())
-                    .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getDelayBetweenRetries())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
+                    .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getValidationRetryDelay())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
                         LOGGER.warn("Retrying to get database connection due {}: {}", objectRetryContext.exception().getClass(), objectRetryContext.exception().getMessage());
                     }))
                     .doOnSuccess(o -> LOGGER.info("Successfully got result of test query"))
@@ -366,7 +377,7 @@ public class R2dbcMigrateApplication {
         return new FilenameParser.MigrationInfo(0, "Internal tables update '" + migrationInfo.getDescription() + "'", false, true);
     }
 
-    private Publisher<? extends Result> getMigrateResultPublisher(R2DBCMigrationProperties properties,
+    private Publisher<? extends Result> getMigrateResultPublisher(MigrateProperties properties,
                                                                   Connection connection, Resource resource,
                                                                   FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
