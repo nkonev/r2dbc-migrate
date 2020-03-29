@@ -37,10 +37,6 @@
 			<artifactId>r2dbc-mssql</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>dev.miku</groupId>
-			<artifactId>r2dbc-mysql</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>io.r2dbc</groupId>
 			<artifactId>r2dbc-postgresql</artifactId>
 		</dependency>

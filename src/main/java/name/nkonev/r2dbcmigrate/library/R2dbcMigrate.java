@@ -3,7 +3,6 @@ package name.nkonev.r2dbcmigrate.library;
 import io.r2dbc.spi.Batch;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Result;
-import io.r2dbc.spi.Statement;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,19 +21,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 
 public class R2dbcMigrate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
-
-    public enum Dialect {
-        POSTGRESQL,
-        MSSQL
-    }
 
     public static class MigrateProperties {
         private long connectionMaxRetries = 500;
@@ -153,7 +145,7 @@ public class R2dbcMigrate {
     }
 
 
-    private SqlQueries getSqlQueries(MigrateProperties properties) {
+    protected SqlQueries getSqlQueries(MigrateProperties properties) {
         if (properties.getDialect() == null) {
             throw new RuntimeException("Dialect cannot be null");
         }
@@ -164,64 +156,6 @@ public class R2dbcMigrate {
                 return new MSSqlQueries();
             default:
                 throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
-        }
-    }
-
-    interface SqlQueries {
-        List<String> createInternalTables();
-
-        String getMaxMigration();
-
-        Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo);
-    }
-
-    static class PostgreSqlQueries implements SqlQueries {
-
-        @Override
-        public List<String> createInternalTables() {
-            return Arrays.asList("create table if not exists migrations (id int primary key, description text)");
-        }
-
-        @Override
-        public String getMaxMigration() {
-            return "select max(id) from migrations";
-        }
-
-        public String insertMigration() {
-            return "insert into migrations(id, description) values ($1, $2)";
-        }
-
-        @Override
-        public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
-            return connection
-                    .createStatement(insertMigration())
-                    .bind("$1", migrationInfo.getVersion())
-                    .bind("$2", migrationInfo.getDescription());
-        }
-    }
-
-    static class MSSqlQueries implements SqlQueries {
-
-        @Override
-        public List<String> createInternalTables() {
-            return Arrays.asList("if not exists (select * from sysobjects where name='migrations' and xtype='U') create table migrations (id int primary key, description text)");
-        }
-
-        @Override
-        public String getMaxMigration() {
-            return "select max(id) as max from migrations";
-        }
-
-        public String insertMigration() {
-            return "insert into migrations(id, description) values (@id, @descr)";
-        }
-
-        @Override
-        public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
-            return connection
-                    .createStatement(insertMigration())
-                    .bind("@id", migrationInfo.getVersion())
-                    .bind("@descr", migrationInfo.getDescription());
         }
     }
 
