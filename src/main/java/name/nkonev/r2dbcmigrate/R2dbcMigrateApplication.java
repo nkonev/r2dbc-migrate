@@ -136,20 +136,29 @@ public class R2dbcMigrateApplication {
                             return Tuples.of(resource, migrationInfo);
                         });
 
-                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = fileResources.flatMap(fileResourceTuple -> {
-                            Resource resource = fileResourceTuple.getT1();
-                            FilenameParser.MigrationInfo migrationInfo = fileResourceTuple.getT2();
+                        Mono<Integer> max = Mono.from(connection.createStatement("select max(id) from migrations;").execute())
+                                .flatMap(o -> Mono.from(o.map((row, rowMetadata) -> {
+                                    Integer integer = row.get("max", Integer.class);
+                                    return integer != null ? integer : 0;
+                                }))).switchIfEmpty(Mono.just(0)).cache();
+                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = max.flatMapMany(maxMigrationNumber -> {
+                            return fileResources
+                                    .filter(objects -> objects.getT2().getVersion() > maxMigrationNumber)
+                                    .flatMap(fileResourceTuple -> {
+                                        Resource resource = fileResourceTuple.getT1();
+                                        FilenameParser.MigrationInfo migrationInfo = fileResourceTuple.getT2();
 
-                            Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
-                            Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
+                                        Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
+                                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
 
-                            Publisher<? extends Result> migrationUp = connection
-                                    .createStatement("insert into migrations(id, description) values ($1, $2)")
-                                    .bind("$1", migrationInfo.getVersion())
-                                    .bind("$2", migrationInfo.getDescription())
-                                    .execute();
-                            Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> updateInternalsFlux = addMigrationInfoToResult(getInternalTablesUpdate(migrationInfo), migrationUp);
-                            return migrationResult.concatWith(updateInternalsFlux);
+                                        Publisher<? extends Result> migrationUp = connection
+                                                .createStatement("insert into migrations(id, description) values ($1, $2)")
+                                                .bind("$1", migrationInfo.getVersion())
+                                                .bind("$2", migrationInfo.getDescription())
+                                                .execute();
+                                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> updateInternalsFlux = addMigrationInfoToResult(getInternalTablesUpdate(migrationInfo), migrationUp);
+                                        return migrationResult.concatWith(updateInternalsFlux);
+                                    });
                         });
 
                         return internalsCreation.concatWith(rowsAffectedByMigration);
