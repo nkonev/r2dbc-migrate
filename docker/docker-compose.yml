@@ -20,7 +20,7 @@ services:
       # /opt/mssql/bin/mssql-conf traceflag 3979 on
       # /opt/mssql/bin/mssql-conf set control.alternatewritethrough 0
       # /opt/mssql/bin/mssql-conf set control.writethrough 0
-      - ./mssql.conf:/var/opt/mssql/mssql.conf
+      - ./mssql/mssql.conf:/var/opt/mssql/mssql.conf
       - mssql_data_dir:/var/opt/mssql
     logging:
       driver: "json-file"
