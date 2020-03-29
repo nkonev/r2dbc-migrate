@@ -240,6 +240,7 @@ public class R2dbcMigrateApplication {
                     }))
                     .flatMapMany(
                             connection -> Mono.from(connection.beginTransaction())
+                                    .thenMany(connection.setAutoCommit(false))
                                     .thenMany(doWork(connection, sqlQueries, properties))
                                     .doOnEach(tuple2Signal -> {
                                         if (tuple2Signal.hasValue()) {
