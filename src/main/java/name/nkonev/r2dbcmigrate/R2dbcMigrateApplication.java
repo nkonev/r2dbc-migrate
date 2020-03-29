@@ -58,11 +58,11 @@ public class R2dbcMigrateApplication {
         MSSQL
     }
 
-    @ConfigurationProperties("r2dbc")
+    @ConfigurationProperties("r2dbc.migrate")
     public static class R2DBCMigrationProperties {
-        private long connectionMaxRetries;
+        private long connectionMaxRetries = 500;
         private String resourcesPath;
-        private int chunkSize;
+        private int chunkSize = 1000;
         private Dialect dialect;
         private String validationQuery = "select 1";
         private Duration validationQueryTimeout = Duration.ofSeconds(5);
