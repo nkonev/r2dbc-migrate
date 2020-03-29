@@ -194,7 +194,7 @@ public class R2dbcMigrateApplication {
     public CommandLineRunner demo(ConnectionFactory connectionFactory, R2DBCConfigurationProperties properties) {
         SqlQueries sqlQueries = getSqlQueries(connectionFactory);
 
-        LOGGER.info("Got connectionFactory");
+        LOGGER.info("Got connectionFactory, detected {}", sqlQueries.getClass());
         return (args) -> {
             Mono.from(connectionFactory.create())
                     .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(Duration.ofSeconds(1))).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
