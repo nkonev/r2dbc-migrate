@@ -10,7 +10,11 @@ public class PostgreSqlQueries implements SqlQueries {
 
     @Override
     public List<String> createInternalTables() {
-        return Arrays.asList("create table if not exists migrations (id int primary key, description text)");
+        return Arrays.asList(
+                "create table if not exists migrations (id int primary key, description text)",
+                "create table if not exists migrations_lock (id int primary key, locked boolean not null)",
+                "insert into migrations_lock(id, locked) values (1, false) on conflict (id) do nothing"
+        );
     }
 
     @Override

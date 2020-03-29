@@ -10,7 +10,11 @@ public class MSSqlQueries implements SqlQueries {
 
     @Override
     public List<String> createInternalTables() {
-        return Arrays.asList("if not exists (select * from sysobjects where name='migrations' and xtype='U') create table migrations (id int primary key, description text)");
+        return Arrays.asList(
+                "if not exists (select * from sysobjects where name='migrations' and xtype='U') create table migrations (id int primary key, description text)",
+                "if not exists (select * from sysobjects where name='migrations_lock' and xtype='U') create table migrations_lock (id int primary key, locked bit not null)",
+                "if not exists (select * from migrations_lock where id = 1) insert into migrations_lock(id, locked) values (1, 'false')"
+        );
     }
 
     @Override
