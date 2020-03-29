@@ -214,6 +214,7 @@ public class R2dbcMigrateApplication {
 
                         Mono<Integer> max = getMaxOrZero(sqlQueries, connection);
                         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = max.flatMapMany(maxMigrationNumber -> {
+                            LOGGER.info("Database version is {}", maxMigrationNumber);
                             return fileResources
                                     .filter(objects -> objects.getT2().getVersion() > maxMigrationNumber)
                                     .flatMap(fileResourceTuple -> {
