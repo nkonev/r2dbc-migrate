@@ -7,11 +7,13 @@ public abstract class FilenameParser {
         private int version;
         private String description;
         private boolean splitByLine;
+        private boolean internal;
 
-        public MigrationInfo(int version, String description, boolean splitByLine) {
+        public MigrationInfo(int version, String description, boolean splitByLine, boolean internal) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
+            this.internal = internal;
         }
 
         public String getDescription() {
@@ -26,12 +28,21 @@ public abstract class FilenameParser {
             return splitByLine;
         }
 
+        public boolean isInternal() {
+            return internal;
+        }
+
+        public void setInternal(boolean internal) {
+            this.internal = internal;
+        }
+
         @Override
         public String toString() {
             return "MigrationInfo{" +
                     "version=" + version +
                     ", description='" + description + '\'' +
                     ", splitByLine=" + splitByLine +
+                    ", internal=" + internal +
                     '}';
         }
     }
@@ -45,10 +56,10 @@ public abstract class FilenameParser {
         String[] array = substring.split("__");
         if (array.length == 3 && array[2].equals("split")) {
             // modifiers: split
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), true);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), true, false);
         } else if (array.length == 2) {
             // no split
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, false);
         } else {
             throw new RuntimeException("Invalid file name '" + filename + "'");
         }

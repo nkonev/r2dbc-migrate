@@ -237,7 +237,11 @@ public class R2dbcMigrateApplication {
                     .doOnEach(tuple2Signal -> {
                         if (tuple2Signal.hasValue()) {
                             Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
-                            LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
+                            if (!objects.getT2().isInternal()){
+                                LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
+                            } else if (LOGGER.isDebugEnabled()) {
+                                LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
+                            }
                         }
                     })
                     .blockLast();
@@ -268,11 +272,11 @@ public class R2dbcMigrateApplication {
     }
 
     private FilenameParser.MigrationInfo getInternalTablesCreation() {
-        return new FilenameParser.MigrationInfo(0, "Internal tables creation", false);
+        return new FilenameParser.MigrationInfo(0, "Internal tables creation", false, true);
     }
 
     private FilenameParser.MigrationInfo getInternalTablesUpdate(FilenameParser.MigrationInfo migrationInfo) {
-        return new FilenameParser.MigrationInfo(0, "Internal tables update '"+migrationInfo.getDescription()+"'", false);
+        return new FilenameParser.MigrationInfo(0, "Internal tables update '"+migrationInfo.getDescription()+"'", false, true);
     }
 
     private Publisher<? extends Result> getMigrateResultPublisher(R2DBCConfigurationProperties properties,
