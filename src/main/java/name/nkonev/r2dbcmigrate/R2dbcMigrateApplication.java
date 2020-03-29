@@ -311,7 +311,7 @@ public class R2dbcMigrateApplication {
         LOGGER.info("Configuration is {}", properties);
         SqlQueries sqlQueries = getSqlQueries(properties);
 
-        LOGGER.info("Instantiated {}", sqlQueries.getClass());
+        LOGGER.debug("Instantiated {}", sqlQueries.getClass());
         return (args) -> {
             // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
             // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
