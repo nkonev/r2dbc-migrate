@@ -24,7 +24,7 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 
-public class R2dbcMigrate {
+public abstract class R2dbcMigrate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
 
@@ -162,7 +162,7 @@ public class R2dbcMigrate {
     }
 
 
-    protected SqlQueries getSqlQueries(MigrateProperties properties) {
+    protected static SqlQueries getSqlQueries(MigrateProperties properties) {
         if (properties.getDialect() == null) {
             throw new RuntimeException("Dialect cannot be null");
         }
@@ -176,7 +176,7 @@ public class R2dbcMigrate {
         }
     }
 
-    private Mono<Void> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
+    private static Mono<Void> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
         Batch createInternals = connection.createBatch();
         sqlQueries.createInternalTables().forEach(createInternals::add);
         Publisher<? extends Result> createInternalTables = createInternals.execute();
@@ -229,7 +229,7 @@ public class R2dbcMigrate {
                 .then();
     }
 
-    public Flux<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
+    public static Flux<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
                                   MigrateProperties properties) {
         LOGGER.info("Configuration is {}", properties);
         SqlQueries sqlQueries = getSqlQueries(properties);
@@ -268,7 +268,7 @@ public class R2dbcMigrate {
                     );
     }
 
-    private Mono<Integer> getMaxOrZero(SqlQueries sqlQueries, Connection connection) {
+    private static Mono<Integer> getMaxOrZero(SqlQueries sqlQueries, Connection connection) {
         return Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
                 .flatMap(o -> Mono.from(o.map((row, rowMetadata) -> {
                     if (rowMetadata.getColumnNames().contains("max")) { // mssql check
@@ -280,7 +280,7 @@ public class R2dbcMigrate {
                 }))).switchIfEmpty(Mono.just(0)).cache();
     }
 
-    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> addMigrationInfoToResult(
+    private static Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> addMigrationInfoToResult(
             FilenameParser.MigrationInfo migrationInfo, Publisher<? extends Result> migrateResultPublisher
     ) {
         return Flux.from(migrateResultPublisher).flatMap(r -> Flux.from(r.getRowsUpdated())
@@ -289,15 +289,15 @@ public class R2dbcMigrate {
         );
     }
 
-    private FilenameParser.MigrationInfo getInternalTablesCreation() {
+    private static FilenameParser.MigrationInfo getInternalTablesCreation() {
         return new FilenameParser.MigrationInfo(0, "Internal tables creation", false, true);
     }
 
-    private FilenameParser.MigrationInfo getInternalTablesUpdate(FilenameParser.MigrationInfo migrationInfo) {
+    private static FilenameParser.MigrationInfo getInternalTablesUpdate(FilenameParser.MigrationInfo migrationInfo) {
         return new FilenameParser.MigrationInfo(0, "Internal tables update '" + migrationInfo.getDescription() + "'", false, true);
     }
 
-    private Publisher<? extends Result> getMigrateResultPublisher(MigrateProperties properties,
+    private static Publisher<? extends Result> getMigrateResultPublisher(MigrateProperties properties,
                                                                   Connection connection, Resource resource,
                                                                   FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
