@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Configuration
-@EnableConfigurationProperties(R2dbcAutoConfiguration.SpringBootMigrateProperties.class)
+@EnableConfigurationProperties(R2dbcAutoConfiguration.SpringBootR2dbcMigrateProperties.class)
 public class R2dbcAutoConfiguration {
 
     private static final String MIGRATE_BEAN_NAME = "r2dbcMigrate";
@@ -59,7 +59,7 @@ public class R2dbcAutoConfiguration {
     }
 
     @ConfigurationProperties("r2dbc.migrate")
-    public static class SpringBootMigrateProperties extends R2dbcMigrate.MigrateProperties {
+    public static class SpringBootR2dbcMigrateProperties extends R2dbcMigrate.MigrateProperties {
 
     }
 
@@ -88,7 +88,7 @@ public class R2dbcAutoConfiguration {
     @Bean(name = MIGRATE_BEAN_NAME, initMethod = "migrate")
     public R2dbcMigrateBlockingInvoker r2dbcMigrate(R2dbcProperties r2dbcProperties, ResourceLoader resourceLoader,
                                                     ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers,
-                                                    R2dbcMigrate.MigrateProperties properties) {
+                                                    SpringBootR2dbcMigrateProperties properties) {
         return new R2dbcMigrateBlockingInvoker(r2dbcProperties, resourceLoader, customizers, properties);
     }
 }
