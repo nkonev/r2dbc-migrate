@@ -27,6 +27,7 @@ import java.util.stream.BaseStream;
 public abstract class R2dbcMigrate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
+    private static final String ROWS_UPDATED = "By '{}' {} rows updated";
 
     public static class MigrateProperties {
         private long connectionMaxRetries = 500;
@@ -176,62 +177,39 @@ public abstract class R2dbcMigrate {
         }
     }
 
-    private static Mono<Void> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
-        Batch createInternals = connection.createBatch();
-        sqlQueries.createInternalTables().forEach(createInternals::add);
-        Publisher<? extends Result> createInternalTables = createInternals.execute();
-        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> internalsCreation = addMigrationInfoToResult(getInternalTablesCreation(), createInternalTables);
+    private static Mono<Void> transactionalWrap(Connection connection, boolean transactional, Publisher<? extends io.r2dbc.spi.Result> migrationThings, String info) {
+        Mono<Integer> integerFlux = Flux.from(migrationThings)
+                .flatMap(Result::getRowsUpdated) // if we don't get rows updates we swallow potential errors from PostgreSQL
+                .switchIfEmpty(Mono.just(0)) // prevent emitting empty flux
+                .reduceWith(() -> 0, Integer::sum)
+                .doOnSuccess(integer -> {
+                    LOGGER.info(ROWS_UPDATED, info, integer);
+                });
 
-        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
-            LOGGER.debug("Reading {}", resource);
-            FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-            LOGGER.info("From {} parsed metadata {}", resource, migrationInfo);
-            return Tuples.of(resource, migrationInfo);
-        });
-
-        Mono<Integer> lockUpdated = Mono.from(connection.createStatement(sqlQueries.tryAcquireLock()).execute())
-            .flatMap(o -> Mono.from(o.getRowsUpdated()))
-            .switchIfEmpty(Mono.just(0))
-            .flatMap(integer -> {
-                if (Integer.valueOf(0).equals(integer)) {
-                    return Mono.error(new RuntimeException("Equals zero"));
-                } else {
-                    return Mono.just(integer);
-                }
-            });
-        Mono<Integer> waitForLock = lockUpdated.retryWhen(Retry.anyOf(RuntimeException.class).backoff(Backoff.fixed(properties.getAcquireLockRetryDelay())).retryMax(properties.getAcquireLockMaxRetries()).doOnRetry(objectRetryContext -> {
-            LOGGER.warn("Waiting for lock");
-        }));
-
-        Mono<Integer> max = getMaxOrZero(sqlQueries, connection);
-        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = max.flatMapMany(maxMigrationNumber -> {
-            LOGGER.info("Database version is {}", maxMigrationNumber);
-            return fileResources
-                    .filter(objects -> objects.getT2().getVersion() > maxMigrationNumber)
-                    .flatMap(fileResourceTuple -> {
-                        Resource resource = fileResourceTuple.getT1();
-                        FilenameParser.MigrationInfo migrationInfo = fileResourceTuple.getT2();
-
-                        Publisher<? extends Result> migrateResultPublisher = getMigrateResultPublisher(properties, connection, resource, migrationInfo);
-                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> migrationResult = addMigrationInfoToResult(migrationInfo, migrateResultPublisher);
-
-                        Publisher<? extends Result> migrationUp = sqlQueries
-                                .createInsertMigrationStatement(connection, migrationInfo)
-                                .execute();
-                        Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> updateInternalsFlux = addMigrationInfoToResult(getInternalTablesUpdate(migrationInfo), migrationUp);
-                        return migrationResult.concatWith(updateInternalsFlux);
-                    });
-        });
-        return internalsCreation
-                .thenMany(waitForLock)
-                .thenMany(rowsAffectedByMigration)
-                .then(Mono.from(connection.createStatement(sqlQueries.releaseLock()).execute()))
-                .then();
+        if (transactional) {
+            return Mono.from(connection.beginTransaction()) // 1
+                    .thenMany(integerFlux) // 2 create internals
+                    .then(Mono.from(connection.commitTransaction())); // 3
+        } else {
+            return Mono.from(connection.setAutoCommit(true)).thenMany(integerFlux).then();
+        }
     }
 
+    private static <T> Mono<Void> transactionalWrapUnchecked(Connection connection, boolean transactional, Publisher<T> migrationThings) {
+        Flux<T> integerFlux = Flux.from(migrationThings);
+        if (transactional) {
+            return Mono.from(connection.beginTransaction()) // 1
+                    .thenMany(integerFlux) // 2 create internals
+                    .then(Mono.from(connection.commitTransaction())); // 3
+        } else {
+            return Mono.from(connection.setAutoCommit(true)).thenMany(integerFlux).then();
+        }
+    }
+
+    // entrypoint
     public static Flux<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
                                   MigrateProperties properties) {
-        LOGGER.info("Configuration is {}", properties);
+        LOGGER.info("Configured with {}", properties);
         SqlQueries sqlQueries = getSqlQueries(properties);
 
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
@@ -249,26 +227,92 @@ public abstract class R2dbcMigrate {
                     // here we opens new connection and make all migration stuff
                     .then(connectionSupplier.get())
                     .log("Make migration work")
-                    .flatMapMany(
-                            connection -> Mono.from(connection.beginTransaction())
-                                    .thenMany(connection.setAutoCommit(false))
-                                    .thenMany(doWork(connection, sqlQueries, properties))
-//                                    .doOnEach(tuple2Signal -> {
-//                                        if (tuple2Signal.hasValue()) {
-//                                            Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
-//                                            if (!objects.getT2().isInternal()) {
-//                                                LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
-//                                            } else if (LOGGER.isDebugEnabled()) {
-//                                                LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
-//                                            }
-//                                        }
-//                                    })
-                                    .then(Mono.from(connection.commitTransaction()))
-                                    .doFinally((st) -> connection.close())
-                    );
+                    .flatMapMany(connection ->
+                            doWork(connection, sqlQueries, properties)
+                            .doFinally((st) -> connection.close())
+                            .then()
+                    )
+                ;
     }
 
-    private static Mono<Integer> getMaxOrZero(SqlQueries sqlQueries, Connection connection) {
+    private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries) {
+        Batch createInternals = connection.createBatch();
+        sqlQueries.createInternalTables().forEach(createInternals::add);
+        Publisher<? extends Result> createInternalTables = createInternals.execute();
+        return transactionalWrap(connection, true, createInternalTables, "Making internal tables");
+    }
+
+    private static Mono<Void> acquireOrWaitForLock(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
+        Mono<Integer> lockUpdated = Mono.from(connection.createStatement(sqlQueries.tryAcquireLock()).execute())
+                .flatMap(o -> Mono.from(o.getRowsUpdated()))
+                .switchIfEmpty(Mono.just(0))
+                .flatMap(integer -> {
+                    if (Integer.valueOf(0).equals(integer)) {
+                        return Mono.error(new RuntimeException("Equals zero"));
+                    } else {
+                        return Mono.just(integer);
+                    }
+                })
+                .doOnSuccess(integer -> {
+                    LOGGER.info(ROWS_UPDATED, "Acquiring lock", integer);
+                });
+        Mono<Integer> waitForLock = lockUpdated.retryWhen(Retry.anyOf(RuntimeException.class).backoff(Backoff.fixed(properties.getAcquireLockRetryDelay())).retryMax(properties.getAcquireLockMaxRetries()).doOnRetry(objectRetryContext -> {
+            LOGGER.warn("Waiting for lock");
+        }));
+        return transactionalWrapUnchecked(connection, true, waitForLock);
+    }
+
+    private static Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> getFileResources(MigrateProperties properties) {
+        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
+            LOGGER.debug("Reading {}", resource);
+            FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
+            LOGGER.info("From {} parsed metadata {}", resource, migrationInfo);
+            return Tuples.of(resource, migrationInfo);
+        });
+        return fileResources;
+    }
+
+    private static Mono<Void> releaseLock(Connection connection, SqlQueries sqlQueries) {
+        return transactionalWrap(connection, true, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock");
+    }
+
+    private static Mono<Void> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
+        return
+                ensureInternals(connection, sqlQueries)
+                        .then(acquireOrWaitForLock(connection, sqlQueries, properties))
+                        .then(getDatabaseVersionOrZero(sqlQueries, connection))
+                        .flatMap(currentVersion -> {
+                            LOGGER.info("Database version is {}", currentVersion);
+
+                            Mono<Void> voidMono = getFileResources(properties)
+                                    .filter(objects -> objects.getT2().getVersion() > currentVersion)
+                                    .collectList()
+                                    .flatMap(list -> {
+                                        // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
+                                        // seems here we build synchronous builder chain =)
+                                        Mono<Void> last = Mono.empty();
+                                        for (Tuple2<Resource, FilenameParser.MigrationInfo> tt : list) {
+                                            last = last.then(makeMigration(connection, properties, tt));
+                                            last = last.then(writeMigrationMetadata(connection, sqlQueries, tt));
+                                        }
+                                        last = last.then(releaseLock(connection, sqlQueries));
+                                        return last;
+                                    });
+
+                            return voidMono;
+                        });
+
+    }
+
+    private static Mono<Void> makeMigration(Connection connection, MigrateProperties properties, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
+        return transactionalWrap(connection, tt.getT2().isTransactional(), getMigrateResultPublisher0(properties, connection, tt.getT1(), tt.getT2()), tt.getT2().toString());
+    }
+
+    private static Mono<Void> writeMigrationMetadata(Connection connection, SqlQueries sqlQueries, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
+        return transactionalWrap(connection, true, sqlQueries.createInsertMigrationStatement(connection, tt.getT2()).execute(), "Writing metadata version "+tt.getT2().getVersion());
+    }
+
+    private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection) {
         return Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
                 .flatMap(o -> Mono.from(o.map((row, rowMetadata) -> {
                     if (rowMetadata.getColumnNames().contains("max")) { // mssql check
@@ -280,24 +324,7 @@ public abstract class R2dbcMigrate {
                 }))).switchIfEmpty(Mono.just(0)).cache();
     }
 
-    private static Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> addMigrationInfoToResult(
-            FilenameParser.MigrationInfo migrationInfo, Publisher<? extends Result> migrateResultPublisher
-    ) {
-        return Flux.from(migrateResultPublisher).flatMap(r -> Flux.from(r.getRowsUpdated())
-                .switchIfEmpty(Mono.just(0))
-                .map(rowsUpdated -> Tuples.of(rowsUpdated, migrationInfo))
-        );
-    }
-
-    private static FilenameParser.MigrationInfo getInternalTablesCreation() {
-        return new FilenameParser.MigrationInfo(0, "Internal tables creation", false, true);
-    }
-
-    private static FilenameParser.MigrationInfo getInternalTablesUpdate(FilenameParser.MigrationInfo migrationInfo) {
-        return new FilenameParser.MigrationInfo(0, "Internal tables update '" + migrationInfo.getDescription() + "'", false, true);
-    }
-
-    private static Publisher<? extends Result> getMigrateResultPublisher(MigrateProperties properties,
+    private static Publisher<? extends Result> getMigrateResultPublisher0(MigrateProperties properties,
                                                                   Connection connection, Resource resource,
                                                                   FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {

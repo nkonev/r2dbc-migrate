@@ -13,6 +13,17 @@ class FilenameParserTest {
         Assertions.assertEquals(5, migrationInfo.getVersion());
         Assertions.assertEquals("create customers", migrationInfo.getDescription());
         Assertions.assertTrue(migrationInfo.isSplitByLine());
+        Assertions.assertTrue(migrationInfo.isTransactional());
+    }
+
+    @Test
+    void testSplitNontransactional() {
+        String s = "V5__create_customers__split,nontransactional.sql";
+        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        Assertions.assertEquals(5, migrationInfo.getVersion());
+        Assertions.assertEquals("create customers", migrationInfo.getDescription());
+        Assertions.assertTrue(migrationInfo.isSplitByLine());
+        Assertions.assertFalse(migrationInfo.isTransactional());
     }
 
     @Test
@@ -22,6 +33,7 @@ class FilenameParserTest {
         Assertions.assertEquals(5, migrationInfo.getVersion());
         Assertions.assertEquals("create customers", migrationInfo.getDescription());
         Assertions.assertFalse(migrationInfo.isSplitByLine());
+        Assertions.assertTrue(migrationInfo.isTransactional());
     }
 
 

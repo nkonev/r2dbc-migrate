@@ -1,18 +1,23 @@
 package name.nkonev.r2dbcmigrate.library;
 
 
+import java.util.Arrays;
+import java.util.List;
+
 public abstract class FilenameParser {
 
     public static class MigrationInfo {
         private int version;
         private String description;
         private boolean splitByLine;
+        private boolean transactional;
         private boolean internal;
 
-        public MigrationInfo(int version, String description, boolean splitByLine, boolean internal) {
+        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional, boolean internal) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
+            this.transactional = transactional;
             this.internal = internal;
         }
 
@@ -32,8 +37,8 @@ public abstract class FilenameParser {
             return internal;
         }
 
-        public void setInternal(boolean internal) {
-            this.internal = internal;
+        public boolean isTransactional() {
+            return transactional;
         }
 
         @Override
@@ -42,6 +47,7 @@ public abstract class FilenameParser {
                     "version=" + version +
                     ", description='" + description + '\'' +
                     ", splitByLine=" + splitByLine +
+                    ", transactional=" + transactional +
                     ", internal=" + internal +
                     '}';
         }
@@ -54,12 +60,14 @@ public abstract class FilenameParser {
         }
         String substring = filename.substring(0, filename.length() - sql.length());
         String[] array = substring.split("__");
-        if (array.length == 3 && array[2].equals("split")) {
-            // modifiers: split
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), true, false);
+        if (array.length == 3) {
+            String modifiersRaw = array[2];
+            List<String> modifiers = Arrays.asList(modifiersRaw.split(","));
+            boolean nonTransactional = modifiers.contains("nontransactional");
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), true, !nonTransactional, false);
         } else if (array.length == 2) {
             // no split
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, false);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true, false);
         } else {
             throw new RuntimeException("Invalid file name '" + filename + "'");
         }
