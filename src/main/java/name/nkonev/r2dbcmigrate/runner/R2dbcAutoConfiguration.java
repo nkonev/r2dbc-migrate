@@ -51,7 +51,7 @@ public class R2dbcAutoConfiguration {
 
     // Connection supplier creating new Connection from new ConnectionFactory.
     // It's intentionally behaviour, see explanation in R2dbcMigrate#migrate
-    protected static Mono<Connection> connectionSupplier(R2dbcProperties properties,
+    protected static Mono<Connection> makeConnectionMono(R2dbcProperties properties,
                                                          ResourceLoader resourceLoader,
                                                          ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers) {
         LOGGER.debug("Supplying connection");
@@ -79,7 +79,7 @@ public class R2dbcAutoConfiguration {
         }
 
         public void migrate() {
-            R2dbcMigrate.migrate(() -> connectionSupplier(r2dbcProperties, resourceLoader, customizers), properties).blockLast();
+            R2dbcMigrate.migrate(() -> makeConnectionMono(r2dbcProperties, resourceLoader, customizers), properties).blockLast();
             LOGGER.info("End of migration");
         }
 
