@@ -12,18 +12,15 @@ import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.retry.Backoff;
-import reactor.retry.Repeat;
-import reactor.retry.RepeatContext;
 import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 
@@ -145,17 +142,13 @@ public class R2dbcMigrate {
         return Flux.just(resources);
     }
 
-    private static Flux<String> fromPath(Path path) {
-        return Flux.using(() -> Files.lines(path),
-                Flux::fromStream,
-                BaseStream::close
-        );
-    }
-
     private static Flux<String> fromResource(Resource resource) {
         try {
-            return fromPath(resource.getFile().toPath());
-        } catch (IOException e) {
+            return Flux.using(() -> new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)).lines(),
+                    Flux::fromStream,
+                    BaseStream::close
+            );
+        } catch (Exception e) {
             return Flux.error(new RuntimeException("Error during get resources from '" + resource + "'", e));
         }
     }
