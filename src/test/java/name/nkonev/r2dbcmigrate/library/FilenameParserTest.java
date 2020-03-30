@@ -1,6 +1,5 @@
-package name.nkonev.r2dbcmigrate;
+package name.nkonev.r2dbcmigrate.library;
 
-import name.nkonev.r2dbcmigrate.library.FilenameParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
