@@ -1,11 +1,10 @@
 # Features
-* waitFor db start
-* split by newline
+* wait for db starts
+* split large file by newline by chunks
+* support concurrent migrations by locking
 
 # Todo
-* lock like in my mybatis
 * more tests
-
 
 # Open MS SQL shell
 ```bash

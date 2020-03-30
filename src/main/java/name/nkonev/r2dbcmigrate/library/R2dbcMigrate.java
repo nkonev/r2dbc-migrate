@@ -12,6 +12,8 @@ import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.retry.Backoff;
+import reactor.retry.Repeat;
+import reactor.retry.RepeatContext;
 import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -21,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 
@@ -36,6 +39,8 @@ public class R2dbcMigrate {
         private String validationQuery = "select 1";
         private Duration validationQueryTimeout = Duration.ofSeconds(5);
         private Duration validationRetryDelay = Duration.ofSeconds(1);
+        private Duration acquireLockRetryDelay = Duration.ofSeconds(1);
+        private long acquireLockMaxRetries = 100;
 
         public MigrateProperties() {
         }
@@ -96,6 +101,23 @@ public class R2dbcMigrate {
             this.validationRetryDelay = validationRetryDelay;
         }
 
+        public Duration getAcquireLockRetryDelay() {
+            return acquireLockRetryDelay;
+        }
+
+        public void setAcquireLockRetryDelay(Duration acquireLockRetryDelay) {
+            this.acquireLockRetryDelay = acquireLockRetryDelay;
+        }
+
+
+        public long getAcquireLockMaxRetries() {
+            return acquireLockMaxRetries;
+        }
+
+        public void setAcquireLockMaxRetries(long acquireLockMaxRetries) {
+            this.acquireLockMaxRetries = acquireLockMaxRetries;
+        }
+
         @Override
         public String toString() {
             return "MigrateProperties{" +
@@ -106,6 +128,8 @@ public class R2dbcMigrate {
                     ", validationQuery='" + validationQuery + '\'' +
                     ", validationQueryTimeout=" + validationQueryTimeout +
                     ", validationRetryDelay=" + validationRetryDelay +
+                    ", acquireLockRetryDelay=" + acquireLockRetryDelay +
+                    ", acquireLockMaxRetries=" + acquireLockMaxRetries +
                     '}';
         }
     }
@@ -159,7 +183,7 @@ public class R2dbcMigrate {
         }
     }
 
-    private Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
+    private Mono<Void> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
         Batch createInternals = connection.createBatch();
         sqlQueries.createInternalTables().forEach(createInternals::add);
         Publisher<? extends Result> createInternalTables = createInternals.execute();
@@ -171,6 +195,20 @@ public class R2dbcMigrate {
             LOGGER.info("From {} parsed metadata {}", resource, migrationInfo);
             return Tuples.of(resource, migrationInfo);
         });
+
+        Mono<Integer> lockUpdated = Mono.from(connection.createStatement(sqlQueries.tryAcquireLock()).execute())
+            .flatMap(o -> Mono.from(o.getRowsUpdated()))
+            .switchIfEmpty(Mono.just(0))
+            .flatMap(integer -> {
+                if (Integer.valueOf(0).equals(integer)) {
+                    return Mono.error(new RuntimeException("Equals zero"));
+                } else {
+                    return Mono.just(integer);
+                }
+            });
+        Mono<Integer> waitForLock = lockUpdated.retryWhen(Retry.anyOf(RuntimeException.class).backoff(Backoff.fixed(properties.getAcquireLockRetryDelay())).retryMax(properties.getAcquireLockMaxRetries()).doOnRetry(objectRetryContext -> {
+            LOGGER.warn("Waiting for lock");
+        }));
 
         Mono<Integer> max = getMaxOrZero(sqlQueries, connection);
         Flux<Tuple2<Integer, FilenameParser.MigrationInfo>> rowsAffectedByMigration = max.flatMapMany(maxMigrationNumber -> {
@@ -191,7 +229,11 @@ public class R2dbcMigrate {
                         return migrationResult.concatWith(updateInternalsFlux);
                     });
         });
-        return internalsCreation.concatWith(rowsAffectedByMigration);
+        return internalsCreation
+                .thenMany(waitForLock)
+                .thenMany(rowsAffectedByMigration)
+                .then(Mono.from(connection.createStatement(sqlQueries.releaseLock()).execute()))
+                .then();
     }
 
     public Flux<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
@@ -218,16 +260,16 @@ public class R2dbcMigrate {
                             connection -> Mono.from(connection.beginTransaction())
                                     .thenMany(connection.setAutoCommit(false))
                                     .thenMany(doWork(connection, sqlQueries, properties))
-                                    .doOnEach(tuple2Signal -> {
-                                        if (tuple2Signal.hasValue()) {
-                                            Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
-                                            if (!objects.getT2().isInternal()) {
-                                                LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
-                                            } else if (LOGGER.isDebugEnabled()) {
-                                                LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
-                                            }
-                                        }
-                                    })
+//                                    .doOnEach(tuple2Signal -> {
+//                                        if (tuple2Signal.hasValue()) {
+//                                            Tuple2<Integer, FilenameParser.MigrationInfo> objects = tuple2Signal.get();
+//                                            if (!objects.getT2().isInternal()) {
+//                                                LOGGER.info("{}: {} rows affected", objects.getT2(), objects.getT1());
+//                                            } else if (LOGGER.isDebugEnabled()) {
+//                                                LOGGER.debug("{}: {} rows affected", objects.getT2(), objects.getT1());
+//                                            }
+//                                        }
+//                                    })
                                     .then(Mono.from(connection.commitTransaction()))
                                     .doFinally((st) -> connection.close())
                     );

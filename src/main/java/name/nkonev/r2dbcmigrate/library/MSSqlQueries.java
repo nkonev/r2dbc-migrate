@@ -33,4 +33,14 @@ public class MSSqlQueries implements SqlQueries {
                 .bind("@id", migrationInfo.getVersion())
                 .bind("@descr", migrationInfo.getDescription());
     }
+
+    @Override
+    public String tryAcquireLock() {
+        return "update migrations_lock set locked = 'true' where id = 1 and locked = 'false'";
+    }
+
+    @Override
+    public String releaseLock() {
+        return "update migrations_lock set locked = 'false' where id = 1";
+    }
 }

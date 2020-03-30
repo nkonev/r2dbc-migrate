@@ -11,4 +11,8 @@ public interface SqlQueries {
     String getMaxMigration();
 
     Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo);
+
+    String tryAcquireLock();
+
+    String releaseLock();
 }
