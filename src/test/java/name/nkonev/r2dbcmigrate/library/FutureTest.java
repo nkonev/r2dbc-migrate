@@ -13,7 +13,13 @@ public class FutureTest {
 
     @Disabled
     @Test
-    public void testSplitMigrationsFitsInMemory() {
+    public void testSplittedLargeMigrationsFitsInMemory() {
+
+    }
+
+    @Disabled
+    @Test
+    public void testCreateMsSqlDatabaseThenSchemaInItThenTableInIt() {
 
     }
 
