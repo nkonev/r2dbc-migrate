@@ -9,8 +9,12 @@
 * split large file by newline by chunks
 * support concurrent migrations by locking
 
+## Download
+```
+docker pull nkonev/r2dbc-migrate:latest
+```
+
 ## Todo
-* make non-transactional migrations for creating databases and schemas in MS SQL
 * introduce library
 * more tests
 
