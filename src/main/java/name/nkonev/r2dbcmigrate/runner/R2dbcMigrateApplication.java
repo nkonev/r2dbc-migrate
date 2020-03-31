@@ -7,7 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import reactor.tools.agent.ReactorDebugAgent;
+//import reactor.tools.agent.ReactorDebugAgent;
 
 // https://github.com/spring-projects/spring-data-r2dbc
 // https://spring.io/blog/2019/12/06/spring-data-r2dbc-goes-ga
@@ -25,7 +25,7 @@ public class R2dbcMigrateApplication {
 
     public static void main(String[] args) {
         // https://projectreactor.io/docs/core/release/reference/#reactor-tools-debug
-        ReactorDebugAgent.init();
+//        ReactorDebugAgent.init();
         SpringApplication.run(R2dbcMigrateApplication.class, args);
     }
 
