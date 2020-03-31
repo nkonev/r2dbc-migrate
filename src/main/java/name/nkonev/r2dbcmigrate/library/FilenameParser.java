@@ -64,7 +64,8 @@ public abstract class FilenameParser {
             String modifiersRaw = array[2];
             List<String> modifiers = Arrays.asList(modifiersRaw.split(","));
             boolean nonTransactional = modifiers.contains("nontransactional");
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), true, !nonTransactional, false);
+            boolean split = modifiers.contains("split");
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), split, !nonTransactional, false);
         } else if (array.length == 2) {
             // no split
             return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true, false);
