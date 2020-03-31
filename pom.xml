@@ -101,28 +101,6 @@
 			</plugin>
 
 			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copying resources</id>
-						<phase>generate-test-resources</phase>
-						<configuration>
-							<tasks>
-								<!-- https://ant.apache.org/manual/Tasks/copy.html -->
-								<mkdir dir="${project.build.testOutputDirectory}/migrations/postgresql/" />
-								<copy todir="${project.build.testOutputDirectory}/migrations/postgresql/">
-									<fileset dir="${project.basedir}/migrations/postgresql" includes="*.sql"/>
-								</copy>
-							</tasks>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>

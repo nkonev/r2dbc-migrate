@@ -58,8 +58,7 @@ public class FutureTest {
     public void testThatTransactionsWrapsQueriesAndTransactionsAreNotNested() {
         R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
-        // ./mvnw generate-test-resources
-        properties.setResourcesPath("classpath:migrations/postgresql/*.sql");
+        properties.setResourcesPath("file:./migrations/postgresql/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).blockLast();
