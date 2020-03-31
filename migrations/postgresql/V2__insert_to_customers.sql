@@ -1,1 +1,1 @@
-insert into customer(first_name, last_name) values ('Muhammad', 'Ali'), ('Name', 'Surname');
+insert into customer(first_name, last_name) values ('Muhammad', 'Ali'), ('Name', 'Фамилия');

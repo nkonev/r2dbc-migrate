@@ -1,31 +1,21 @@
 package name.nkonev.r2dbcmigrate.library;
 
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.stream.BaseStream;
 
 public abstract class FileReader {
 
-    public static Flux<String> readChunked(Resource resource) {
-        return fromResource(resource);
-    }
-
-    public static String read(Resource resource) {
-        return getString(resource);
-    }
-
-    private static Flux<String> fromResource(Resource resource) {
+    public static Flux<String> readChunked(Resource resource, Charset fileCharset) {
         try {
             return Flux.using(() -> new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8) // TODO make configurable
+                            new InputStreamReader(resource.getInputStream(), fileCharset)
                     ).lines(),
                     Flux::fromStream,
                     BaseStream::close
@@ -35,9 +25,9 @@ public abstract class FileReader {
         }
     }
 
-    private static String getString(Resource resource) {
+    public static String read(Resource resource, Charset fileCharset) {
         try (InputStream inputStream = resource.getInputStream()) {
-            return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8); // TODO make configurable
+            return StreamUtils.copyToString(inputStream, fileCharset);
         } catch (IOException e) {
             throw new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e);
         }

@@ -16,6 +16,8 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
@@ -35,6 +37,7 @@ public abstract class R2dbcMigrate {
         private Duration validationRetryDelay = Duration.ofSeconds(1);
         private Duration acquireLockRetryDelay = Duration.ofSeconds(1);
         private long acquireLockMaxRetries = 100;
+        private Charset fileCharset = StandardCharsets.UTF_8;
 
         public MigrateProperties() {
         }
@@ -112,6 +115,14 @@ public abstract class R2dbcMigrate {
             this.acquireLockMaxRetries = acquireLockMaxRetries;
         }
 
+        public Charset getFileCharset() {
+            return fileCharset;
+        }
+
+        public void setFileCharset(Charset fileCharset) {
+            this.fileCharset = fileCharset;
+        }
+
         @Override
         public String toString() {
             return "MigrateProperties{" +
@@ -124,6 +135,7 @@ public abstract class R2dbcMigrate {
                     ", validationRetryDelay=" + validationRetryDelay +
                     ", acquireLockRetryDelay=" + acquireLockRetryDelay +
                     ", acquireLockMaxRetries=" + acquireLockMaxRetries +
+                    ", fileCharset=" + fileCharset +
                     '}';
         }
     }
@@ -312,7 +324,7 @@ public abstract class R2dbcMigrate {
                                                                          FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
             Flux<? extends Result> sequentFlux = FileReader
-                    .readChunked(resource)
+                    .readChunked(resource, properties.getFileCharset())
                     .buffer(properties.getChunkSize())
                     .concatMap(strings -> {
                         LOGGER.debug("Creating batch - for {} processing {} strings", migrationInfo, strings.size());
@@ -320,7 +332,7 @@ public abstract class R2dbcMigrate {
                     }, 1);
             return sequentFlux;
         } else {
-            return connection.createStatement(FileReader.read(resource)).execute();
+            return connection.createStatement(FileReader.read(resource, properties.getFileCharset())).execute();
         }
     }
 
