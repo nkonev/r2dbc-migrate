@@ -8,22 +8,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.retry.Backoff;
 import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
-import java.io.BufferedReader;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.BaseStream;
 
 public abstract class R2dbcMigrate {
 
@@ -270,23 +265,11 @@ public abstract class R2dbcMigrate {
                                     .collectList()
                                     .flatMap(list -> {
                                         // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
-                                        // seems here we build synchronous builder chain =)
+                                        // seems here we build sequent builder chain
+                                        // TODO consider replace this chain with concatMap(f, 1)
                                         Mono<Void> last = Mono.empty();
                                         for (Tuple2<Resource, FilenameParser.MigrationInfo> tt : list) {
-                                            if (tt.getT2().isSplitByLine()) {
-                                                Flux<Integer> flux = FileReader
-                                                        .readChunked(tt.getT1())
-                                                        .buffer(properties.getChunkSize())
-                                                        .concatMap(strings -> {
-                                                            LOGGER.debug("Creating batch - for {} processing {} strings", tt.getT2(), strings.size());
-                                                            return Flux.from(makeBatch(connection, strings).execute());
-                                                        }, 1)
-                                                        //.flatMap(Batch::execute)
-                                                        .flatMap(o -> o.getRowsUpdated());
-                                                last = last.then(flux.then());
-                                            } else {
-                                                last = last.then(makeMigration(connection, properties, tt));
-                                            }
+                                            last = last.then(makeMigration(connection, properties, tt));
                                             last = last.then(writeMigrationMetadata(connection, sqlQueries, tt));
                                         }
                                         last = last.then(releaseLock(connection, sqlQueries));
@@ -294,12 +277,12 @@ public abstract class R2dbcMigrate {
                                     });
 
                             return voidMono;
-                        });
+                        }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
 
     }
 
     private static Mono<Void> makeMigration(Connection connection, MigrateProperties properties, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
-        return transactionalWrap(connection, tt.getT2().isTransactional(), getMigrateResultPublisher0(properties, connection, tt.getT1(), tt.getT2()), tt.getT2().toString());
+        return transactionalWrap(connection, tt.getT2().isTransactional(), getMigrateResultPublisher(properties, connection, tt.getT1(), tt.getT2()), tt.getT2().toString());
     }
 
     private static Mono<Void> writeMigrationMetadata(Connection connection, SqlQueries sqlQueries, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
@@ -324,20 +307,18 @@ public abstract class R2dbcMigrate {
         return batch;
     }
 
-    private static Publisher<? extends Result> getMigrateResultPublisher0(MigrateProperties properties,
-                                                                  Connection connection, Resource resource,
-                                                                  FilenameParser.MigrationInfo migrationInfo) {
+    private static Publisher<? extends Result> getMigrateResultPublisher(MigrateProperties properties,
+                                                                         Connection connection, Resource resource,
+                                                                         FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
-            Flux<? extends Result> flux = FileReader
+            Flux<? extends Result> sequentFlux = FileReader
                     .readChunked(resource)
                     .buffer(properties.getChunkSize())
-                    .map(strings -> {
+                    .concatMap(strings -> {
                         LOGGER.debug("Creating batch - for {} processing {} strings", migrationInfo, strings.size());
-                        return makeBatch(connection, strings);
-                    })
-                    .flatMap(Batch::execute);
-
-            return flux;
+                        return makeBatch(connection, strings).execute();
+                    }, 1);
+            return sequentFlux;
         } else {
             return connection.createStatement(FileReader.read(resource)).execute();
         }

@@ -25,7 +25,7 @@ public abstract class FileReader {
     private static Flux<String> fromResource(Resource resource) {
         try {
             return Flux.using(() -> new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)
+                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8) // TODO make configurable
                     ).lines(),
                     Flux::fromStream,
                     BaseStream::close
@@ -37,19 +37,10 @@ public abstract class FileReader {
 
     private static String getString(Resource resource) {
         try (InputStream inputStream = resource.getInputStream()) {
-            return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+            return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8); // TODO make configurable
         } catch (IOException e) {
             throw new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e);
         }
     }
-
-   /* public static void main(String[] args) {
-        FileSystemResource fileSystemResource = new FileSystemResource("/home/nkonev/migrator/postgresql_bcs/V6__vTransactions__split.sql");
-        Integer count = readChunked(fileSystemResource)
-                .filter(s -> "INSERT INTO dwh_persbroker.perseus.vTransactions (TradeNum, Account, Quantity, TradeDate, Exchange, InstrumentCurrency, ISIN, PaymentCurrency, Price, SourceCode, TradeDirection, ID_DEAL, TradeType, PaymentVolume, PaidCoupon, ReceivedCoupon) VALUES ('305869982', '10131', 894468.00, '2014-11-21 17:44:19.0000000', 'ММВБ', 'RUB', 'RU0009024277', 'RUB', 2276.00, 'БО РР', 'Продажа', '2425320149', 'Акция', -393.00, null, null);".equals(s))
-                .
-                .collectList().map(strings -> strings.size()).block();
-        System.out.println(count);
-    }*/
 
 }
