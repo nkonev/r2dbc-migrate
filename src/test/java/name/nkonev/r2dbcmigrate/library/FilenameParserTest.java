@@ -27,6 +27,16 @@ class FilenameParserTest {
     }
 
     @Test
+    void testNontransactional() {
+        String s = "V5__create_customers__nontransactional.sql";
+        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        Assertions.assertEquals(5, migrationInfo.getVersion());
+        Assertions.assertEquals("create customers", migrationInfo.getDescription());
+        Assertions.assertFalse(migrationInfo.isSplitByLine());
+        Assertions.assertFalse(migrationInfo.isTransactional());
+    }
+
+    @Test
     void test() {
         String s = "V5__create_customers.sql";
         FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
