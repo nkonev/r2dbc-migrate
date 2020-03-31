@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.BaseStream;
 
@@ -142,26 +143,6 @@ public abstract class R2dbcMigrate {
         }
         return Flux.just(resources);
     }
-
-    private static Flux<String> fromResource(Resource resource) {
-        try {
-            return Flux.using(() -> new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)).lines(),
-                    Flux::fromStream,
-                    BaseStream::close
-            );
-        } catch (Exception e) {
-            return Flux.error(new RuntimeException("Error during get resources from '" + resource + "'", e));
-        }
-    }
-
-    private static String getString(Resource resource) {
-        try (InputStream inputStream = resource.getInputStream()) {
-            return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e);
-        }
-    }
-
 
     protected static SqlQueries getSqlQueries(MigrateProperties properties) {
         if (properties.getDialect() == null) {
@@ -292,7 +273,20 @@ public abstract class R2dbcMigrate {
                                         // seems here we build synchronous builder chain =)
                                         Mono<Void> last = Mono.empty();
                                         for (Tuple2<Resource, FilenameParser.MigrationInfo> tt : list) {
-                                            last = last.then(makeMigration(connection, properties, tt));
+                                            if (tt.getT2().isSplitByLine()) {
+                                                Flux<Integer> flux = FileReader
+                                                        .readChunked(tt.getT1())
+                                                        .buffer(properties.getChunkSize())
+                                                        .concatMap(strings -> {
+                                                            LOGGER.debug("Creating batch - for {} processing {} strings", tt.getT2(), strings.size());
+                                                            return Flux.from(makeBatch(connection, strings).execute());
+                                                        }, 1)
+                                                        //.flatMap(Batch::execute)
+                                                        .flatMap(o -> o.getRowsUpdated());
+                                                last = last.then(flux.then());
+                                            } else {
+                                                last = last.then(makeMigration(connection, properties, tt));
+                                            }
                                             last = last.then(writeMigrationMetadata(connection, sqlQueries, tt));
                                         }
                                         last = last.then(releaseLock(connection, sqlQueries));
@@ -324,17 +318,28 @@ public abstract class R2dbcMigrate {
                 }))).switchIfEmpty(Mono.just(0)).cache();
     }
 
+    static Batch makeBatch(Connection connection, List<String> strings) {
+        Batch batch = connection.createBatch();
+        strings.forEach(batch::add);
+        return batch;
+    }
+
     private static Publisher<? extends Result> getMigrateResultPublisher0(MigrateProperties properties,
                                                                   Connection connection, Resource resource,
                                                                   FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
-            return fromResource(resource).buffer(properties.getChunkSize()).flatMap(strings -> {
-                Batch batch = connection.createBatch();
-                strings.forEach(batch::add);
-                return batch.execute();
-            });
+            Flux<? extends Result> flux = FileReader
+                    .readChunked(resource)
+                    .buffer(properties.getChunkSize())
+                    .map(strings -> {
+                        LOGGER.debug("Creating batch - for {} processing {} strings", migrationInfo, strings.size());
+                        return makeBatch(connection, strings);
+                    })
+                    .flatMap(Batch::execute);
+
+            return flux;
         } else {
-            return connection.createStatement(getString(resource)).execute();
+            return connection.createStatement(FileReader.read(resource)).execute();
         }
     }
 
