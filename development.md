@@ -1,5 +1,6 @@
 # Reset & open PostgreSQL logs
 ```
+cd src/test/resources/docker
 docker-compose down -v; docker-compose up -d; docker-compose logs -f postgresql
 ```
 
