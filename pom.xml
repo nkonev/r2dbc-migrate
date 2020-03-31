@@ -5,7 +5,7 @@
 
 	<groupId>name.nkonev</groupId>
 	<artifactId>r2dbc-migrate</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<name>r2dbc-migrate</name>
 	<description>R2DBC migration tool and library</description>
 
