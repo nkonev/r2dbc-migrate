@@ -84,6 +84,7 @@ public class PostgresTestcontainersTest {
 
         // get log
         List<ILoggingEvent> logsList = listAppender.list;
+        listAppender.stop();
         List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
         Assertions.assertTrue(
                 Collections.indexOfSubList(collect, Arrays.asList(
