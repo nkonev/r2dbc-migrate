@@ -9,10 +9,7 @@ import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
@@ -21,7 +18,9 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,11 +32,13 @@ public class PostgresTestcontainersTest {
     final static int POSTGRESQL_PORT = 5432;
     static GenericContainer container;
 
-    static Logger fooLogger;
-    static Level previousLevel;
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(PostgresTestcontainersTest.class);
 
-    @BeforeAll
-    public static void beforeAll() throws IOException {
+    static Logger statementsLogger;
+    static Level statementsPreviousLevel;
+
+    @BeforeEach
+    public void beforeAll() throws IOException {
         FileUtils.copyFileToDirectory(new File("./docker/postgresql/docker-entrypoint-initdb.d/init-r2dbc-db.sql"), new File("./target/test-classes/docker/postgresql/docker-entrypoint-initdb.d"));
 
         container = new GenericContainer("postgres:12.2")
@@ -48,14 +49,14 @@ public class PostgresTestcontainersTest {
                         .withTimes(2));
         container.start();
 
-        fooLogger = (Logger) LoggerFactory.getLogger("io.r2dbc.postgresql.QUERY");
-        previousLevel = fooLogger.getEffectiveLevel();
+        statementsLogger = (Logger) LoggerFactory.getLogger("io.r2dbc.postgresql.QUERY");
+        statementsPreviousLevel = statementsLogger.getEffectiveLevel();
     }
 
-    @AfterAll
-    public static void afterAll() {
+    @AfterEach
+    public void afterAll() {
         container.stop();
-        fooLogger.setLevel(previousLevel);
+        statementsLogger.setLevel(statementsPreviousLevel);
     }
 
     private Mono<Connection> makeConnectionMono(String host, int port, String database) {
@@ -73,14 +74,14 @@ public class PostgresTestcontainersTest {
 
     @Test
     public void testThatTransactionsWrapsQueriesAndTransactionsAreNotNested() {
-        fooLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
+        statementsLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
 
         // create and start a ListAppender
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         // add the appender to the logger
         // addAppender is outdated now
-        fooLogger.addAppender(listAppender);
+        statementsLogger.addAppender(listAppender);
 
         R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
@@ -92,7 +93,7 @@ public class PostgresTestcontainersTest {
         // get log
         List<ILoggingEvent> logsList = listAppender.list;
         listAppender.stop();
-        fooLogger.setLevel(previousLevel);
+        statementsLogger.setLevel(statementsPreviousLevel);
         List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
         Assertions.assertTrue(
                 Collections.indexOfSubList(collect, Arrays.asList(
@@ -127,5 +128,34 @@ public class PostgresTestcontainersTest {
                 )) != -1);
         // make asserts
     }
+
+    @Test
+    public void testSplittedLargeMigrationsFitsInMemory() throws IOException {
+        // _JAVA_OPTIONS: -Xmx128m
+        File generatedMigrationDir = new File("./target/test-classes/oom_migrations");
+        generatedMigrationDir.mkdirs();
+
+        FileUtils.copyDirectory(new File("./migrations/postgresql"), generatedMigrationDir);
+
+        File generatedMigration = new File(generatedMigrationDir, "V20__generated__split.sql");
+        if (!generatedMigration.exists()) {
+            LOGGER.info("Generating large file");
+            PrintWriter pw = new PrintWriter(new FileWriter(generatedMigration));
+            for (int i = 0; i < 6_000_000; i++) {
+                pw.println(String.format("insert into customer(first_name, last_name) values ('Generated Name %d', 'Generated Surname %d');", i, i));
+            }
+            pw.close();
+            LOGGER.info("Generating large file completed");
+        }
+
+        R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+        properties.setDialect(Dialect.POSTGRESQL);
+        properties.setResourcesPath("file:./target/test-classes/oom_migrations/*.sql");
+
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).blockLast();
+
+    }
+
 
 }
