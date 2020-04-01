@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>name.nkonev</groupId>
+	<groupId>name.nkonev.r2dbc-migrate</groupId>
 	<artifactId>r2dbc-migrate</artifactId>
 	<version>0.0.6-SNAPSHOT</version>
 	<name>r2dbc-migrate</name>
