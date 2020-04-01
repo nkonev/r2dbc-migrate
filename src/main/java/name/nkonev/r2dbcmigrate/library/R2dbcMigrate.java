@@ -19,8 +19,12 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public abstract class R2dbcMigrate {
 
@@ -140,15 +144,15 @@ public abstract class R2dbcMigrate {
         }
     }
 
-    private static Flux<Resource> getResources(String resourcesPath) {
+    private static List<Resource> getResources(String resourcesPath) {
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources;
         try {
             resources = resolver.getResources(resourcesPath);
         } catch (IOException e) {
-            return Flux.error(new RuntimeException("Error during get resources from '" + resourcesPath + "'", e));
+            throw new RuntimeException("Error during get resources from '" + resourcesPath + "'", e);
         }
-        return Flux.just(resources);
+        return Arrays.asList(resources);
     }
 
     protected static SqlQueries getSqlQueries(MigrateProperties properties) {
@@ -251,13 +255,22 @@ public abstract class R2dbcMigrate {
     }
 
     private static Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> getFileResources(MigrateProperties properties) {
-        Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> fileResources = getResources(properties.getResourcesPath()).map(resource -> {
-            LOGGER.debug("Reading {}", resource);
-            FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-            LOGGER.info("From {} parsed metadata {}", resource, migrationInfo);
-            return Tuples.of(resource, migrationInfo);
-        });
-        return fileResources;
+        List<Tuple2<Resource, FilenameParser.MigrationInfo>> collect = getResources(properties.getResourcesPath()).stream()
+                .filter(Objects::nonNull)
+                .filter(Resource::isReadable)
+                .map(resource -> {
+                    LOGGER.debug("Reading {}", resource);
+                    FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
+                    return Tuples.of(resource, migrationInfo);
+                }).sorted((o1, o2) -> {
+                    FilenameParser.MigrationInfo migrationInfo1 = o1.getT2();
+                    FilenameParser.MigrationInfo migrationInvo2 = o2.getT2();
+                    return Integer.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
+                }).peek(objects -> {
+                    LOGGER.info("From {} parsed metadata {}", objects.getT1(), objects.getT2());
+                })
+                .collect(Collectors.toList());
+        return Flux.fromIterable(collect);
     }
 
     private static Mono<Void> releaseLock(Connection connection, SqlQueries sqlQueries) {
