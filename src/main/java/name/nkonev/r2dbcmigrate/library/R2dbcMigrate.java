@@ -207,7 +207,7 @@ public abstract class R2dbcMigrate {
     }
 
     // entrypoint
-    public static Flux<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
+    public static Mono<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
                                      MigrateProperties properties) {
         LOGGER.info("Configured with {}", properties);
         SqlQueries sqlQueries = getSqlQueries(properties);
@@ -230,7 +230,7 @@ public abstract class R2dbcMigrate {
         } else {
             toCheck = testConnectionResults.map(result -> "ignored").last();
         }
-        Flux<Void> migrationWork = toCheck.timeout(properties.getValidationQueryTimeout())
+        Mono<Void> migrationWork = toCheck.timeout(properties.getValidationQueryTimeout())
                 .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getValidationRetryDelay())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
                     LOGGER.warn("Retrying to get database connection due {}: {}", objectRetryContext.exception().getClass(), objectRetryContext.exception().getMessage());
                 }))
@@ -238,10 +238,9 @@ public abstract class R2dbcMigrate {
                 // here we opens new connection and make all migration stuff
                 .then(connectionSupplier.get())
                 .log("Make migration work")
-                .flatMapMany(connection ->
+                .flatMap(connection ->
                         doWork(connection, sqlQueries, properties)
                                 .doFinally((st) -> connection.close())
-                                .then()
                 );
         return migrationWork;
     }

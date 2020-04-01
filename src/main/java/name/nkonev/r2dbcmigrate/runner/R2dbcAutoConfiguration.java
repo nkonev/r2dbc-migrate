@@ -79,7 +79,7 @@ public class R2dbcAutoConfiguration {
         }
 
         public void migrate() {
-            R2dbcMigrate.migrate(() -> makeConnectionMono(r2dbcProperties, resourceLoader, customizers), properties).blockLast();
+            R2dbcMigrate.migrate(() -> makeConnectionMono(r2dbcProperties, resourceLoader, customizers), properties).block();
             LOGGER.info("End of migration");
         }
 
