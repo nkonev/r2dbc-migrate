@@ -44,7 +44,6 @@ public class PostgresTestcontainersTest {
 
         fooLogger = (Logger) LoggerFactory.getLogger("io.r2dbc.postgresql.QUERY");
         previousLevel = fooLogger.getEffectiveLevel();
-        fooLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
     }
 
     @AfterAll
@@ -68,6 +67,8 @@ public class PostgresTestcontainersTest {
 
     @Test
     public void testThatTransactionsWrapsQueriesAndTransactionsAreNotNested() {
+        fooLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
+
         // create and start a ListAppender
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
@@ -85,6 +86,7 @@ public class PostgresTestcontainersTest {
         // get log
         List<ILoggingEvent> logsList = listAppender.list;
         listAppender.stop();
+        fooLogger.setLevel(previousLevel);
         List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
         Assertions.assertTrue(
                 Collections.indexOfSubList(collect, Arrays.asList(
