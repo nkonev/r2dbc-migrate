@@ -306,9 +306,10 @@ public abstract class R2dbcMigrate {
 
                             return getFileResources(properties)
                                     .filter(objects -> objects.getT2().getVersion() > currentVersion)
-                                    .concatMap(objects ->
-                                            makeMigration(connection, properties, objects)
-                                                .then(writeMigrationMetadata(connection, sqlQueries, objects))
+                                    // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
+                                    .concatMap(tuple2 ->
+                                            makeMigration(connection, properties, tuple2)
+                                                .then(writeMigrationMetadata(connection, sqlQueries, tuple2))
                                     , 1)
                                     .then(releaseLock(connection, sqlQueries));
                         }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
