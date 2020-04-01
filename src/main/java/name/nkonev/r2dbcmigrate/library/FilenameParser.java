@@ -1,6 +1,5 @@
 package name.nkonev.r2dbcmigrate.library;
 
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,14 +10,12 @@ public abstract class FilenameParser {
         private String description;
         private boolean splitByLine;
         private boolean transactional;
-        private boolean internal;
 
-        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional, boolean internal) {
+        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
             this.transactional = transactional;
-            this.internal = internal;
         }
 
         public String getDescription() {
@@ -33,9 +30,6 @@ public abstract class FilenameParser {
             return splitByLine;
         }
 
-        public boolean isInternal() {
-            return internal;
-        }
 
         public boolean isTransactional() {
             return transactional;
@@ -48,7 +42,6 @@ public abstract class FilenameParser {
                     ", description='" + description + '\'' +
                     ", splitByLine=" + splitByLine +
                     ", transactional=" + transactional +
-                    ", internal=" + internal +
                     '}';
         }
     }
@@ -65,10 +58,10 @@ public abstract class FilenameParser {
             List<String> modifiers = Arrays.asList(modifiersRaw.split(","));
             boolean nonTransactional = modifiers.contains("nontransactional");
             boolean split = modifiers.contains("split");
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), split, !nonTransactional, false);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), split, !nonTransactional);
         } else if (array.length == 2) {
             // no split
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true, false);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true);
         } else {
             throw new RuntimeException("Invalid file name '" + filename + "'");
         }
