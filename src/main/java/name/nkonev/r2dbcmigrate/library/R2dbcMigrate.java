@@ -18,7 +18,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -209,7 +208,7 @@ public abstract class R2dbcMigrate {
 
     // entrypoint
     public static Flux<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
-                                  MigrateProperties properties) {
+                                     MigrateProperties properties) {
         LOGGER.info("Configured with {}", properties);
         SqlQueries sqlQueries = getSqlQueries(properties);
 
@@ -305,23 +304,13 @@ public abstract class R2dbcMigrate {
                         .flatMap(currentVersion -> {
                             LOGGER.info("Database version is {}", currentVersion);
 
-                            Mono<Void> voidMono = getFileResources(properties)
+                            return getFileResources(properties)
                                     .filter(objects -> objects.getT2().getVersion() > currentVersion)
-                                    .collectList()
-                                    .flatMap(list -> {
-                                        // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
-                                        // seems here we build sequent builder chain
-                                        // TODO consider replace this chain with concatMap(f, 1)
-                                        Mono<Void> last = Mono.empty();
-                                        for (Tuple2<Resource, FilenameParser.MigrationInfo> tt : list) {
-                                            last = last.then(makeMigration(connection, properties, tt));
-                                            last = last.then(writeMigrationMetadata(connection, sqlQueries, tt));
-                                        }
-                                        last = last.then(releaseLock(connection, sqlQueries));
-                                        return last;
-                                    });
-
-                            return voidMono;
+                                    .concatMap(objects ->
+                                            makeMigration(connection, properties, objects)
+                                                .then(writeMigrationMetadata(connection, sqlQueries, objects))
+                                    , 1)
+                                    .then(releaseLock(connection, sqlQueries));
                         }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
 
     }
@@ -331,7 +320,7 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Void> writeMigrationMetadata(Connection connection, SqlQueries sqlQueries, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
-        return transactionalWrap(connection, true, sqlQueries.createInsertMigrationStatement(connection, tt.getT2()).execute(), "Writing metadata version "+tt.getT2().getVersion());
+        return transactionalWrap(connection, true, sqlQueries.createInsertMigrationStatement(connection, tt.getT2()).execute(), "Writing metadata version " + tt.getT2().getVersion());
     }
 
     private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection) {
