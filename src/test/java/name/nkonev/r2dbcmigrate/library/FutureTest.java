@@ -70,7 +70,7 @@ public class FutureTest {
     @Disabled
     @Test
     public void testSplittedLargeMigrationsFitsInMemory() {
-
+        // _JAVA_OPTIONS: -Xmx128m
     }
 
     @Disabled
