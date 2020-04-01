@@ -1,8 +1,6 @@
 package name.nkonev.r2dbcmigrate.library;
 
-import io.r2dbc.spi.Batch;
-import io.r2dbc.spi.Connection;
-import io.r2dbc.spi.Result;
+import io.r2dbc.spi.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +21,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -37,6 +36,7 @@ public abstract class R2dbcMigrate {
         private int chunkSize = 1000;
         private Dialect dialect;
         private String validationQuery = "select 1";
+        private String validationQueryExpectedValue;
         private Duration validationQueryTimeout = Duration.ofSeconds(5);
         private Duration validationRetryDelay = Duration.ofSeconds(1);
         private Duration acquireLockRetryDelay = Duration.ofSeconds(1);
@@ -127,6 +127,14 @@ public abstract class R2dbcMigrate {
             this.fileCharset = fileCharset;
         }
 
+        public String getValidationQueryExpectedValue() {
+            return validationQueryExpectedValue;
+        }
+
+        public void setValidationQueryExpectedValue(String validationQueryExpectedValue) {
+            this.validationQueryExpectedValue = validationQueryExpectedValue;
+        }
+
         @Override
         public String toString() {
             return "MigrateProperties{" +
@@ -135,6 +143,7 @@ public abstract class R2dbcMigrate {
                     ", chunkSize=" + chunkSize +
                     ", dialect=" + dialect +
                     ", validationQuery='" + validationQuery + '\'' +
+                    ", validationQueryExpectedValue='" + validationQueryExpectedValue + '\'' +
                     ", validationQueryTimeout=" + validationQueryTimeout +
                     ", validationRetryDelay=" + validationRetryDelay +
                     ", acquireLockRetryDelay=" + acquireLockRetryDelay +
@@ -205,26 +214,37 @@ public abstract class R2dbcMigrate {
         SqlQueries sqlQueries = getSqlQueries(properties);
 
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
-        return
-            // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
-            // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
-            Mono.defer(connectionSupplier)
-                    .log("Creating test connection")
-                    .flatMap(testConnection -> Mono.from(testConnection.createStatement(properties.getValidationQuery()).execute()).doFinally(signalType -> testConnection.close()))
-                    .timeout(properties.getValidationQueryTimeout())
-                    .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getValidationRetryDelay())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
-                        LOGGER.warn("Retrying to get database connection due {}: {}", objectRetryContext.exception().getClass(), objectRetryContext.exception().getMessage());
-                    }))
-                    .doOnSuccess(o -> LOGGER.info("Successfully got result of test query"))
-                    // here we opens new connection and make all migration stuff
-                    .then(connectionSupplier.get())
-                    .log("Make migration work")
-                    .flatMapMany(connection ->
-                            doWork(connection, sqlQueries, properties)
-                            .doFinally((st) -> connection.close())
-                            .then()
-                    )
-                ;
+
+        // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
+        // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
+        Flux<Result> testConnectionResults = Mono.defer(connectionSupplier)
+                .log("Creating test connection")
+                .flatMapMany(testConnection -> Flux.from(testConnection.createStatement(properties.getValidationQuery()).execute()).doFinally(signalType -> testConnection.close()));
+
+        final Mono<String> toCheck;
+        if (properties.getValidationQueryExpectedValue() != null) {
+            toCheck = testConnectionResults
+                    .flatMap(o -> o.map(getResultSafely("result", String.class, "__VALIDATION_RESULT_NOT_PROVIDED")))
+                    .filter(s -> properties.getValidationQueryExpectedValue().equals(s))
+                    .switchIfEmpty(Mono.error(new RuntimeException("Not result of test query")))
+                    .last();
+        } else {
+            toCheck = testConnectionResults.map(result -> "ignored").last();
+        }
+        Flux<Void> migrationWork = toCheck.timeout(properties.getValidationQueryTimeout())
+                .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getValidationRetryDelay())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
+                    LOGGER.warn("Retrying to get database connection due {}: {}", objectRetryContext.exception().getClass(), objectRetryContext.exception().getMessage());
+                }))
+                .doOnSuccess(o -> LOGGER.info("Successfully got result of test query"))
+                // here we opens new connection and make all migration stuff
+                .then(connectionSupplier.get())
+                .log("Make migration work")
+                .flatMapMany(connection ->
+                        doWork(connection, sqlQueries, properties)
+                                .doFinally((st) -> connection.close())
+                                .then()
+                );
+        return migrationWork;
     }
 
     private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries) {
@@ -316,14 +336,18 @@ public abstract class R2dbcMigrate {
 
     private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection) {
         return Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
-                .flatMap(o -> Mono.from(o.map((row, rowMetadata) -> {
-                    if (rowMetadata.getColumnNames().contains("max")) { // mssql check
-                        Integer integer = row.get("max", Integer.class);
-                        return integer != null ? integer : 0;
-                    } else {
-                        return 0;
-                    }
-                }))).switchIfEmpty(Mono.just(0)).cache();
+                .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0)))).switchIfEmpty(Mono.just(0)).cache();
+    }
+
+    private static <ColumnType> BiFunction<Row, RowMetadata, ColumnType> getResultSafely(String resultColumn, Class<ColumnType> ct, ColumnType defaultValue) {
+        return (row, rowMetadata) -> {
+            if (rowMetadata.getColumnNames().contains(resultColumn)) { // mssql check
+                ColumnType integer = row.get(resultColumn, ct);
+                return integer != null ? integer : defaultValue;
+            } else {
+                return defaultValue;
+            }
+        };
     }
 
     static Batch makeBatch(Connection connection, List<String> strings) {

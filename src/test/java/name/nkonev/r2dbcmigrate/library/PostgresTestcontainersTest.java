@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PostgresTestcontainersTest {
     final static int POSTGRESQL_PORT = 5432;
@@ -95,7 +96,8 @@ public class PostgresTestcontainersTest {
         listAppender.stop();
         statementsLogger.setLevel(statementsPreviousLevel);
         List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
-        Assertions.assertTrue(
+        // make asserts
+        assertTrue(
                 Collections.indexOfSubList(collect, Arrays.asList(
                         "BEGIN",
                         "create table if not exists migrations (id int primary key, description text); create table if not exists migrations_lock (id int primary key, locked boolean not null); insert into migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
@@ -126,7 +128,40 @@ public class PostgresTestcontainersTest {
                         "update migrations_lock set locked = false where id = 1",
                         "COMMIT"
                 )) != -1);
-        // make asserts
+    }
+
+    @Test
+    public void testValidationResultOk() {
+        R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+        properties.setValidationQuery("select 'super value' as result");
+        properties.setValidationQueryExpectedValue("super value");
+        properties.setConnectionMaxRetries(1);
+        properties.setDialect(Dialect.POSTGRESQL);
+        properties.setResourcesPath("file:./migrations/postgresql/*.sql");
+
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).blockLast();
+    }
+
+    @Test
+    public void testValidationResultFail() {
+        RuntimeException thrown = Assertions.assertThrows(
+                RuntimeException.class,
+                () -> {
+                    R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+                    properties.setValidationQuery("select 'not super value' as result");
+                    properties.setValidationQueryExpectedValue("super value");
+                    properties.setConnectionMaxRetries(10);
+                    properties.setDialect(Dialect.POSTGRESQL);
+                    properties.setResourcesPath("file:./migrations/postgresql/*.sql");
+
+                    Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+                    R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).blockLast();
+                },
+                "Expected exception to throw, but it didn't"
+        );
+
+        assertTrue(thrown.getMessage().contains("Not result of test query"));
     }
 
     @Test
