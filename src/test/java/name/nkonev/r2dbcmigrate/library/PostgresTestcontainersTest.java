@@ -8,6 +8,7 @@ import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -18,12 +19,15 @@ import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Mono;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
-import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
 
 public class PostgresTestcontainersTest {
     final static int POSTGRESQL_PORT = 5432;
@@ -33,7 +37,9 @@ public class PostgresTestcontainersTest {
     static Level previousLevel;
 
     @BeforeAll
-    public static void beforeAll() {
+    public static void beforeAll() throws IOException {
+        FileUtils.copyFileToDirectory(new File("./docker/postgresql/docker-entrypoint-initdb.d/init-r2dbc-db.sql"), new File("./target/test-classes/docker/postgresql/docker-entrypoint-initdb.d"));
+
         container = new GenericContainer("postgres:12.2")
                 .withExposedPorts(POSTGRESQL_PORT)
                 .withEnv("POSTGRES_PASSWORD", "postgresqlPassword")
