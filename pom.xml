@@ -14,6 +14,11 @@
 		<spring.boot.version>2.3.0.M3</spring.boot.version>
 		<maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
 		<testcontainers.version>1.13.0</testcontainers.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
+		<maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
+		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
 	</properties>
 
 	<dependencyManagement>
@@ -109,6 +114,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.compiler.plugin.version}</version>
 				<configuration>
 					<source>${java.version}</source>
 					<target>${java.version}</target>
