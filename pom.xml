@@ -172,6 +172,9 @@
 								<goals>
 									<goal>sign</goal>
 								</goals>
+								<configuration>
+									<passphrase>${gpg.passphrase}</passphrase>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
