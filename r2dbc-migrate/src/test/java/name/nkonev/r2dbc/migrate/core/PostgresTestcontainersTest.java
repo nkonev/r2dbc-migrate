@@ -40,7 +40,10 @@ public class PostgresTestcontainersTest {
 
     @BeforeEach
     public void beforeAll() throws IOException {
-        FileUtils.copyFileToDirectory(new File("./docker/postgresql/docker-entrypoint-initdb.d/init-r2dbc-db.sql"), new File("./target/test-classes/docker/postgresql/docker-entrypoint-initdb.d"));
+        FileUtils.copyFileToDirectory(
+                new File("../docker/postgresql/docker-entrypoint-initdb.d/init-r2dbc-db.sql"),
+                new File("./target/test-classes/docker/postgresql/docker-entrypoint-initdb.d")
+        );
 
         container = new GenericContainer("postgres:12.2")
                 .withExposedPorts(POSTGRESQL_PORT)
@@ -86,7 +89,7 @@ public class PostgresTestcontainersTest {
 
         R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
-        properties.setResourcesPath("file:./migrations/postgresql/*.sql");
+        properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).block();
@@ -137,7 +140,7 @@ public class PostgresTestcontainersTest {
         properties.setValidationQueryExpectedValue("super value");
         properties.setConnectionMaxRetries(1);
         properties.setDialect(Dialect.POSTGRESQL);
-        properties.setResourcesPath("file:./migrations/postgresql/*.sql");
+        properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).block();
@@ -151,9 +154,9 @@ public class PostgresTestcontainersTest {
                     R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
                     properties.setValidationQuery("select 'not super value' as result");
                     properties.setValidationQueryExpectedValue("super value");
-                    properties.setConnectionMaxRetries(10);
+                    properties.setConnectionMaxRetries(1);
                     properties.setDialect(Dialect.POSTGRESQL);
-                    properties.setResourcesPath("file:./migrations/postgresql/*.sql");
+                    properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
                     Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
                     R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).block();
@@ -164,13 +167,14 @@ public class PostgresTestcontainersTest {
         assertTrue(thrown.getMessage().contains("Not result of test query"));
     }
 
+//    @Disabled
     @Test
     public void testSplittedLargeMigrationsFitsInMemory() throws IOException {
         // _JAVA_OPTIONS: -Xmx128m
         File generatedMigrationDir = new File("./target/test-classes/oom_migrations");
         generatedMigrationDir.mkdirs();
 
-        FileUtils.copyDirectory(new File("./migrations/postgresql"), generatedMigrationDir);
+        FileUtils.copyDirectory(new File("./src/test/resources/migrations/postgresql"), generatedMigrationDir);
 
         File generatedMigration = new File(generatedMigrationDir, "V20__generated__split.sql");
         if (!generatedMigration.exists()) {
