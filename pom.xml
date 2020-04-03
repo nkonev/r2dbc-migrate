@@ -4,10 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>name.nkonev.r2dbc-migrate</groupId>
-	<artifactId>r2dbc-migrate</artifactId>
+	<artifactId>r2dbc-migrate-parent</artifactId>
 	<version>0.0.6-SNAPSHOT</version>
-	<name>r2dbc-migrate</name>
+	<name>r2dbc-migrate-parent</name>
 	<description>R2DBC migration tool and library</description>
+	<packaging>pom</packaging>
 
 	<properties>
 		<java.version>11</java.version>
@@ -21,6 +22,12 @@
 		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
 	</properties>
 
+	<modules>
+		<module>r2dbc-migrate</module>
+		<module>spring-boot-starter-r2dbc-migrate</module>
+		<module>r2dbc-migrate-standalone</module>
+	</modules>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -33,110 +40,6 @@
 		</dependencies>
 	</dependencyManagement>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-spi</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-pool</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-mssql</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-postgresql</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor.addons</groupId>
-			<artifactId>reactor-extra</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-logging</artifactId>
-		</dependency>
-
-		<!-- TODO not working in container's AdoptOpenJDK 11
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-tools</artifactId>
-		</dependency>
-		-->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.junit.vintage</groupId>
-					<artifactId>junit-vintage-engine</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
-			<version>${testcontainers.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.6</version>
-			<scope>test</scope>
-		</dependency>
-
-	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>${spring.boot.version}</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>repackage</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
-				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>${maven.surefire.plugin.version}</version>
-				<configuration>
-					<argLine>-Xmx256m</argLine>
-					<forkCount>1</forkCount>
-					<parallel>classes</parallel>
-					<reuseForks>false</reuseForks>
-				</configuration>
-			</plugin>
-
-		</plugins>
-
-	</build>
-
 	<repositories>
 		<repository>
 			<id>spring-milestones</id>
@@ -144,6 +47,7 @@
 			<url>https://repo.spring.io/milestone</url>
 		</repository>
 	</repositories>
+
 	<pluginRepositories>
 		<pluginRepository>
 			<id>spring-milestones</id>
