@@ -8,7 +8,7 @@
 	<parent>
 		<artifactId>r2dbc-migrate-parent</artifactId>
 		<groupId>name.nkonev.r2dbc-migrate</groupId>
-		<version>0.0.19</version>
+		<version>0.0.20-SNAPSHOT</version>
 	</parent>
 
 	<dependencyManagement>
