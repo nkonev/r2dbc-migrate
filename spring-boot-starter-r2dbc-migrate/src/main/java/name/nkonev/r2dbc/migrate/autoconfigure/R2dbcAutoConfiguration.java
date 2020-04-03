@@ -1,4 +1,4 @@
-package name.nkonev.r2dbc.migrate.autoconfiguration;
+package name.nkonev.r2dbc.migrate.autoconfigure;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
