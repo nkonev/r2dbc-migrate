@@ -133,6 +133,23 @@
 					<arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
 					<tagNameFormat>@{project.version}</tagNameFormat>
 				</configuration>
+				<executions>
+					<execution>
+						<id>prepare</id>
+						<goals>
+							<goal>prepare</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>perform</id>
+						<goals>
+							<goal>perform</goal>
+						</goals>
+						<configuration>
+							<arguments>-DskipTests</arguments>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
