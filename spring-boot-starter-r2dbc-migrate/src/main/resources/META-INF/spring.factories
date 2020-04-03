@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-name.nkonev.r2dbc.migrate.autoconfigure.R2dbcAutoConfiguration
+name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration

@@ -22,16 +22,19 @@ import org.springframework.core.io.ResourceLoader;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static java.util.Optional.ofNullable;
+
 @Configuration
-@EnableConfigurationProperties(R2dbcAutoConfiguration.SpringBootR2dbcMigrateProperties.class)
-public class R2dbcAutoConfiguration {
+@EnableConfigurationProperties(R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties.class)
+public class R2dbcMigrateAutoConfiguration {
 
     private static final String MIGRATE_BEAN_NAME = "r2dbcMigrate";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcAutoConfiguration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrateAutoConfiguration.class);
 
     // declares that ConnectionFactory depends on r2dbcMigrate
     @Configuration
@@ -88,14 +91,17 @@ public class R2dbcAutoConfiguration {
                 public BiFunction<R2dbcMigrate.MigrateProperties, Connection, SqlQueries> getSqlQueriesFunction() {
                     if (properties.getDialect() == null) {
                         return (migrateProperties, connection) -> {
-                            String databaseProductName = connection.getMetadata().getDatabaseProductName();
-                            if (databaseProductName.startsWith("PostgreSQL")) {
-                                return new PostgreSqlQueries();
-                            } else if (databaseProductName.startsWith("Microsoft SQL Server")) {
-                                return new MSSqlQueries();
-                            } else {
-                                return super.getSqlQueriesFunction().apply(migrateProperties, connection);
+                            Optional<String> maybeDb = ofNullable(connection.getMetadata())
+                                    .map(md -> md.getDatabaseProductName())
+                                    .map(s -> s.toLowerCase());
+                            if (maybeDb.isPresent()) {
+                                if (maybeDb.get().contains("postgres")) {
+                                    return new PostgreSqlQueries();
+                                } else if (maybeDb.get().contains("microsoft")) {
+                                    return new MSSqlQueries();
+                                }
                             }
+                            return super.getSqlQueriesFunction().apply(migrateProperties, connection);
                         };
                     } else {
                         return super.getSqlQueriesFunction();
