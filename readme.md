@@ -6,9 +6,10 @@
 
 ## Features
 * Filename-based `V3__insert_to_customers__split,nontransactional.sql`: parts separated by two underscores, where last part is flags - one of `split`, `nontransactional`
-* docker friendly - it waits for until database started
-* split large file by newline by chunks
-* support concurrent migrations in microservices by locking
+* Waiting for until database started
+* Validation query and (optionally) checking its result
+* Split large file to chunks by newline. You can migrate file larger than your `-Xmx`
+* Support concurrent migrations in microservices by locking mechanism
 
 ## Download
 
@@ -44,5 +45,6 @@ docker pull nkonev/r2dbc-migrate:latest
 </dependency>
 ```
 
-## Todo
-* more tests
+## Example
+https://github.com/nkonev/r2dbc-migrate-example
+
