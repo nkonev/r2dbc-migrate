@@ -16,11 +16,14 @@ docker-compose exec postgresql psql -U r2dbc
 
 # Building
 ```bash
+(cd ./docker; docker-compose down -v; docker-compose up -d)
 ./mvnw clean package
 ./mvnw release:prepare -Dresume=false
 ./mvnw release:perform
 
-(cd ./docker; docker-compose down -v; docker-compose up -d); (cd ./r2dbc-migrate-standalone; rm ./target/*-javadoc.jar ./target/*-sources.jar; docker build . --tag nkonev/r2dbc-migrate:latest --tag nkonev/r2dbc-migrate:0.0.13)
+(cd ./r2dbc-migrate-standalone; rm ./target/*-javadoc.jar ./target/*-sources.jar; docker build . --tag nkonev/r2dbc-migrate:latest --tag nkonev/r2dbc-migrate:0.0.13)
 docker push nkonev/r2dbc-migrate:0.0.13
 docker push nkonev/r2dbc-migrate:latest
+
+git push origin HEAD --tags
 ```
