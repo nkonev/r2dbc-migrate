@@ -15,6 +15,32 @@
 docker pull nkonev/r2dbc-migrate:latest
 ```
 
+### Standalone application
+```
+<dependency>
+  <groupId>name.nkonev.r2dbc-migrate</groupId>
+  <artifactId>r2dbc-migrate-standalone</artifactId>
+  <version>VERSION</version>
+</dependency>
+```
+
+### Spring Boot Starter
+```
+<dependency>
+  <groupId>name.nkonev.r2dbc-migrate</groupId>
+  <artifactId>spring-boot-starter-r2dbc-migrate</artifactId>
+  <version>VERSION</version>
+</dependency>
+```
+
+### Only library
+```
+<dependency>
+  <groupId>name.nkonev.r2dbc-migrate</groupId>
+  <artifactId>r2dbc-migrate-core</artifactId>
+  <version>VERSION</version>
+</dependency>
+```
+
 ## Todo
-* introduce library
 * more tests
