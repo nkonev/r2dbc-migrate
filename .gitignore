@@ -28,3 +28,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+*.releaseBackup
+release.properties
