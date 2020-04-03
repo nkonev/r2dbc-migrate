@@ -1,6 +1,6 @@
 # R2DBC migration tool
 
-Inspired of [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-available-now) announcement.
+Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-available-now) announcement.
 
 R2DBC [page](https://r2dbc.io/).
 
