@@ -10,6 +10,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
@@ -167,7 +168,7 @@ public class PostgresTestcontainersTest {
         assertTrue(thrown.getMessage().contains("Not result of test query"));
     }
 
-//    @Disabled
+    @EnabledIfSystemProperty(named = "enableOomTests", matches = "true")
     @Test
     public void testSplittedLargeMigrationsFitsInMemory() throws IOException {
         // _JAVA_OPTIONS: -Xmx128m
@@ -193,7 +194,6 @@ public class PostgresTestcontainersTest {
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties).block();
-
     }
 
 
