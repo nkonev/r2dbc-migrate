@@ -8,6 +8,31 @@
 	<name>r2dbc-migrate-parent</name>
 	<description>R2DBC migration tool and library</description>
 	<packaging>pom</packaging>
+	<url>https://github.com/nkonev/r2dbc-migrate</url>
+
+	<scm>
+		<connection>scm:git:git://github.com/nkonev/r2dbc-migrate.git</connection>
+		<developerConnection>scm:git:git@github.com:nkonev/r2dbc-migrate.git</developerConnection>
+		<url>https://github.com/nkonev/r2dbc-migrate</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>nkonev</id>
+			<name>Nikita Konev</name>
+			<roles>
+				<role>Project lead</role>
+			</roles>
+		</developer>
+	</developers>
 
 	<properties>
 		<java.version>11</java.version>
@@ -66,13 +91,6 @@
 			</url>
 		</repository>
 	</distributionManagement>
-
-	<scm>
-		<connection>scm:git:git://github.com/nkonev/r2dbc-migrate.git</connection>
-		<developerConnection>scm:git:git@github.com:nkonev/r2dbc-migrate.git</developerConnection>
-		<url>https://github.com/nkonev/r2dbc-migrate</url>
-		<tag>HEAD</tag>
-	</scm>
 
 	<build>
 		<plugins>
