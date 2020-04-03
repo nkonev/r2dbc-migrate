@@ -11,17 +11,10 @@
 * support concurrent migrations in microservices by locking
 
 ## Download
+
+### Docker
 ```
 docker pull nkonev/r2dbc-migrate:latest
-```
-
-### Standalone application
-```
-<dependency>
-  <groupId>name.nkonev.r2dbc-migrate</groupId>
-  <artifactId>r2dbc-migrate-standalone</artifactId>
-  <version>VERSION</version>
-</dependency>
 ```
 
 ### Spring Boot Starter
@@ -38,6 +31,15 @@ docker pull nkonev/r2dbc-migrate:latest
 <dependency>
   <groupId>name.nkonev.r2dbc-migrate</groupId>
   <artifactId>r2dbc-migrate-core</artifactId>
+  <version>VERSION</version>
+</dependency>
+```
+
+### Standalone application
+```
+<dependency>
+  <groupId>name.nkonev.r2dbc-migrate</groupId>
+  <artifactId>r2dbc-migrate-standalone</artifactId>
   <version>VERSION</version>
 </dependency>
 ```
