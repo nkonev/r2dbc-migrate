@@ -173,7 +173,7 @@
 									<goal>sign</goal>
 								</goals>
 								<configuration>
-									<passphrase>${gpg.passphrase}</passphrase>
+									<passphrase>@{gpg.passphrase}</passphrase>
 								</configuration>
 							</execution>
 						</executions>
