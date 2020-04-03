@@ -4,6 +4,6 @@ RUN mkdir -p /migrations/postgresql && mkdir -p /migrations/mssql
 
 WORKDIR /
 
-COPY ./library/target/r2dbc-migrate-*.jar /r2dbc-migrate.jar
+COPY ./target/r2dbc-migrate-*.jar /r2dbc-migrate.jar
 ENTRYPOINT ["java", "-jar", "/r2dbc-migrate.jar"]
 
