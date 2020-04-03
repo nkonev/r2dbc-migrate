@@ -23,7 +23,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public abstract class R2dbcMigrate {
+public class R2dbcMigrate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
     private static final String ROWS_UPDATED = "By '{}' {} rows updated";
@@ -162,17 +162,25 @@ public abstract class R2dbcMigrate {
         return Arrays.asList(resources);
     }
 
-    protected static SqlQueries getSqlQueries(MigrateProperties properties) {
-        if (properties.getDialect() == null) {
-            throw new RuntimeException("Dialect cannot be null");
-        }
-        switch (properties.getDialect()) {
-            case POSTGRESQL:
-                return new PostgreSqlQueries();
-            case MSSQL:
-                return new MSSqlQueries();
-            default:
-                throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
+    public static class Hooks {
+        private BiFunction<MigrateProperties, Connection, SqlQueries> sqlQueriesFunction = (properties, connection) -> {
+            if (properties.getDialect() == null) {
+                throw new RuntimeException("Dialect cannot be null");
+            }
+            switch (properties.getDialect()) {
+                case POSTGRESQL:
+                    return new PostgreSqlQueries();
+                case MSSQL:
+                    return new MSSqlQueries();
+                default:
+                    throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
+            }
+        };
+
+        public Hooks() { }
+
+        public BiFunction<MigrateProperties, Connection, SqlQueries> getSqlQueriesFunction() {
+            return sqlQueriesFunction;
         }
     }
 
@@ -207,11 +215,11 @@ public abstract class R2dbcMigrate {
 
     // entrypoint
     public static Mono<Void> migrate(Supplier<Mono<Connection>> connectionSupplier,
-                                     MigrateProperties properties) {
+                                     MigrateProperties properties, Hooks hooks) {
         LOGGER.info("Configured with {}", properties);
-        SqlQueries sqlQueries = getSqlQueries(properties);
 
-        LOGGER.debug("Instantiated {}", sqlQueries.getClass());
+        if (hooks == null) { hooks = new Hooks(); }
+        final Hooks finalHooks = hooks;
 
         // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
         // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
@@ -237,10 +245,7 @@ public abstract class R2dbcMigrate {
                 // here we opens new connection and make all migration stuff
                 .then(connectionSupplier.get())
                 .log("Make migration work")
-                .flatMap(connection ->
-                        doWork(connection, sqlQueries, properties)
-                                .doFinally((st) -> connection.close())
-                );
+                .flatMap(connection -> doWork(connection, properties, finalHooks).doFinally((st) -> connection.close()));
         return migrationWork;
     }
 
@@ -294,7 +299,10 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, true, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock");
     }
 
-    private static Mono<Void> doWork(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
+    private static Mono<Void> doWork(Connection connection, MigrateProperties properties, Hooks hooks) {
+        SqlQueries sqlQueries = hooks.getSqlQueriesFunction().apply(properties, connection);
+        LOGGER.debug("Instantiated {}", sqlQueries.getClass());
+
         return
                 ensureInternals(connection, sqlQueries)
                         .then(acquireOrWaitForLock(connection, sqlQueries, properties))

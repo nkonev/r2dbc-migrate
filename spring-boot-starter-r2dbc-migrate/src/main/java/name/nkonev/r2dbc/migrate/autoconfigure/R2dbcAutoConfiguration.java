@@ -2,7 +2,10 @@ package name.nkonev.r2dbc.migrate.autoconfigure;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
+import name.nkonev.r2dbc.migrate.core.MSSqlQueries;
+import name.nkonev.r2dbc.migrate.core.PostgreSqlQueries;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrate;
+import name.nkonev.r2dbc.migrate.core.SqlQueries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -19,6 +22,7 @@ import org.springframework.core.io.ResourceLoader;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -79,7 +83,26 @@ public class R2dbcAutoConfiguration {
         }
 
         public void migrate() {
-            R2dbcMigrate.migrate(() -> makeConnectionMono(r2dbcProperties, resourceLoader, customizers), properties).block();
+            R2dbcMigrate.Hooks hooks = new R2dbcMigrate.Hooks() {
+                @Override
+                public BiFunction<R2dbcMigrate.MigrateProperties, Connection, SqlQueries> getSqlQueriesFunction() {
+                    if (properties.getDialect() == null) {
+                        return (migrateProperties, connection) -> {
+                            String databaseProductName = connection.getMetadata().getDatabaseProductName();
+                            if (databaseProductName.startsWith("PostgreSQL")) {
+                                return new PostgreSqlQueries();
+                            } else if (databaseProductName.startsWith("Microsoft SQL Server")) {
+                                return new MSSqlQueries();
+                            } else {
+                                return super.getSqlQueriesFunction().apply(migrateProperties, connection);
+                            }
+                        };
+                    } else {
+                        return super.getSqlQueriesFunction();
+                    }
+                }
+            };
+            R2dbcMigrate.migrate(() -> makeConnectionMono(r2dbcProperties, resourceLoader, customizers), properties, hooks).block();
             LOGGER.info("End of migration");
         }
 
