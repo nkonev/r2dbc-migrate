@@ -40,16 +40,11 @@ public class PostgresTestcontainersTest {
     static Level statementsPreviousLevel;
 
     @BeforeEach
-    public void beforeAll() throws IOException {
-        FileUtils.copyFileToDirectory(
-                new File("../docker/postgresql/docker-entrypoint-initdb.d/init-r2dbc-db.sql"),
-                new File("./target/test-classes/docker/postgresql/docker-entrypoint-initdb.d")
-        );
-
+    public void beforeAll()  {
         container = new GenericContainer("postgres:12.2")
                 .withExposedPorts(POSTGRESQL_PORT)
                 .withEnv("POSTGRES_PASSWORD", "postgresqlPassword")
-                .withClasspathResourceMapping("docker/postgresql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
+                .withClasspathResourceMapping("/docker/postgresql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s")
                         .withTimes(2));
         container.start();
