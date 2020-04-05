@@ -13,7 +13,7 @@
 
 	<dependencies>
 		<dependency>
-			<artifactId>spring-boot-starter-r2dbc-migrate</artifactId>
+			<artifactId>r2dbc-migrate-spring-boot-starter</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>
 			<version>0.0.24-SNAPSHOT</version>
 		</dependency>

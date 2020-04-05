@@ -48,7 +48,7 @@
 
 	<modules>
 		<module>r2dbc-migrate-core</module>
-		<module>spring-boot-starter-r2dbc-migrate</module>
+		<module>r2dbc-migrate-spring-boot-starter</module>
 		<module>r2dbc-migrate-standalone</module>
 	</modules>
 

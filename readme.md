@@ -27,7 +27,7 @@ docker pull nkonev/r2dbc-migrate:latest
 ```
 <dependency>
   <groupId>name.nkonev.r2dbc-migrate</groupId>
-  <artifactId>spring-boot-starter-r2dbc-migrate</artifactId>
+  <artifactId>r2dbc-migrate-spring-boot-starter</artifactId>
   <version>VERSION</version>
 </dependency>
 ```
