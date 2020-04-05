@@ -172,6 +172,8 @@ public abstract class R2dbcMigrate {
                     return new PostgreSqlQueries();
                 case MSSQL:
                     return new MSSqlQueries();
+                case MYSQL:
+                    return new MySqlQueries();
                 default:
                     throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
             }

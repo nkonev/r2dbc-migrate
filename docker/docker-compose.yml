@@ -42,7 +42,23 @@ services:
       options:
         max-size: "50m"
         max-file: "1"
-
+  mysql:
+    image: mysql:5.7
+    restart: unless-stopped
+    ports:
+      - 33306:3306
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+    volumes :
+      - ./mysql/etc/mysql/conf.d:/etc/mysql/conf.d
+      - ./mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - mysql_data_dir:/var/lib/mysql
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "1"
 volumes:
   mssql_data_dir:
   postgresql_data_dir:
+  mysql_data_dir:

@@ -7,6 +7,7 @@ R2DBC [page](https://r2dbc.io/).
 ## Supported databases
 * PostgreSQL
 * Microsoft SQL Server
+* MySQL
 
 ## Features
 * Filename-based `V3__insert_to_customers__split,nontransactional.sql`: parts separated by two underscores, where last part is flags - one of `split`, `nontransactional`

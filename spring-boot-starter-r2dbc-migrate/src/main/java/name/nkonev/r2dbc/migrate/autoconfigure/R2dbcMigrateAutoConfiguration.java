@@ -2,10 +2,7 @@ package name.nkonev.r2dbc.migrate.autoconfigure;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
-import name.nkonev.r2dbc.migrate.core.MSSqlQueries;
-import name.nkonev.r2dbc.migrate.core.PostgreSqlQueries;
-import name.nkonev.r2dbc.migrate.core.R2dbcMigrate;
-import name.nkonev.r2dbc.migrate.core.SqlQueries;
+import name.nkonev.r2dbc.migrate.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -99,6 +96,8 @@ public class R2dbcMigrateAutoConfiguration {
                                     return new PostgreSqlQueries();
                                 } else if (maybeDb.get().contains("microsoft")) {
                                     return new MSSqlQueries();
+                                } else if (maybeDb.get().contains("mysql")) {
+                                    return new MySqlQueries();
                                 }
                             }
                             return super.getSqlQueriesFunction().apply(migrateProperties, connection);

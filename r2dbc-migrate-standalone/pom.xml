@@ -29,7 +29,11 @@
 			<groupId>io.r2dbc</groupId>
 			<artifactId>r2dbc-postgresql</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>dev.miku</groupId>
+			<artifactId>r2dbc-mysql</artifactId>
+			<version>0.8.1.RELEASE</version>
+		</dependency>
 		<!-- TODO not working in container's AdoptOpenJDK 11
 		<dependency>
 			<groupId>io.projectreactor</groupId>
