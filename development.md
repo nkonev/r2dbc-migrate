@@ -17,7 +17,7 @@ docker-compose exec postgresql psql -U r2dbc
 # Building
 ```bash
 (cd ./docker; docker-compose down -v; docker-compose up -d)
-./mvnw clean package
+./mvnw clean package -DenableStandaloneTests=true -DenableOomTests=true
 ./mvnw release:prepare -Dresume=false
 ./mvnw release:perform
 

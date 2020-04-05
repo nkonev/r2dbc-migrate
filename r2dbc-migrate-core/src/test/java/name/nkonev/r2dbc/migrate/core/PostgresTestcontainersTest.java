@@ -59,14 +59,14 @@ public class PostgresTestcontainersTest {
         statementsLogger.setLevel(statementsPreviousLevel);
     }
 
-    private Mono<Connection> makeConnectionMono(String host, int port, String database) {
+    private Mono<Connection> makeConnectionMono(int port) {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(DRIVER, "postgresql")
-                .option(HOST, host)
+                .option(HOST, "127.0.0.1")
                 .option(PORT, port)
                 .option(USER, "r2dbc")
                 .option(PASSWORD, "r2dbcPazZw0rd")
-                .option(DATABASE, database)
+                .option(DATABASE, "r2dbc")
                 .build());
         Publisher<? extends Connection> connectionPublisher = connectionFactory.create();
         return Mono.from(connectionPublisher);
@@ -88,7 +88,7 @@ public class PostgresTestcontainersTest {
         properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties, null).block();
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties, null).block();
 
         // get log
         List<ILoggingEvent> logsList = listAppender.list;
@@ -139,7 +139,7 @@ public class PostgresTestcontainersTest {
         properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties, null).block();
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties, null).block();
     }
 
     @Test
@@ -155,7 +155,7 @@ public class PostgresTestcontainersTest {
                     properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
                     Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-                    R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties, null).block();
+                    R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties, null).block();
                 },
                 "Expected exception to throw, but it didn't"
         );
@@ -188,7 +188,7 @@ public class PostgresTestcontainersTest {
         properties.setResourcesPath("file:./target/test-classes/oom_migrations/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(() -> makeConnectionMono("127.0.0.1", mappedPort, "r2dbc"), properties, null).block();
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties, null).block();
     }
 
 

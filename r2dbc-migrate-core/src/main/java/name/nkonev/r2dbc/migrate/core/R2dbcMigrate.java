@@ -23,7 +23,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class R2dbcMigrate {
+public abstract class R2dbcMigrate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
     private static final String ROWS_UPDATED = "By '{}' {} rows updated";
