@@ -32,7 +32,7 @@
 		<dependency>
 			<groupId>dev.miku</groupId>
 			<artifactId>r2dbc-mysql</artifactId>
-			<version>0.8.1.RELEASE</version>
+			<version>${r2dbc.mysql.driver.version}</version>
 		</dependency>
 		<!-- TODO not working in container's AdoptOpenJDK 11
 		<dependency>
