@@ -75,7 +75,7 @@ public class MssqlTestcontainersTest {
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
 
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties, null).block();
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
 
         Flux<Client> clientFlux = makeConnectionMono(mappedPort)
                 .flatMapMany(connection -> Flux.from(connection.createStatement("select * from sales_department.rich_clients.client").execute()).doFinally(signalType -> connection.close()))

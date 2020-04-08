@@ -75,7 +75,7 @@ public class MysqlTestcontainersTest {
         R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
         properties.setDialect(Dialect.MYSQL);
         properties.setResourcesPath("classpath:/migrations/mysql/*.sql");
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties, null).block();
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
 
         Flux<Customer> clientFlux = makeConnectionMono(mappedPort)
                 .flatMapMany(connection -> Flux.from(connection.createStatement("select * from customer order by id").execute()).doFinally(signalType -> connection.close()))

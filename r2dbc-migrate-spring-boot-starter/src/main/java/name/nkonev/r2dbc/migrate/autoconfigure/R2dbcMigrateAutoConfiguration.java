@@ -2,7 +2,7 @@ package name.nkonev.r2dbc.migrate.autoconfigure;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
-import name.nkonev.r2dbc.migrate.core.*;
+import name.nkonev.r2dbc.migrate.core.R2dbcMigrate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,13 +17,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ResourceLoader;
 import reactor.core.publisher.Mono;
-
 import java.util.List;
-import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-
-import static java.util.Optional.ofNullable;
 
 @Configuration
 @EnableConfigurationProperties(R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties.class)
@@ -83,31 +78,7 @@ public class R2dbcMigrateAutoConfiguration {
         }
 
         public void migrate() {
-            R2dbcMigrate.Hooks hooks = new R2dbcMigrate.Hooks() {
-                @Override
-                public BiFunction<R2dbcMigrate.MigrateProperties, Connection, SqlQueries> getSqlQueriesFunction() {
-                    if (properties.getDialect() == null) {
-                        return (migrateProperties, connection) -> {
-                            Optional<String> maybeDb = ofNullable(connection.getMetadata())
-                                    .map(md -> md.getDatabaseProductName())
-                                    .map(s -> s.toLowerCase());
-                            if (maybeDb.isPresent()) {
-                                if (maybeDb.get().contains("postgres")) {
-                                    return new PostgreSqlQueries();
-                                } else if (maybeDb.get().contains("microsoft")) {
-                                    return new MSSqlQueries();
-                                } else if (maybeDb.get().contains("mysql")) {
-                                    return new MySqlQueries();
-                                }
-                            }
-                            return super.getSqlQueriesFunction().apply(migrateProperties, connection);
-                        };
-                    } else {
-                        return super.getSqlQueriesFunction();
-                    }
-                }
-            };
-            R2dbcMigrate.migrate(() -> makeConnectionMono(r2dbcProperties, resourceLoader, customizers), properties, hooks).block();
+            R2dbcMigrate.migrate(() -> makeConnectionMono(r2dbcProperties, resourceLoader, customizers), properties).block();
             LOGGER.info("End of migration");
         }
 
