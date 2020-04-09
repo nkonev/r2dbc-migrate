@@ -71,7 +71,7 @@ public class MssqlTestcontainersTest {
     public void testCreateMsSqlDatabaseThenSchemaInItThenTableInIt() {
         Integer mappedPort = container.getMappedPort(MSSQL_PORT);
 
-        R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
 

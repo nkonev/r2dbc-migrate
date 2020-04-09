@@ -13,9 +13,6 @@ import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -31,129 +28,6 @@ public abstract class R2dbcMigrate {
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
     private static final String ROWS_UPDATED = "By '{}' {} rows updated";
 
-    public static class MigrateProperties {
-        private long connectionMaxRetries = 500;
-        private String resourcesPath;
-        private int chunkSize = 1000;
-        private Dialect dialect;
-        private String validationQuery = "select 1";
-        private String validationQueryExpectedValue;
-        private Duration validationQueryTimeout = Duration.ofSeconds(5);
-        private Duration validationRetryDelay = Duration.ofSeconds(1);
-        private Duration acquireLockRetryDelay = Duration.ofSeconds(1);
-        private long acquireLockMaxRetries = 100;
-        private Charset fileCharset = StandardCharsets.UTF_8;
-
-        public MigrateProperties() {
-        }
-
-        public String getResourcesPath() {
-            return resourcesPath;
-        }
-
-        public void setResourcesPath(String resourcesPath) {
-            this.resourcesPath = resourcesPath;
-        }
-
-        public long getConnectionMaxRetries() {
-            return connectionMaxRetries;
-        }
-
-        public void setConnectionMaxRetries(long connectionMaxRetries) {
-            this.connectionMaxRetries = connectionMaxRetries;
-        }
-
-        public int getChunkSize() {
-            return chunkSize;
-        }
-
-        public void setChunkSize(int chunkSize) {
-            this.chunkSize = chunkSize;
-        }
-
-        public Dialect getDialect() {
-            return dialect;
-        }
-
-        public void setDialect(Dialect dialect) {
-            this.dialect = dialect;
-        }
-
-        public String getValidationQuery() {
-            return validationQuery;
-        }
-
-        public void setValidationQuery(String validationQuery) {
-            this.validationQuery = validationQuery;
-        }
-
-        public Duration getValidationQueryTimeout() {
-            return validationQueryTimeout;
-        }
-
-        public void setValidationQueryTimeout(Duration validationQueryTimeout) {
-            this.validationQueryTimeout = validationQueryTimeout;
-        }
-
-        public Duration getValidationRetryDelay() {
-            return validationRetryDelay;
-        }
-
-        public void setValidationRetryDelay(Duration validationRetryDelay) {
-            this.validationRetryDelay = validationRetryDelay;
-        }
-
-        public Duration getAcquireLockRetryDelay() {
-            return acquireLockRetryDelay;
-        }
-
-        public void setAcquireLockRetryDelay(Duration acquireLockRetryDelay) {
-            this.acquireLockRetryDelay = acquireLockRetryDelay;
-        }
-
-
-        public long getAcquireLockMaxRetries() {
-            return acquireLockMaxRetries;
-        }
-
-        public void setAcquireLockMaxRetries(long acquireLockMaxRetries) {
-            this.acquireLockMaxRetries = acquireLockMaxRetries;
-        }
-
-        public Charset getFileCharset() {
-            return fileCharset;
-        }
-
-        public void setFileCharset(Charset fileCharset) {
-            this.fileCharset = fileCharset;
-        }
-
-        public String getValidationQueryExpectedValue() {
-            return validationQueryExpectedValue;
-        }
-
-        public void setValidationQueryExpectedValue(String validationQueryExpectedValue) {
-            this.validationQueryExpectedValue = validationQueryExpectedValue;
-        }
-
-        @Override
-        public String toString() {
-            return "MigrateProperties{" +
-                    "connectionMaxRetries=" + connectionMaxRetries +
-                    ", resourcesPath='" + resourcesPath + '\'' +
-                    ", chunkSize=" + chunkSize +
-                    ", dialect=" + dialect +
-                    ", validationQuery='" + validationQuery + '\'' +
-                    ", validationQueryExpectedValue='" + validationQueryExpectedValue + '\'' +
-                    ", validationQueryTimeout=" + validationQueryTimeout +
-                    ", validationRetryDelay=" + validationRetryDelay +
-                    ", acquireLockRetryDelay=" + acquireLockRetryDelay +
-                    ", acquireLockMaxRetries=" + acquireLockMaxRetries +
-                    ", fileCharset=" + fileCharset +
-                    '}';
-        }
-    }
-
     private static List<Resource> getResources(String resourcesPath) {
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources;
@@ -165,7 +39,7 @@ public abstract class R2dbcMigrate {
         return Arrays.asList(resources);
     }
 
-    private static SqlQueries getSqlQueries(MigrateProperties properties, Connection connection) {
+    private static SqlQueries getSqlQueries(R2dbcMigrateProperties properties, Connection connection) {
         Optional<String> maybeDb = ofNullable(connection.getMetadata())
                 .map(md -> md.getDatabaseProductName())
                 .map(s -> s.toLowerCase());
@@ -223,7 +97,7 @@ public abstract class R2dbcMigrate {
     }
 
     // entrypoint
-    public static Mono<Void> migrate(Supplier<Mono<Connection>> connectionSupplier, MigrateProperties properties) {
+    public static Mono<Void> migrate(Supplier<Mono<Connection>> connectionSupplier, R2dbcMigrateProperties properties) {
         LOGGER.info("Configured with {}", properties);
 
         // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
@@ -233,10 +107,10 @@ public abstract class R2dbcMigrate {
                 .flatMapMany(testConnection -> Flux.from(testConnection.createStatement(properties.getValidationQuery()).execute()).doFinally(signalType -> testConnection.close()));
 
         final Mono<String> toCheck;
-        if (properties.getValidationQueryExpectedValue() != null) {
+        if (properties.getValidationQueryExpectedResultValue() != null) {
             toCheck = testConnectionResults
                     .flatMap(o -> o.map(getResultSafely("result", String.class, "__VALIDATION_RESULT_NOT_PROVIDED")))
-                    .filter(s -> properties.getValidationQueryExpectedValue().equals(s))
+                    .filter(s -> properties.getValidationQueryExpectedResultValue().equals(s))
                     .switchIfEmpty(Mono.error(new RuntimeException("Not result of test query")))
                     .last();
         } else {
@@ -261,7 +135,7 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, true, createInternalTables, "Making internal tables");
     }
 
-    private static Mono<Void> acquireOrWaitForLock(Connection connection, SqlQueries sqlQueries, MigrateProperties properties) {
+    private static Mono<Void> acquireOrWaitForLock(Connection connection, SqlQueries sqlQueries, R2dbcMigrateProperties properties) {
         Mono<Integer> lockUpdated = Mono.from(connection.createStatement(sqlQueries.tryAcquireLock()).execute())
                 .flatMap(o -> Mono.from(o.getRowsUpdated()))
                 .switchIfEmpty(Mono.just(0))
@@ -281,7 +155,7 @@ public abstract class R2dbcMigrate {
         return transactionalWrapUnchecked(connection, true, waitForLock);
     }
 
-    private static Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> getFileResources(MigrateProperties properties) {
+    private static Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> getFileResources(R2dbcMigrateProperties properties) {
         List<Tuple2<Resource, FilenameParser.MigrationInfo>> collect = getResources(properties.getResourcesPath()).stream()
                 .filter(Objects::nonNull)
                 .filter(Resource::isReadable)
@@ -304,7 +178,7 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, true, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock");
     }
 
-    private static Mono<Void> doWork(Connection connection, MigrateProperties properties) {
+    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties) {
         SqlQueries sqlQueries = getSqlQueries(properties, connection);
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
 
@@ -327,7 +201,7 @@ public abstract class R2dbcMigrate {
 
     }
 
-    private static Mono<Void> makeMigration(Connection connection, MigrateProperties properties, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
+    private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
         return transactionalWrap(connection, tt.getT2().isTransactional(), getMigrateResultPublisher(properties, connection, tt.getT1(), tt.getT2()), tt.getT2().toString());
     }
 
@@ -357,7 +231,7 @@ public abstract class R2dbcMigrate {
         return batch;
     }
 
-    private static Publisher<? extends Result> getMigrateResultPublisher(MigrateProperties properties,
+    private static Publisher<? extends Result> getMigrateResultPublisher(R2dbcMigrateProperties properties,
                                                                          Connection connection, Resource resource,
                                                                          FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {

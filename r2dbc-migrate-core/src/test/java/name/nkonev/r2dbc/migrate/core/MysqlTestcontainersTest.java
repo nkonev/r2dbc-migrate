@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -72,7 +71,7 @@ public class MysqlTestcontainersTest {
     public void testMigrationWorks() {
         Integer mappedPort = container.getMappedPort(MYSQL_PORT);
 
-        R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MYSQL);
         properties.setResourcesPath("classpath:/migrations/mysql/*.sql");
         R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();

@@ -83,7 +83,7 @@ public class PostgresTestcontainersTest {
         // addAppender is outdated now
         statementsLogger.addAppender(listAppender);
 
-        R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
         properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
@@ -131,9 +131,9 @@ public class PostgresTestcontainersTest {
 
     @Test
     public void testValidationResultOk() {
-        R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setValidationQuery("select 'super value' as result");
-        properties.setValidationQueryExpectedValue("super value");
+        properties.setValidationQueryExpectedResultValue("super value");
         properties.setConnectionMaxRetries(1);
         properties.setDialect(Dialect.POSTGRESQL);
         properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
@@ -147,9 +147,9 @@ public class PostgresTestcontainersTest {
         RuntimeException thrown = Assertions.assertThrows(
                 RuntimeException.class,
                 () -> {
-                    R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+                    R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
                     properties.setValidationQuery("select 'not super value' as result");
-                    properties.setValidationQueryExpectedValue("super value");
+                    properties.setValidationQueryExpectedResultValue("super value");
                     properties.setConnectionMaxRetries(1);
                     properties.setDialect(Dialect.POSTGRESQL);
                     properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
@@ -183,7 +183,7 @@ public class PostgresTestcontainersTest {
             LOGGER.info("Generating large file completed");
         }
 
-        R2dbcMigrate.MigrateProperties properties = new R2dbcMigrate.MigrateProperties();
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
         properties.setResourcesPath("file:./target/test-classes/oom_migrations/*.sql");
 

@@ -3,6 +3,7 @@ package name.nkonev.r2dbc.migrate.autoconfigure;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrate;
+import name.nkonev.r2dbc.migrate.core.R2dbcMigrateProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -58,7 +59,7 @@ public class R2dbcMigrateAutoConfiguration {
     }
 
     @ConfigurationProperties("r2dbc.migrate")
-    public static class SpringBootR2dbcMigrateProperties extends R2dbcMigrate.MigrateProperties {
+    public static class SpringBootR2dbcMigrateProperties extends R2dbcMigrateProperties {
 
     }
 
@@ -66,11 +67,11 @@ public class R2dbcMigrateAutoConfiguration {
         private R2dbcProperties r2dbcProperties;
         private ResourceLoader resourceLoader;
         private ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers;
-        private R2dbcMigrate.MigrateProperties properties;
+        private R2dbcMigrateProperties properties;
 
         public R2dbcMigrateBlockingInvoker(R2dbcProperties r2dbcProperties, ResourceLoader resourceLoader,
                                            ObjectProvider<ConnectionFactoryOptionsBuilderCustomizer> customizers,
-                                           R2dbcMigrate.MigrateProperties properties) {
+                                           R2dbcMigrateProperties properties) {
             this.r2dbcProperties = r2dbcProperties;
             this.resourceLoader = resourceLoader;
             this.customizers = customizers;
