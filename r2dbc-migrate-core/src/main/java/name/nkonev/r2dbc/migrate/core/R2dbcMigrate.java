@@ -217,8 +217,8 @@ public abstract class R2dbcMigrate {
     private static <ColumnType> BiFunction<Row, RowMetadata, ColumnType> getResultSafely(String resultColumn, Class<ColumnType> ct, ColumnType defaultValue) {
         return (row, rowMetadata) -> {
             if (rowMetadata.getColumnNames().contains(resultColumn)) { // mssql check
-                ColumnType integer = row.get(resultColumn, ct);
-                return integer != null ? integer : defaultValue;
+                ColumnType value = row.get(resultColumn, ct);
+                return value != null ? value : defaultValue;
             } else {
                 return defaultValue;
             }
