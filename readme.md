@@ -38,9 +38,10 @@ docker pull nkonev/r2dbc-migrate:latest
 ### Only library
 ```
 <dependency>
-  <groupId>name.nkonev.r2dbc-migrate</groupId>
-  <artifactId>r2dbc-migrate-core</artifactId>
-  <version>VERSION</version>
+    <groupId>name.nkonev.r2dbc-migrate</groupId>
+    <artifactId>r2dbc-migrate-core</artifactId>
+    <version>VERSION</version>
+    <classifier>shaded</classifier>
 </dependency>
 ```
 
