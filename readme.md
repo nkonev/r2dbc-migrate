@@ -1,4 +1,7 @@
 # R2DBC migration tool
+[![Maven Central](https://img.shields.io/maven-central/v/name.nkonev.r2dbc-migrate/r2dbc-migrate-spring-boot-starter)](https://search.maven.org/search?q=g:name.nkonev.r2dbc-migrate%20AND%20a:r2dbc-migrate-spring-boot-starter)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/nkonev/r2dbc-migrate?label=docker)](https://hub.docker.com/r/nkonev/r2dbc-migrate/tags)
+[![Build Status](https://travis-ci.com/nkonev/r2dbc-migrate.svg?branch=master)](https://travis-ci.com/nkonev/r2dbc-migrate)
 
 Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-available-now) announcement.
 
