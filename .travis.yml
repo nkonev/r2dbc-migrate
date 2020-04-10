@@ -8,3 +8,4 @@ cache:
 script:
   - (cd ./docker; docker-compose down -v; docker-compose up -d)
   - ./mvnw clean package -DenableStandaloneTests=true
+  - rm -rf ~/.m2/repository/name/nkonev/r2dbc-migrate
