@@ -1,0 +1,10 @@
+language: java
+dist: bionic
+jdk:
+  - "openjdk11"
+cache:
+  directories:
+    - "/home/travis/.m2"
+script:
+  - (cd ./docker; docker-compose down -v; docker-compose up -d)
+  - ./mvnw clean package -DenableStandaloneTests=true
