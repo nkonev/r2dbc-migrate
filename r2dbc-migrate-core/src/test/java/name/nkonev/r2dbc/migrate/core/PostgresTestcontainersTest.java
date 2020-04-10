@@ -22,12 +22,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
+import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PostgresTestcontainersTest {
@@ -46,7 +48,7 @@ public class PostgresTestcontainersTest {
                 .withEnv("POSTGRES_PASSWORD", "postgresqlPassword")
                 .withClasspathResourceMapping("/docker/postgresql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s")
-                        .withTimes(2));
+                        .withTimes(2).withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds)));
         container.start();
 
         statementsLogger = (Logger) LoggerFactory.getLogger("io.r2dbc.postgresql.QUERY");

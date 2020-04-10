@@ -14,8 +14,11 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
+import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 
 public class MssqlTestcontainersTest {
 
@@ -32,7 +35,8 @@ public class MssqlTestcontainersTest {
                 .withEnv("ACCEPT_EULA", "Y")
                 .withEnv("SA_PASSWORD", password)
                 .withEnv("MSSQL_COLLATION", "cyrillic_general_ci_as")
-                .waitingFor(new LogMessageWaitStrategy().withRegEx(".*The default collation was successfully changed.*\\s"));
+                .waitingFor(new LogMessageWaitStrategy().withRegEx(".*The default collation was successfully changed.*\\s")
+                        .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds)));
 
         container.start();
     }

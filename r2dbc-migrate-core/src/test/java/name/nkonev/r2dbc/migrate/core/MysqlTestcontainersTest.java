@@ -11,10 +11,14 @@ import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
+import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 
 public class MysqlTestcontainersTest {
 
@@ -32,7 +36,8 @@ public class MysqlTestcontainersTest {
                 .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
                 .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
                 .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
-                .withExposedPorts(MYSQL_PORT);
+                .withExposedPorts(MYSQL_PORT)
+                .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
         container.start();
     }
