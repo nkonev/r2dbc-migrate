@@ -41,16 +41,15 @@ docker pull nkonev/r2dbc-migrate:latest
     <groupId>name.nkonev.r2dbc-migrate</groupId>
     <artifactId>r2dbc-migrate-core</artifactId>
     <version>VERSION</version>
-    <classifier>shaded</classifier>
 </dependency>
 ```
 
-As it includes shaded `spring-core`, it has weak dependency on
+It has weak dependency on `spring-core`, in order to read protocols like `file:/`, `classpath:/`, so you need to add
 ```
 <dependency>
-    <groupId>commons-logging</groupId>
-    <artifactId>commons-logging</artifactId>
-    <version>1.2</version>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-core</artifactId>
+    <version>VERSION</version>
 </dependency>
 ```
 

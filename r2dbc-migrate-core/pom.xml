@@ -31,6 +31,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -101,45 +102,6 @@
 					<parallel>classes</parallel>
 					<reuseForks>false</reuseForks>
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>${maven.shade.plugin.version}</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-						<configuration>
-							<shadedArtifactAttached>true</shadedArtifactAttached>
-							<artifactSet>
-								<includes>
-									<include>org.springframework:spring-core</include>
-								</includes>
-							</artifactSet>
-							<filters>
-								<filter>
-									<artifact>org.springframework:spring-core</artifact>
-									<includes>
-										<include>org/springframework/**</include>
-									</includes>
-								</filter>
-							</filters>
-							<relocations>
-								<relocation>
-									<pattern>org.springframework</pattern>
-									<shadedPattern>shaded.org.springframework</shadedPattern>
-									<includes>
-										<include>org.springframework.**</include>
-									</includes>
-								</relocation>
-							</relocations>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 
 		</plugins>
