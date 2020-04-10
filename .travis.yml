@@ -12,9 +12,11 @@ script:
   - "docker load < /home/travis/docker-images/mssql.tar || true"
   - "docker load < /home/travis/docker-images/postgres.tar || true"
   - "docker load < /home/travis/docker-images/mysql.tar || true"
+  - "docker load < /home/travis/docker-images/ryuk.tar || true"
   - (cd ./docker; docker-compose down -v; docker-compose up -d)
   - ./mvnw clean package -DenableStandaloneTests=true
   - rm -rf ~/.m2/repository/name/nkonev/r2dbc-migrate
-  - "[[ ! -f /home/travis/docker-images/mssql.tar ]] && docker save mcr.microsoft.com/mssql/server:2017-CU19-ubuntu-16.04 > /home/travis/docker-images/mssql.tar"
-  - "[[ ! -f /home/travis/docker-images/postgres.tar ]] && docker save postgres:12.2 > /home/travis/docker-images/postgres.tar"
-  - "[[ ! -f /home/travis/docker-images/mysql.tar ]] && docker save mysql:5.7 > /home/travis/docker-images/mysql.tar"
+  - "[[ ! -f /home/travis/docker-images/mssql.tar ]] && docker save mcr.microsoft.com/mssql/server:2017-CU19-ubuntu-16.04 > /home/travis/docker-images/mssql.tar || true"
+  - "[[ ! -f /home/travis/docker-images/postgres.tar ]] && docker save postgres:12.2 > /home/travis/docker-images/postgres.tar || true"
+  - "[[ ! -f /home/travis/docker-images/mysql.tar ]] && docker save mysql:5.7 > /home/travis/docker-images/mysql.tar || true"
+  - "[[ ! -f /home/travis/docker-images/ryuk.tar ]] && docker save quay.io/testcontainers/ryuk:0.2.3 > /home/travis/docker-images/ryuk.tar || true"
