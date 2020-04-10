@@ -62,6 +62,8 @@ As it includes shaded `spring-core`, it has weak dependency on
 </dependency>
 ```
 
-## Example
+## Spring Boot Example
 https://github.com/nkonev/r2dbc-migrate-example
 
+## Library example
+https://github.com/nkonev/r2dbc-migrate-example/tree/library
