@@ -125,24 +125,16 @@
 								<filter>
 									<artifact>org.springframework:spring-core</artifact>
 									<includes>
-										<include>org/springframework/core/io/**</include>
-										<include>org/springframework/util/**</include>
+										<include>org/springframework/**</include>
 									</includes>
 								</filter>
 							</filters>
 							<relocations>
 								<relocation>
-									<pattern>org.springframework.core.io</pattern>
-									<shadedPattern>shaded.org.springframework.core.io</shadedPattern>
+									<pattern>org.springframework</pattern>
+									<shadedPattern>shaded.org.springframework</shadedPattern>
 									<includes>
-										<include>org.springframework.core.io.**</include>
-									</includes>
-								</relocation>
-								<relocation>
-									<pattern>org.springframework.util</pattern>
-									<shadedPattern>shaded.org.springframework.util</shadedPattern>
-									<includes>
-										<include>org.springframework.util.**</include>
+										<include>org.springframework.**</include>
 									</includes>
 								</relocation>
 							</relocations>

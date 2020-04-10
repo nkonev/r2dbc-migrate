@@ -44,6 +44,15 @@ docker pull nkonev/r2dbc-migrate:latest
 </dependency>
 ```
 
+As it includes shaded `spring-core`, it has weak dependency on
+```
+<dependency>
+    <groupId>commons-logging</groupId>
+    <artifactId>commons-logging</artifactId>
+    <version>1.2</version>
+</dependency>
+```
+
 ### Standalone application
 ```
 <dependency>
