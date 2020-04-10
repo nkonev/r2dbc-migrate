@@ -5,8 +5,10 @@ jdk:
 cache:
   directories:
     - "/home/travis/.m2"
+    - "/home/travis/docker-images"
 install: "/bin/true"
 script:
+  - rm -rf /home/travis/docker-images
   - (cd ./docker; docker-compose down -v; docker-compose up -d)
   - ./mvnw clean package -DenableStandaloneTests=true
   - rm -rf ~/.m2/repository/name/nkonev/r2dbc-migrate
