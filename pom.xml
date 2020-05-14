@@ -44,7 +44,6 @@
 		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
 		<maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
 		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-		<r2dbc.mysql.driver.version>0.8.1.RELEASE</r2dbc.mysql.driver.version>
 	</properties>
 
 	<modules>
