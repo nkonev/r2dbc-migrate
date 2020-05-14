@@ -102,9 +102,9 @@ public abstract class R2dbcMigrate {
 
         // Here we build cold publisher which will recreate ConnectionFactory if test query fails.
         // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
-        Flux<Result> testConnectionResults = Mono.defer(connectionSupplier)
-                .log("Creating test connection")
-                .flatMapMany(testConnection -> Flux.from(testConnection.createStatement(properties.getValidationQuery()).execute()).doFinally(signalType -> testConnection.close()));
+        Flux<? extends Result> testConnectionResults = Flux.usingWhen(Mono.defer(connectionSupplier),
+            connection -> Flux.from(connection.createStatement(properties.getValidationQuery()).execute()),
+            Connection::close).log("Creating test connection");
 
         final Mono<String> toCheck;
         if (properties.getValidationQueryExpectedResultValue() != null) {
@@ -122,9 +122,11 @@ public abstract class R2dbcMigrate {
                 }))
                 .doOnSuccess(o -> LOGGER.info("Successfully got result of test query"))
                 // here we opens new connection and make all migration stuff
-                .then(connectionSupplier.get())
-                .log("Make migration work")
-                .flatMap(connection -> doWork(connection, properties).doFinally((st) -> connection.close()));
+                .then(Mono.usingWhen(
+                    Mono.defer(connectionSupplier),
+                    connection -> doWork(connection, properties),
+                    Connection::close
+                ));
         return migrationWork;
     }
 
@@ -184,19 +186,20 @@ public abstract class R2dbcMigrate {
 
         return
                 ensureInternals(connection, sqlQueries)
-                        .then(acquireOrWaitForLock(connection, sqlQueries, properties))
-                        .then(getDatabaseVersionOrZero(sqlQueries, connection))
+                        .log("Ensuring internals")
+                        .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("Acquiring lock"))
+                        .then(getDatabaseVersionOrZero(sqlQueries, connection).log("Get database version"))
                         .flatMap(currentVersion -> {
                             LOGGER.info("Database version is {}", currentVersion);
 
-                            return getFileResources(properties)
+                            return getFileResources(properties).log("Requesting migration files")
                                     .filter(objects -> objects.getT2().getVersion() > currentVersion)
                                     // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
                                     .concatMap(tuple2 ->
-                                            makeMigration(connection, properties, tuple2)
-                                                .then(writeMigrationMetadata(connection, sqlQueries, tuple2))
+                                            makeMigration(connection, properties, tuple2).log("Make migration work")
+                                                .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("Writing migration metadata"))
                                     , 1)
-                                    .then(releaseLock(connection, sqlQueries));
+                                    .then(releaseLock(connection, sqlQueries).log("Releasing lock"));
                         }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
 
     }
