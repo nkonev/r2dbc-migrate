@@ -1,6 +1,7 @@
 package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.*;
+import java.util.logging.Level;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +105,7 @@ public abstract class R2dbcMigrate {
         // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
         Flux<? extends Result> testConnectionResults = Flux.usingWhen(Mono.defer(connectionSupplier),
             connection -> Flux.from(connection.createStatement(properties.getValidationQuery()).execute()),
-            Connection::close).log("Creating test connection");
+            Connection::close).log("CreatingTestConnection", Level.FINE);
 
         final Mono<String> toCheck;
         if (properties.getValidationQueryExpectedResultValue() != null) {
@@ -189,20 +190,20 @@ public abstract class R2dbcMigrate {
 
         return
                 ensureInternals(connection, sqlQueries)
-                        .log("Ensuring internals")
-                        .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("Acquiring lock"))
-                        .then(getDatabaseVersionOrZero(sqlQueries, connection).log("Get database version"))
+                        .log("EnsuringInternals", Level.FINE)
+                        .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("AcquiringLock", Level.FINE))
+                        .then(getDatabaseVersionOrZero(sqlQueries, connection).log("GetDatabaseVersion", Level.FINE))
                         .flatMap(currentVersion -> {
                             LOGGER.info("Database version is {}", currentVersion);
 
-                            return getFileResources(properties).log("Requesting migration files")
+                            return getFileResources(properties).log("RequestingMigrationFiles", Level.FINE)
                                     .filter(objects -> objects.getT2().getVersion() > currentVersion)
                                     // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
                                     .concatMap(tuple2 ->
-                                            makeMigration(connection, properties, tuple2).log("Make migration work")
-                                                .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("Writing migration metadata"))
+                                            makeMigration(connection, properties, tuple2).log("MakeMigrationWork", Level.FINE)
+                                                .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("WritingMigrationMetadata", Level.FINE))
                                     , 1)
-                                    .then(releaseLock(connection, sqlQueries).log("Releasing lock"));
+                                    .then(releaseLock(connection, sqlQueries).log("ReleasingLock", Level.FINE));
                         }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
 
     }
