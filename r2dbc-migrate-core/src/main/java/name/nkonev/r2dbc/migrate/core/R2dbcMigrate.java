@@ -110,8 +110,11 @@ public abstract class R2dbcMigrate {
         if (properties.getValidationQueryExpectedResultValue() != null) {
             toCheck = testConnectionResults
                     .flatMap(o -> o.map(getResultSafely("result", String.class, "__VALIDATION_RESULT_NOT_PROVIDED")))
-                    .filter(s -> properties.getValidationQueryExpectedResultValue().equals(s))
-                    .switchIfEmpty(Mono.error(new RuntimeException("Not result of test query")))
+                    .filter(s -> {
+                        LOGGER.info("Comparing expected value '{}' with provided result '{}'", properties.getValidationQueryExpectedResultValue(), s);
+                        return properties.getValidationQueryExpectedResultValue().equals(s);
+                    })
+                    .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
                     .last();
         } else {
             toCheck = testConnectionResults.map(result -> "ignored").last();

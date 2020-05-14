@@ -162,7 +162,7 @@ public class PostgresTestcontainersTest {
                 "Expected exception to throw, but it didn't"
         );
 
-        assertTrue(thrown.getMessage().contains("Not result of test query"));
+        assertTrue(thrown.getMessage().contains("Not matched result of test query"));
     }
 
     @EnabledIfSystemProperty(named = "enableOomTests", matches = "true")

@@ -1,0 +1,161 @@
+{"groups": [
+  {
+    "name": "r2dbc.migrate",
+    "type": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  }
+],"properties": [
+  {
+    "name": "r2dbc.migrate.resources-path",
+    "type": "java.lang.String",
+    "description": "Path to migrations. Internally uses \"PathMatchingResourcePatternResolver\" so it should starts from \"file:\" or \"classpath:\" prefix",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.dialect",
+    "type": "name.nkonev.r2dbc.migrate.core.Dialect",
+    "description": "Optional database dialect",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.connection-max-retries",
+    "type": "long",
+    "description": "Count of retries to connect to database. r2dbc-migrate will retry with fixed interval \"validation-retry-delay\"",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.validation-retry-delay",
+    "type": "java.time.Duration",
+    "description": "Delay between trying to get success of validation \"validation-query\"",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.validation-query-timeout",
+    "type": "java.time.Duration",
+    "description": "Timeout for \"validation-query\"",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.validation-query",
+    "type": "java.lang.String",
+    "description": "Query that used for connection's validation",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.validation-query-expected-result-value",
+    "type": "java.lang.String",
+    "description": "If set then \"result\" column of validation-query will be used to compare with",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.chunk-size",
+    "type": "int",
+    "description": "Number of lines which will be passed as batch to the connection. Used with \"splitted\" modifier.",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.file-charset",
+    "type": "java.nio.charset.Charset",
+    "description": "Charset used to read file.",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.acquire-lock-retry-delay",
+    "type": "java.time.Duration",
+    "description": "Delay between retries to acquire lock",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.acquire-lock-max-retries",
+    "type": "long",
+    "description": "Count of retries to acquire lock from \"migrations_lock\" table",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  }
+],"hints": [
+  {
+    "name": "r2dbc.migrate.resources-path",
+    "values": [
+      {
+        "value": "classpath:/db/migration/*.sql",
+        "description": "Classpath example."
+      },
+      {
+        "value": "file:/opt/migration/*.sql",
+        "description": "Filesystem example."
+      }
+    ],
+    "providers": [
+      {
+        "name": "any"
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.dialect",
+    "values": [
+      {
+        "value": "postgresql",
+        "description": "PostgreSQL dialect."
+      },
+      {
+        "value": "mssql",
+        "description": "Microsoft SQL Server dialect."
+      },
+      {
+        "value": "mysql",
+        "description": "MySQL dialect."
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.validation-query",
+    "values": [
+      {
+        "value": "select 'super value' as result",
+        "description": "PostgreSQL connection check with result column."
+      },
+      {
+        "value": "SELECT collation_name as result FROM sys.databases WHERE name = N'master'",
+        "description": "Checks that Microsoft SQL Server configuration completed and collation_name is set."
+      }
+    ],
+    "providers": [
+      {
+        "name": "any"
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.validation-query-expected-result-value",
+    "values": [
+      {
+        "value": "super value",
+        "description": "Example of expected value for PostgreSQL connection check."
+      },
+      {
+        "value": "Cyrillic_General_CI_AS",
+        "description": "Example of expected value for Microsoft SQL Server."
+      }
+    ],
+    "providers": [
+      {
+        "name": "any"
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.file-charset",
+    "values": [
+      {
+        "value": "UTF-8",
+        "description": "Charset example."
+      }
+    ],
+    "providers": [
+      {
+        "name": "any"
+      }
+    ]
+  }
+]}
+
