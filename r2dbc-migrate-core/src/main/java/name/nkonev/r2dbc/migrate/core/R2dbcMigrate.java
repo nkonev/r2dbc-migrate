@@ -41,30 +41,31 @@ public abstract class R2dbcMigrate {
     }
 
     private static SqlQueries getSqlQueries(R2dbcMigrateProperties properties, Connection connection) {
-        Optional<String> maybeDb = ofNullable(connection.getMetadata())
+        if (properties.getDialect() == null) {
+            Optional<String> maybeDb = ofNullable(connection.getMetadata())
                 .map(md -> md.getDatabaseProductName())
                 .map(s -> s.toLowerCase());
-        if (maybeDb.isPresent()) {
-            if (maybeDb.get().contains("postgres")) {
-                return new PostgreSqlQueries();
-            } else if (maybeDb.get().contains("microsoft")) {
-                return new MSSqlQueries();
-            } else if (maybeDb.get().contains("mysql")) {
-                return new MySqlQueries();
+            if (maybeDb.isPresent()) {
+                if (maybeDb.get().contains("postgres")) {
+                    return new PostgreSqlQueries();
+                } else if (maybeDb.get().contains("microsoft")) {
+                    return new MSSqlQueries();
+                } else if (maybeDb.get().contains("mysql")) {
+                    return new MySqlQueries();
+                }
             }
-        }
-        if (properties.getDialect() == null) {
             throw new RuntimeException("Dialect cannot be null");
-        }
-        switch (properties.getDialect()) {
-            case POSTGRESQL:
-                return new PostgreSqlQueries();
-            case MSSQL:
-                return new MSSqlQueries();
-            case MYSQL:
-                return new MySqlQueries();
-            default:
-                throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
+        } else {
+            switch (properties.getDialect()) {
+                case POSTGRESQL:
+                    return new PostgreSqlQueries();
+                case MSSQL:
+                    return new MSSqlQueries();
+                case MYSQL:
+                    return new MySqlQueries();
+                default:
+                    throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
+            }
         }
     }
 
