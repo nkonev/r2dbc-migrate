@@ -36,7 +36,7 @@
 
 	<properties>
 		<java.version>11</java.version>
-		<spring.boot.version>2.3.0.M3</spring.boot.version>
+		<spring.boot.version>2.3.0.RELEASE</spring.boot.version>
 		<maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
 		<testcontainers.version>1.13.0</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -72,11 +72,6 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
-		<repository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-		</repository>
 	</repositories>
 
 	<pluginRepositories>
@@ -86,11 +81,6 @@
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
-		</pluginRepository>
-		<pluginRepository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
 		</pluginRepository>
 	</pluginRepositories>
 
