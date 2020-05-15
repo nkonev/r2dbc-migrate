@@ -119,7 +119,7 @@ public abstract class R2dbcMigrate {
                     .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
                     .last();
         } else {
-            toCheck = testConnectionResults.map(result -> "ignored").last();
+            toCheck = testConnectionResults.flatMap(Result::getRowsUpdated).map(integer -> ""+integer).last();
         }
         Mono<Void> migrationWork = toCheck.timeout(properties.getValidationQueryTimeout())
                 .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getValidationRetryDelay())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
