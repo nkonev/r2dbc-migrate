@@ -108,24 +108,19 @@ public abstract class R2dbcMigrate {
             connection -> Flux.from(connection.createStatement(properties.getValidationQuery()).execute()),
             Connection::close).log("CreatingTestConnection", Level.FINE);
 
-        final Mono<String> toCheck;
-        if (properties.getValidationQueryExpectedResultValue() != null) {
-            toCheck = testConnectionResults
-                    .flatMap(o -> o.map(getResultSafely("result", String.class, "__VALIDATION_RESULT_NOT_PROVIDED")))
-                    .filter(s -> {
-                        LOGGER.info("Comparing expected value '{}' with provided result '{}'", properties.getValidationQueryExpectedResultValue(), s);
-                        return properties.getValidationQueryExpectedResultValue().equals(s);
-                    })
-                    .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
-                    .last();
-        } else {
-            toCheck = testConnectionResults.flatMap(Result::getRowsUpdated).map(integer -> ""+integer).last();
-        }
+        final Mono<String> toCheck = testConnectionResults
+            .flatMap(o -> o.map(getResultSafely("result", String.class, "__VALIDATION_RESULT_NOT_PROVIDED")))
+            .filter(s -> {
+                LOGGER.info("Comparing expected value '{}' with provided result '{}'", properties.getValidationQueryExpectedResultValue(), s);
+                return properties.getValidationQueryExpectedResultValue().equals(s);
+            })
+            .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
+            .last();
         Mono<Void> migrationWork = toCheck.timeout(properties.getValidationQueryTimeout())
                 .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getValidationRetryDelay())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
                     LOGGER.warn("Retrying to get database connection due {}: {}", objectRetryContext.exception().getClass(), objectRetryContext.exception().getMessage());
                 }))
-                .doOnSuccess(o -> LOGGER.info("Successfully got result of test query"))
+                .doOnSuccess(o -> LOGGER.info("Successfully got result '{}' of test query", o))
                 // here we opens new connection and make all migration stuff
                 .then(Mono.usingWhen(
                     Mono.defer(connectionSupplier),

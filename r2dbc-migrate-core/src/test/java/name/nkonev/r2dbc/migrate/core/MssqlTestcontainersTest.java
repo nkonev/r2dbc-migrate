@@ -72,14 +72,12 @@ public class MssqlTestcontainersTest {
     }
 
     @Test
-    public void testCreateMsSqlDatabaseThenSchemaInItThenTableInIt() {
+    public void testDefaultValidationResult() {
         Integer mappedPort = container.getMappedPort(MSSQL_PORT);
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
-        properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
-        properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
         R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
 
@@ -93,6 +91,36 @@ public class MssqlTestcontainersTest {
                             row.get("estimated_money", Integer.class)
                     );
                 }));
+        Client client = clientFlux.blockLast();
+
+        Assertions.assertEquals("John", client.firstName);
+        Assertions.assertEquals("Smith", client.secondName);
+        Assertions.assertEquals("4444", client.account);
+        Assertions.assertEquals(9999999, client.estimatedMoney);
+    }
+
+    @Test
+    public void testCreateMsSqlDatabaseThenSchemaInItThenTableInIt() {
+        Integer mappedPort = container.getMappedPort(MSSQL_PORT);
+
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setDialect(Dialect.MSSQL);
+        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
+        properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
+        properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
+
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+
+        Flux<Client> clientFlux = makeConnectionMono(mappedPort)
+            .flatMapMany(connection -> Flux.from(connection.createStatement("select * from sales_department.rich_clients.client").execute()).doFinally(signalType -> connection.close()))
+            .flatMap(o -> o.map((row, rowMetadata) -> {
+                return new Client(
+                    row.get("first_name", String.class),
+                    row.get("second_name", String.class),
+                    row.get("account", String.class),
+                    row.get("estimated_money", Integer.class)
+                );
+            }));
         Client client = clientFlux.blockLast();
 
         Assertions.assertEquals("John", client.firstName);
