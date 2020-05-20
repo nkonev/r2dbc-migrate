@@ -13,11 +13,16 @@ R2DBC [page](https://r2dbc.io/).
 * MySQL
 
 ## Features
-* Filename-based `V3__insert_to_customers__split,nontransactional.sql`: parts separated by two underscores, where last part is flags - one of `split`, `nontransactional`
-* Waiting for until database started
-* Validation query and (optionally) checking its result
-* Split large file to chunks by newline. You can migrate file larger than your `-Xmx`
-* Support concurrent migrations in microservices by locking mechanism
+* PostgreSQL, Microsoft SQL Server, MySQL support
+* Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
+* It waits until database have been started, there is test query, and validation result of. This can be useful to initial load data into database with docker-compose
+* Supports migrations files larger than `-Xmx`: file will be splitted line-by-line (`split` modifier), then it will be loaded by chunks into database
+* Lock support, that make you able to start number of replicas your microservice, without care of migrations will collide each other
+* Each migration runs in the separated transaction
+* It also supports `nontransactional` migrations, due to SQL Server prohibits `CREATE DATABASE` in the transaction
+* Docker image
+
+All available configuration options are in [R2dbcMigrateProperties](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-core/src/main/java/name/nkonev/r2dbc/migrate/core/R2dbcMigrateProperties.java) class.
 
 ## Download
 
