@@ -24,11 +24,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
+import static name.nkonev.r2dbc.migrate.core.ListUtils.hasSubList;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,16 +74,28 @@ public class PostgresTestcontainersTest {
         return Mono.from(connectionPublisher);
     }
 
-    @Test
-    public void testThatTransactionsWrapsQueriesAndTransactionsAreNotNested() {
+    private ListAppender<ILoggingEvent> startAppender() {
         statementsLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
-
-        // create and start a ListAppender
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         // add the appender to the logger
         // addAppender is outdated now
         statementsLogger.addAppender(listAppender);
+        return listAppender;
+    }
+
+    private List<ILoggingEvent> stopAppenderAndGetLogsList(ListAppender<ILoggingEvent> listAppender) {
+        List<ILoggingEvent> logsList = listAppender.list;
+        listAppender.stop();
+        statementsLogger.detachAppender(listAppender);
+        statementsLogger.setLevel(statementsPreviousLevel);
+        return logsList;
+    }
+
+    @Test
+    public void testThatTransactionsWrapsQueriesAndTransactionsAreNotNested() {
+        // create and start a ListAppender
+        ListAppender<ILoggingEvent> listAppender = startAppender();
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
@@ -93,9 +105,7 @@ public class PostgresTestcontainersTest {
         R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
 
         // get log
-        List<ILoggingEvent> logsList = listAppender.list;
-        listAppender.stop();
-        statementsLogger.setLevel(statementsPreviousLevel);
+        List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
         List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
         // make asserts
         assertTrue(
@@ -133,14 +143,8 @@ public class PostgresTestcontainersTest {
 
     @Test
     public void testThatLockIsReleasedAfterError() {
-        statementsLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
-
         // create and start a ListAppender
-        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-        listAppender.start();
-        // add the appender to the logger
-        // addAppender is outdated now
-        statementsLogger.addAppender(listAppender);
+        ListAppender<ILoggingEvent> listAppender = startAppender();
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
@@ -158,9 +162,7 @@ public class PostgresTestcontainersTest {
         Assertions.assertTrue(thrown.getMessage().contains("syntax error at or near \"ololo\""));
 
         // get log
-        List<ILoggingEvent> logsList = listAppender.list;
-        listAppender.stop();
-        statementsLogger.setLevel(statementsPreviousLevel);
+        List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
         List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
         // make asserts
         assertTrue(
@@ -185,10 +187,6 @@ public class PostgresTestcontainersTest {
                 "COMMIT",
                 "update migrations_lock set locked = false where id = 1"
             )));
-    }
-
-    private boolean hasSubList(List<Object> collect, List<Object> sublist) {
-        return (Collections.indexOfSubList(collect, sublist) != -1);
     }
 
     @Test
