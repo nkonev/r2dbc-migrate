@@ -106,7 +106,7 @@ public abstract class R2dbcMigrate {
         // It need for MssqlConnectionFactory. MssqlConnectionFactory becomes broken if we make requests immediately after database started.
         Flux<? extends Result> testConnectionResults = Flux.usingWhen(Mono.defer(connectionSupplier),
             connection -> Flux.from(connection.createStatement(properties.getValidationQuery()).execute()),
-            Connection::close).log("CreatingTestConnection", Level.FINE);
+            Connection::close).log("R2dbcMigrateCreatingTestConnection", Level.FINE);
 
         final Mono<String> toCheck = testConnectionResults
             .flatMap(o -> o.map(getResultSafely("result", String.class, "__VALIDATION_RESULT_NOT_PROVIDED")))
@@ -186,25 +186,26 @@ public abstract class R2dbcMigrate {
 
         return
                 ensureInternals(connection, sqlQueries)
-                        .log("EnsuringInternals", Level.FINE)
-                        .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("AcquiringLock", Level.FINE))
-                        .then(getDatabaseVersionOrZero(sqlQueries, connection).log("GetDatabaseVersion", Level.FINE))
+                        .log("R2dbcMigrateEnsuringInternals", Level.FINE)
+                        .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("R2dbcMigrateAcquiringLock", Level.FINE))
+                        .then(getDatabaseVersionOrZero(sqlQueries, connection).log("R2dbcMigrateGetDatabaseVersion", Level.FINE))
                         .flatMap(currentVersion -> {
                             LOGGER.info("Database version is {}", currentVersion);
 
-                            return getFileResources(properties).log("RequestingMigrationFiles", Level.FINE)
+                            return getFileResources(properties).log("R2dbcMigrateRequestingMigrationFiles", Level.FINE)
                                     .filter(objects -> objects.getT2().getVersion() > currentVersion)
                                     // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
                                     .concatMap(tuple2 ->
-                                            makeMigration(connection, properties, tuple2).log("MakeMigrationWork", Level.FINE)
-                                                .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("WritingMigrationMetadata", Level.FINE))
+                                            makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakeMigrationWork", Level.FINE)
+                                                .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("R2dbcMigrateWritingMigrationMetadata", Level.FINE))
                                     , 1)
-                                    .then(releaseLock(connection, sqlQueries).log("ReleasingLock", Level.FINE));
+                                    .then(releaseLock(connection, sqlQueries).log("R2dbcMigrateReleasingLock", Level.FINE));
                         }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
 
     }
 
     private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
+        LOGGER.info("Applying {}", tt.getT2());
         return transactionalWrap(connection, tt.getT2().isTransactional(), getMigrateResultPublisher(properties, connection, tt.getT1(), tt.getT2()), tt.getT2().toString());
     }
 
