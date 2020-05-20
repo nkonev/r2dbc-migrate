@@ -180,6 +180,10 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, true, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock");
     }
 
+    private static Mono<Void> releaseLockNotTransactional(Connection connection, SqlQueries sqlQueries) {
+        return transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error");
+    }
+
     private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties) {
         SqlQueries sqlQueries = getSqlQueries(properties, connection);
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
@@ -199,6 +203,7 @@ public abstract class R2dbcMigrate {
                                             makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakeMigrationWork", Level.FINE)
                                                 .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("R2dbcMigrateWritingMigrationMetadata", Level.FINE))
                                     , 1)
+                                    .onErrorResume(throwable -> releaseLockNotTransactional(connection, sqlQueries).then(Mono.error(throwable)))
                                     .then(releaseLock(connection, sqlQueries).log("R2dbcMigrateReleasingLock", Level.FINE));
                         }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
 

@@ -99,7 +99,7 @@ public class PostgresTestcontainersTest {
         List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
         // make asserts
         assertTrue(
-                Collections.indexOfSubList(collect, Arrays.asList(
+            hasSubList(collect, Arrays.asList(
                         "BEGIN",
                         "create table if not exists migrations (id int primary key, description text); create table if not exists migrations_lock (id int primary key, locked boolean not null); insert into migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
                         "COMMIT",
@@ -128,7 +128,67 @@ public class PostgresTestcontainersTest {
                         "BEGIN",
                         "update migrations_lock set locked = false where id = 1",
                         "COMMIT"
-                )) != -1);
+                )));
+    }
+
+    @Test
+    public void testThatLockIsReleasedAfterError() {
+        statementsLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
+
+        // create and start a ListAppender
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        // add the appender to the logger
+        // addAppender is outdated now
+        statementsLogger.addAppender(listAppender);
+
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setDialect(Dialect.POSTGRESQL);
+        properties.setResourcesPath("classpath:/migrations/postgresql_error/*.sql");
+
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+
+        RuntimeException thrown = Assertions.assertThrows(
+            RuntimeException.class,
+            () -> {
+                R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+            },
+            "Expected exception to throw, but it didn't"
+        );
+        Assertions.assertTrue(thrown.getMessage().contains("syntax error at or near \"ololo\""));
+
+        // get log
+        List<ILoggingEvent> logsList = listAppender.list;
+        listAppender.stop();
+        statementsLogger.setLevel(statementsPreviousLevel);
+        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
+        // make asserts
+        assertTrue(
+            hasSubList(collect, Arrays.asList(
+                "BEGIN",
+                "create table if not exists migrations (id int primary key, description text); create table if not exists migrations_lock (id int primary key, locked boolean not null); insert into migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
+                "COMMIT",
+                "BEGIN",
+                "update migrations_lock set locked = true where id = 1 and locked = false",
+                "COMMIT",
+                "select max(id) from migrations",
+                "BEGIN",
+                "CREATE TABLE customer (id SERIAL PRIMARY KEY, first_name VARCHAR(255), last_name VARCHAR(255))",
+                "COMMIT",
+                "BEGIN",
+                "insert into migrations(id, description) values ($1, $2)",
+                "COMMIT",
+                "BEGIN",
+                "insert into customer(first_name, last_name) values\n"
+                    + "ololo\n"
+                    + "('Muhammad', 'Ali'), ('Name', 'Фамилия');",
+                "COMMIT",
+                "update migrations_lock set locked = false where id = 1"
+            )));
+    }
+
+    private boolean hasSubList(List<Object> collect, List<Object> sublist) {
+        return (Collections.indexOfSubList(collect, sublist) != -1);
     }
 
     @Test
