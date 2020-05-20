@@ -223,7 +223,7 @@ public abstract class R2dbcMigrate {
                 .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0)))).switchIfEmpty(Mono.just(0)).cache();
     }
 
-    private static <ColumnType> BiFunction<Row, RowMetadata, ColumnType> getResultSafely(String resultColumn, Class<ColumnType> ct, ColumnType defaultValue) {
+    static <ColumnType> BiFunction<Row, RowMetadata, ColumnType> getResultSafely(String resultColumn, Class<ColumnType> ct, ColumnType defaultValue) {
         return (row, rowMetadata) -> {
             if (rowMetadata.getColumnNames().contains(resultColumn)) { // mssql check
                 ColumnType value = row.get(resultColumn, ct);

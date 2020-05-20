@@ -9,7 +9,7 @@
         </encoder>
     </appender>
 
-<!--    <logger name="org.springframework.test.web.servlet.result" level="INFO"/>-->
+    <!-- <logger name="io.r2dbc.mssql.QUERY" level="DEBUG"/> -->
 
     <root level="INFO">
         <appender-ref ref="stdout"/>

@@ -29,10 +29,11 @@ import java.util.stream.Collectors;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 import static name.nkonev.r2dbc.migrate.core.ListUtils.hasSubList;
+import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PostgresTestcontainersTest {
+public class PostgresTestcontainersTest extends LogCaptureableTests {
     final static int POSTGRESQL_PORT = 5432;
     static GenericContainer container;
 
@@ -72,24 +73,6 @@ public class PostgresTestcontainersTest {
                 .build());
         Publisher<? extends Connection> connectionPublisher = connectionFactory.create();
         return Mono.from(connectionPublisher);
-    }
-
-    private ListAppender<ILoggingEvent> startAppender() {
-        statementsLogger.setLevel(Level.DEBUG); // TODO here I override maven logger
-        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-        listAppender.start();
-        // add the appender to the logger
-        // addAppender is outdated now
-        statementsLogger.addAppender(listAppender);
-        return listAppender;
-    }
-
-    private List<ILoggingEvent> stopAppenderAndGetLogsList(ListAppender<ILoggingEvent> listAppender) {
-        List<ILoggingEvent> logsList = listAppender.list;
-        listAppender.stop();
-        statementsLogger.detachAppender(listAppender);
-        statementsLogger.setLevel(statementsPreviousLevel);
-        return logsList;
     }
 
     @Test
@@ -187,6 +170,16 @@ public class PostgresTestcontainersTest {
                 "COMMIT",
                 "update migrations_lock set locked = false where id = 1"
             )));
+
+        Mono<Boolean> r = Mono.usingWhen(
+            makeConnectionMono(mappedPort),
+            connection -> Mono.just(connection.createStatement("select locked from migrations_lock where id = 1"))
+                .flatMap(statement -> Mono.from(statement.execute()))
+                .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
+            Connection::close);
+        Boolean block = r.block();
+        Assertions.assertNotNull(block);
+        Assertions.assertFalse(block);
     }
 
     @Test
@@ -252,4 +245,13 @@ public class PostgresTestcontainersTest {
     }
 
 
+    @Override
+    protected Level getStatementsPreviousLevel() {
+        return statementsPreviousLevel;
+    }
+
+    @Override
+    protected Logger getStatementsLogger() {
+        return statementsLogger;
+    }
 }
