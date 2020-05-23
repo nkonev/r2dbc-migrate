@@ -151,19 +151,6 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         assertTrue(
             hasSubList(collect, Arrays.asList(
                 "BEGIN",
-                "create table if not exists migrations (id int primary key, description text); create table if not exists migrations_lock (id int primary key, locked boolean not null); insert into migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
-                "COMMIT",
-                "BEGIN",
-                "update migrations_lock set locked = true where id = 1 and locked = false",
-                "COMMIT",
-                "select max(id) from migrations",
-                "BEGIN",
-                "CREATE TABLE customer (id SERIAL PRIMARY KEY, first_name VARCHAR(255), last_name VARCHAR(255))",
-                "COMMIT",
-                "BEGIN",
-                "insert into migrations(id, description) values ($1, $2)",
-                "COMMIT",
-                "BEGIN",
                 "insert into customer(first_name, last_name) values\n"
                     + "ololo\n"
                     + "('Muhammad', 'Ali'), ('Name', 'Фамилия');",

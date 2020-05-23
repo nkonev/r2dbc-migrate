@@ -1,14 +1,22 @@
 package name.nkonev.r2dbc.migrate.core;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
@@ -18,9 +26,12 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
+import static name.nkonev.r2dbc.migrate.core.ListUtils.hasSubList;
+import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MysqlTestcontainersTest {
+public class MysqlTestcontainersTest extends LogCaptureableTests {
 
     final static int MYSQL_PORT = 3306;
 
@@ -29,6 +40,8 @@ public class MysqlTestcontainersTest {
     final static String user = "mysql-user";
     final static String password = "mysql-password";
 
+    static Logger statementsLogger;
+    static Level statementsPreviousLevel;
 
     @BeforeEach
     public void beforeAll()  {
@@ -40,11 +53,15 @@ public class MysqlTestcontainersTest {
                 .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
         container.start();
+
+        statementsLogger = (Logger) LoggerFactory.getLogger("name.nkonev.r2dbc.migrate.core.R2dbcMigrate");
+        statementsPreviousLevel = statementsLogger.getEffectiveLevel();
     }
 
     @AfterEach
     public void afterAll() {
         container.stop();
+        statementsLogger.setLevel(statementsPreviousLevel);
     }
 
     private Mono<Connection> makeConnectionMono(int port) {
@@ -58,6 +75,16 @@ public class MysqlTestcontainersTest {
                 .build());
         Publisher<? extends Connection> connectionPublisher = connectionFactory.create();
         return Mono.from(connectionPublisher);
+    }
+
+    @Override
+    protected Level getStatementsPreviousLevel() {
+        return statementsPreviousLevel;
+    }
+
+    @Override
+    protected Logger getStatementsLogger() {
+        return statementsLogger;
     }
 
     static class Customer {
@@ -95,7 +122,47 @@ public class MysqlTestcontainersTest {
         Assertions.assertEquals("Customer", client.firstName);
         Assertions.assertEquals("Surname 4", client.lastName);
         Assertions.assertEquals(6, client.id);
+    }
 
+    @Test
+    public void testThatLockIsReleasedAfterError() {
+        // create and start a ListAppender
+        ListAppender<ILoggingEvent> listAppender = startAppender();
+
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setDialect(Dialect.MYSQL);
+        properties.setResourcesPath("classpath:/migrations/mysql_error/*.sql");
+
+        Integer mappedPort = container.getMappedPort(MYSQL_PORT);
+
+        RuntimeException thrown = Assertions.assertThrows(
+            RuntimeException.class,
+            () -> {
+                R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+            },
+            "Expected exception to throw, but it didn't"
+        );
+        Assertions.assertTrue(thrown.getMessage().contains("You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'haha\n"));
+
+        // get log
+        List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
+        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(
+            Collectors.toList());
+        // make asserts
+        assertTrue(
+            hasSubList(collect, Arrays.asList(
+                "Releasing lock after error"
+            )));
+
+        Mono<Byte> r = Mono.usingWhen(
+            makeConnectionMono(mappedPort),
+            connection -> Mono.just(connection.createStatement("select locked from migrations_lock where id = 1"))
+                .flatMap(statement -> Mono.from(statement.execute()))
+                .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Byte.class, null)))),
+            Connection::close);
+        Byte block = r.block();
+        Assertions.assertNotNull(block);
+        Assertions.assertEquals((byte)0, block);
     }
 
 }
