@@ -183,6 +183,14 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
     }
 
     @Test
+    public void testDefaults() {
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+    }
+
+    @Test
     public void testValidationResultFail() {
         RuntimeException thrown = Assertions.assertThrows(
                 RuntimeException.class,
