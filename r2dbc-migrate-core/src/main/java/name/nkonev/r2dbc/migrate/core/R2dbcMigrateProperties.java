@@ -111,18 +111,18 @@ public class R2dbcMigrateProperties {
 
     @Override
     public String toString() {
-        return "MigrateProperties{" +
-                "connectionMaxRetries=" + connectionMaxRetries +
-                ", resourcesPath='" + resourcesPath + '\'' +
-                ", chunkSize=" + chunkSize +
-                ", dialect=" + dialect +
-                ", validationQuery='" + validationQuery + '\'' +
-                ", validationQueryExpectedResultValue='" + validationQueryExpectedResultValue + '\'' +
-                ", validationQueryTimeout=" + validationQueryTimeout +
-                ", validationRetryDelay=" + validationRetryDelay +
-                ", acquireLockRetryDelay=" + acquireLockRetryDelay +
-                ", acquireLockMaxRetries=" + acquireLockMaxRetries +
-                ", fileCharset=" + fileCharset +
-                '}';
+        return "R2dbcMigrateProperties{" +
+            "connectionMaxRetries=" + connectionMaxRetries +
+            ", resourcesPath='" + resourcesPath + '\'' +
+            ", chunkSize=" + chunkSize +
+            ", dialect=" + dialect +
+            ", validationQuery='" + validationQuery + '\'' +
+            ", validationQueryExpectedResultValue='" + validationQueryExpectedResultValue + '\'' +
+            ", validationQueryTimeout=" + validationQueryTimeout +
+            ", validationRetryDelay=" + validationRetryDelay +
+            ", acquireLockRetryDelay=" + acquireLockRetryDelay +
+            ", acquireLockMaxRetries=" + acquireLockMaxRetries +
+            ", fileCharset=" + fileCharset +
+            '}';
     }
 }

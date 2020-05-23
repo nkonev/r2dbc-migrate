@@ -1,0 +1,1 @@
+CREATE DATABASE my_db COLLATE cyrillic_general_ci_as;

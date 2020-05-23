@@ -5,7 +5,7 @@ version: '3.2'
 services:
   # https://hub.docker.com/_/microsoft-mssql-server
   mssql:
-    image: mcr.microsoft.com/mssql/server:2017-CU19-ubuntu-16.04
+    image: mcr.microsoft.com/mssql/server:2019-CU5-ubuntu-16.04
     restart: unless-stopped
     # https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-configure-environment-variables?view=sql-server-2017
     environment:

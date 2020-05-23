@@ -115,7 +115,7 @@
         "description": "PostgreSQL connection check with result column."
       },
       {
-        "value": "SELECT collation_name as result FROM sys.databases WHERE name = N'master'",
+        "value": "SET LOCK_TIMEOUT 2000; SELECT collation_name as result FROM sys.databases WHERE name = N'master'",
         "description": "Checks that Microsoft SQL Server configuration completed and collation_name is set."
       }
     ],

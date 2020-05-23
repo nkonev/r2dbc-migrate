@@ -1,12 +1,12 @@
 package name.nkonev.r2dbc.migrate.standalone;
 
-import io.r2dbc.spi.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.r2dbc.core.DatabaseClient;
 //import reactor.tools.agent.ReactorDebugAgent;
 
 @SpringBootApplication
@@ -21,8 +21,8 @@ public class R2dbcMigrateApplication {
     }
 
     @Bean
-    public CommandLineRunner commandlineEntryPoint(ConnectionFactory connectionFactory) {
-        LOGGER.info("Here we got connectionFactory after migrations");
+    public CommandLineRunner commandlineEntryPoint(DatabaseClient databaseClient) {
+        LOGGER.info("Here we got databaseClient after migrations");
 
         return args -> { };
     }

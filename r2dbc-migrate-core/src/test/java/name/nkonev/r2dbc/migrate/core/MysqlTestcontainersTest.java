@@ -1,4 +1,4 @@
-package name.nkonev.r2dbc.migrate.core;
+/*package name.nkonev.r2dbc.migrate.core;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -166,3 +166,4 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
     }
 
 }
+*/
