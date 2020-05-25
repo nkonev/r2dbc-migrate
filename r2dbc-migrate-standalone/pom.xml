@@ -107,6 +107,23 @@
 							<goal>run</goal>
 						</goals>
 					</execution>
+					<execution>
+						<id>docker-push</id>
+						<phase>deploy</phase>
+						<configuration>
+							<tasks>
+								<exec dir="${project.basedir}" executable="docker" failonerror="true" searchpath="true">
+									<arg line="push ${docker.repository}:latest"/>
+								</exec>
+								<exec dir="${project.basedir}" executable="docker" failonerror="true" searchpath="true">
+									<arg line="push ${docker.repository}:${project.version}"/>
+								</exec>
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
 				</executions>
 			</plugin>
 		</plugins>
