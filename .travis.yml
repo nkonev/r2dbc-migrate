@@ -2,6 +2,7 @@ language: java
 dist: bionic
 jdk:
   - "openjdk11"
+  - "openjdk8"
 cache:
   directories:
     - "/home/travis/.m2"

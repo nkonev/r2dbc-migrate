@@ -35,7 +35,7 @@
 	</developers>
 
 	<properties>
-		<java.version>11</java.version>
+		<java.version>8</java.version>
 		<spring.boot.version>2.3.0.RELEASE</spring.boot.version>
 		<maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
 		<testcontainers.version>1.13.0</testcontainers.version>
@@ -122,6 +122,23 @@
 				<executions>
 					<execution>
 						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+				</configuration>
+				<executions>
+					<execution>
+						<id>attach-javadoc</id>
 						<goals>
 							<goal>jar</goal>
 						</goals>

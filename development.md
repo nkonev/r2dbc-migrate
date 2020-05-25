@@ -21,6 +21,7 @@ docker-compose exec mysql mysql -umysql-user -pmysql-password -Dr2dbc
 
 # Building
 ```bash
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 (cd ./docker; docker-compose down -v; docker-compose up -d)
 ./mvnw clean package -DenableStandaloneTests=true -DenableOomTests=true
 ./mvnw release:prepare -Dresume=false
