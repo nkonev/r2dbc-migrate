@@ -27,7 +27,6 @@ export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 ./mvnw release:prepare -Dresume=false
 ./mvnw release:perform
 
-(cd ./r2dbc-migrate-standalone; rm ./target/*-javadoc.jar ./target/*-sources.jar; docker build . --tag nkonev/r2dbc-migrate:latest --tag nkonev/r2dbc-migrate:0.0.13)
 docker push nkonev/r2dbc-migrate:0.0.13
 docker push nkonev/r2dbc-migrate:latest
 
