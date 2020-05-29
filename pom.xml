@@ -167,7 +167,7 @@
 				<version>2.5.3</version>
 				<configuration>
 					<localCheckout>true</localCheckout>
-					<pushChanges>false</pushChanges>
+					<pushChanges>true</pushChanges>
 					<mavenExecutorId>forked-path</mavenExecutorId>
 					<arguments>-DskipTests</arguments>
 					<tagNameFormat>@{project.version}</tagNameFormat>
