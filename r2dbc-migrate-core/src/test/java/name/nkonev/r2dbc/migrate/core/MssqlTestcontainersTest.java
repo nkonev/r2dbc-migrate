@@ -43,7 +43,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
     static Level statementsPreviousLevel;
 
     @BeforeEach
-    public void beforeAll()  {
+    public void beforeEach()  {
         container = new GenericContainer("mcr.microsoft.com/mssql/server:2017-CU19-ubuntu-16.04")
                 .withExposedPorts(MSSQL_PORT)
                 .withEnv("ACCEPT_EULA", "Y")
@@ -59,7 +59,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
     }
 
     @AfterEach
-    public void afterAll() {
+    public void afterEach() {
         container.stop();
         statementsLogger.setLevel(statementsPreviousLevel);
     }

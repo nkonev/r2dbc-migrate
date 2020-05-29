@@ -43,7 +43,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
     static Level statementsPreviousLevel;
 
     @BeforeEach
-    public void beforeAll()  {
+    public void beforeEach()  {
         container = new GenericContainer("postgres:12.2")
                 .withExposedPorts(POSTGRESQL_PORT)
                 .withEnv("POSTGRES_PASSWORD", "postgresqlPassword")
@@ -57,7 +57,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
     }
 
     @AfterEach
-    public void afterAll() {
+    public void afterEach() {
         container.stop();
         statementsLogger.setLevel(statementsPreviousLevel);
     }
@@ -208,7 +208,8 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                 "Expected exception to throw, but it didn't"
         );
 
-        assertTrue(thrown.getMessage().contains("Not matched result of test query"));
+        assertTrue(thrown.getMessage().contains("Retries exhausted"));
+        assertTrue(thrown.getCause().getMessage().contains("Not matched result of test query"));
     }
 
     @EnabledIfSystemProperty(named = "enableOomTests", matches = "true")

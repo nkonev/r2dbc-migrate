@@ -9,8 +9,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.retry.Backoff;
-import reactor.retry.Retry;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 import java.io.IOException;
@@ -117,8 +115,8 @@ public abstract class R2dbcMigrate {
             .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
             .last();
         Mono<Void> migrationWork = toCheck.timeout(properties.getValidationQueryTimeout())
-                .retryWhen(Retry.anyOf(Exception.class).backoff(Backoff.fixed(properties.getValidationRetryDelay())).retryMax(properties.getConnectionMaxRetries()).doOnRetry(objectRetryContext -> {
-                    LOGGER.warn("Retrying to get database connection due {}: {}", objectRetryContext.exception().getClass(), objectRetryContext.exception().getMessage());
+                .retryWhen(reactor.util.retry.Retry.fixedDelay(properties.getConnectionMaxRetries(), properties.getValidationRetryDelay()).doAfterRetry(retrySignal -> {
+                    LOGGER.warn("Retrying to get database connection due {}: {}", retrySignal.failure().getClass(), retrySignal.failure().getMessage());
                 }))
                 .doOnSuccess(o -> LOGGER.info("Successfully got result '{}' of test query", o))
                 // here we opens new connection and make all migration stuff
@@ -151,7 +149,8 @@ public abstract class R2dbcMigrate {
                 .doOnSuccess(integer -> {
                     LOGGER.info(ROWS_UPDATED, "Acquiring lock", integer);
                 });
-        Mono<Integer> waitForLock = lockUpdated.retryWhen(Retry.anyOf(RuntimeException.class).backoff(Backoff.fixed(properties.getAcquireLockRetryDelay())).retryMax(properties.getAcquireLockMaxRetries()).doOnRetry(objectRetryContext -> {
+
+        Mono<Integer> waitForLock = lockUpdated.retryWhen(reactor.util.retry.Retry.fixedDelay(properties.getAcquireLockMaxRetries(), properties.getAcquireLockRetryDelay()).doAfterRetry(retrySignal -> {
             LOGGER.warn("Waiting for lock");
         }));
         return transactionalWrapUnchecked(connection, true, waitForLock);
