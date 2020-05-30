@@ -60,7 +60,7 @@ It has weak dependency on `spring-core`, in order to read protocols like `file:/
 
 ### Standalone application
 
-If you want to build your own docker image you can do this
+If you want to build your own docker image you will be able to do this
 ```bash
 curl -Ss https://repo.maven.apache.org/maven2/name/nkonev/r2dbc-migrate/r2dbc-migrate-standalone/VERSION/r2dbc-migrate-standalone-VERSION.jar > /tmp/migrate.jar
 ```
