@@ -27,5 +27,5 @@ export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 ./mvnw release:prepare -Dresume=false
 ./mvnw release:perform
 
-git push origin HEAD --tags
+git fetch
 ```

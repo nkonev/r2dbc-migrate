@@ -32,7 +32,7 @@ docker pull nkonev/r2dbc-migrate:latest
 ```
 
 ### Spring Boot Starter
-```
+```xml
 <dependency>
   <groupId>name.nkonev.r2dbc-migrate</groupId>
   <artifactId>r2dbc-migrate-spring-boot-starter</artifactId>
@@ -41,7 +41,7 @@ docker pull nkonev/r2dbc-migrate:latest
 ```
 
 ### Only library
-```
+```xml
 <dependency>
     <groupId>name.nkonev.r2dbc-migrate</groupId>
     <artifactId>r2dbc-migrate-core</artifactId>
@@ -50,7 +50,7 @@ docker pull nkonev/r2dbc-migrate:latest
 ```
 
 It has weak dependency on `spring-core`, in order to read protocols like `file:/`, `classpath:/`, so you need to add
-```
+```xml
 <dependency>
     <groupId>org.springframework</groupId>
     <artifactId>spring-core</artifactId>
@@ -59,12 +59,10 @@ It has weak dependency on `spring-core`, in order to read protocols like `file:/
 ```
 
 ### Standalone application
-```
-<dependency>
-  <groupId>name.nkonev.r2dbc-migrate</groupId>
-  <artifactId>r2dbc-migrate-standalone</artifactId>
-  <version>VERSION</version>
-</dependency>
+
+If you want to build your own docker image you can do this
+```bash
+curl -Ss https://repo.maven.apache.org/maven2/name/nkonev/r2dbc-migrate/r2dbc-migrate-standalone/VERSION/r2dbc-migrate-standalone-VERSION.jar > /tmp/migrate.jar
 ```
 
 ## Spring Boot Example
