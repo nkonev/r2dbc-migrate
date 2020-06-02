@@ -158,6 +158,24 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
     }
 
     @Test
+    public void testAppendCreateMsSqlDatabase() {
+        Integer mappedPort = container.getMappedPort(MSSQL_PORT);
+
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setDialect(Dialect.MSSQL);
+        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
+        properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
+        properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
+
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+
+        // here we simulate new launch
+        properties.setResourcesPath("classpath:/migrations/mssql_append/*.sql");
+        // and we assert that we able to add yet another database (nontransactional should work)
+        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+    }
+
+    @Test
     public void testThatLockIsReleasedAfterError() {
         // create and start a ListAppender
         ListAppender<ILoggingEvent> listAppender = startAppender();

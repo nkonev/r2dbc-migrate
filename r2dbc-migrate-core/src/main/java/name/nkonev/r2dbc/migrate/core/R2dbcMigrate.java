@@ -218,8 +218,9 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection) {
-        return Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
-                .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0)))).switchIfEmpty(Mono.just(0)).cache();
+        return Mono.from(connection.setAutoCommit(true)) // same as in transactionalWrap, in order not to leave non-committed transaction
+            .then(Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
+            .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0)))).switchIfEmpty(Mono.just(0)).cache());
     }
 
     static <ColumnType> BiFunction<Row, RowMetadata, ColumnType> getResultSafely(String resultColumn, Class<ColumnType> ct, ColumnType defaultValue) {
