@@ -204,7 +204,7 @@ public abstract class R2dbcMigrate {
                                     , 1)
                                     .onErrorResume(throwable -> releaseLockNotTransactional(connection, sqlQueries).then(Mono.error(throwable)))
                                     .then(releaseLock(connection, sqlQueries).log("R2dbcMigrateReleasingLock", Level.FINE));
-                        }); // TODO consider timeout-based retry whole chain for MS SQL Server 2019
+                        });
 
     }
 
