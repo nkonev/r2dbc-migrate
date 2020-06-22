@@ -67,6 +67,10 @@ public abstract class R2dbcMigrate {
         }
     }
 
+    private static <T> Flux<T> withAutoCommit(Connection connection, Publisher<T> action) {
+        return Mono.from(connection.setAutoCommit(true)).thenMany(action);
+    }
+
     private static Mono<Void> transactionalWrap(Connection connection, boolean transactional, Publisher<? extends io.r2dbc.spi.Result> migrationThings, String info) {
         Mono<Integer> integerFlux = Flux.from(migrationThings)
                 .flatMap(Result::getRowsUpdated) // if we don't get rows updates we swallow potential errors from PostgreSQL
@@ -81,7 +85,7 @@ public abstract class R2dbcMigrate {
                     .thenMany(integerFlux) // 2 create internals
                     .then(Mono.from(connection.commitTransaction())); // 3
         } else {
-            return Mono.from(connection.setAutoCommit(true)).thenMany(integerFlux).then();
+            return withAutoCommit(connection, integerFlux).then();
         }
     }
 
@@ -92,7 +96,7 @@ public abstract class R2dbcMigrate {
                     .thenMany(integerFlux) // 2 create internals
                     .then(Mono.from(connection.commitTransaction())); // 3
         } else {
-            return Mono.from(connection.setAutoCommit(true)).thenMany(integerFlux).then();
+            return withAutoCommit(connection, integerFlux).then();
         }
     }
 
@@ -218,9 +222,11 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection) {
-        return Mono.from(connection.setAutoCommit(true)) // same as in transactionalWrap, in order not to leave non-committed transaction // TODO move to something like transactionalWrap()
-            .then(Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute())
-            .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0)))).switchIfEmpty(Mono.just(0)).cache());
+        return withAutoCommit(connection, connection.createStatement(sqlQueries.getMaxMigration()).execute())
+            .last()
+            .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0))))
+            .switchIfEmpty(Mono.just(0))
+            .cache();
     }
 
     static <ColumnType> BiFunction<Row, RowMetadata, ColumnType> getResultSafely(String resultColumn, Class<ColumnType> ct, ColumnType defaultValue) {
