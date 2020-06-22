@@ -38,7 +38,7 @@
 		<java.version>8</java.version>
 		<spring.boot.version>2.3.0.RELEASE</spring.boot.version>
 		<maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-		<testcontainers.version>1.13.0</testcontainers.version>
+		<testcontainers.version>1.14.3</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
