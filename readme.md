@@ -11,9 +11,9 @@ R2DBC [page](https://r2dbc.io/).
 * PostgreSQL
 * Microsoft SQL Server
 * MySQL
+* H2
 
 ## Features
-* PostgreSQL, Microsoft SQL Server, MySQL support
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
 * It waits until database have been started, there is test query, and validation result of. This can be useful to initial load data into database with docker-compose
 * Supports migrations files larger than `-Xmx`: file will be splitted line-by-line (`split` modifier), then it will be loaded by chunks into database
