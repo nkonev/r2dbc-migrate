@@ -55,8 +55,9 @@ public class R2dbcMigrateAutoConfiguration {
         }
 
         public void migrate() {
+            LOGGER.info("Starting R2DBC migration");
             R2dbcMigrate.migrate(connectionFactory, properties).block();
-            LOGGER.info("End of migration");
+            LOGGER.info("End of R2DBC migration");
         }
 
     }
