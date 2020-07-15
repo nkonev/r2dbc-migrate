@@ -104,6 +104,10 @@
       {
         "value": "mysql",
         "description": "MySQL dialect."
+      },
+      {
+        "value": "h2",
+        "description": "h2 dialect."
       }
     ]
   },

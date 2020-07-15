@@ -50,6 +50,8 @@ public abstract class R2dbcMigrate {
                     return new MSSqlQueries();
                 } else if (maybeDb.get().contains("mysql")) {
                     return new MySqlQueries();
+                } else if (maybeDb.get().contains("h2")) {
+                    return new H2Queries();
                 }
             }
             throw new RuntimeException("Dialect cannot be null");
@@ -61,6 +63,8 @@ public abstract class R2dbcMigrate {
                     return new MSSqlQueries();
                 case MYSQL:
                     return new MySqlQueries();
+                case H2:
+                    return new H2Queries();
                 default:
                     throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
             }
