@@ -1,4 +1,4 @@
-/*package name.nkonev.r2dbc.migrate.core;
+package name.nkonev.r2dbc.migrate.core;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -15,21 +15,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.time.Duration;
-
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
 import static name.nkonev.r2dbc.migrate.core.ListUtils.hasSubList;
 import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MssqlTestcontainersTest extends LogCaptureableTests {
@@ -64,7 +60,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         statementsLogger.setLevel(statementsPreviousLevel);
     }
 
-    private Mono<Connection> makeConnectionMono(int port) {
+    private ConnectionFactory makeConnectionMono(int port) {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(DRIVER, "mssql")
                 .option(HOST, "127.0.0.1")
@@ -73,8 +69,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
                 .option(PASSWORD, password)
                 .option(DATABASE, "master")
                 .build());
-        Publisher<? extends Connection> connectionPublisher = connectionFactory.create();
-        return Mono.from(connectionPublisher);
+        return connectionFactory;
     }
 
     @Override
@@ -107,18 +102,21 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
 
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
-        Flux<Client> clientFlux = makeConnectionMono(mappedPort)
-                .flatMapMany(connection -> Flux.from(connection.createStatement("select * from sales_department.rich_clients.client").execute()).doFinally(signalType -> connection.close()))
+        Flux<Client> clientFlux = Flux.usingWhen(
+            makeConnectionMono(mappedPort).create(),
+            connection -> Flux.from(connection.createStatement("select * from sales_department.rich_clients.client").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
                     return new Client(
-                            row.get("first_name", String.class),
-                            row.get("second_name", String.class),
-                            row.get("account", String.class),
-                            row.get("estimated_money", Integer.class)
+                        row.get("first_name", String.class),
+                        row.get("second_name", String.class),
+                        row.get("account", String.class),
+                        row.get("estimated_money", Integer.class)
                     );
-                }));
+                })),
+            Connection::close);
+
         Client client = clientFlux.blockLast();
 
         Assertions.assertEquals("John", client.firstName);
@@ -137,18 +135,21 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
-        Flux<Client> clientFlux = makeConnectionMono(mappedPort)
-            .flatMapMany(connection -> Flux.from(connection.createStatement("select * from sales_department.rich_clients.client").execute()).doFinally(signalType -> connection.close()))
-            .flatMap(o -> o.map((row, rowMetadata) -> {
-                return new Client(
-                    row.get("first_name", String.class),
-                    row.get("second_name", String.class),
-                    row.get("account", String.class),
-                    row.get("estimated_money", Integer.class)
-                );
-            }));
+        Flux<Client> clientFlux = Flux.usingWhen(
+            makeConnectionMono(mappedPort).create(),
+            connection -> Flux.from(connection.createStatement("select * from sales_department.rich_clients.client").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new Client(
+                        row.get("first_name", String.class),
+                        row.get("second_name", String.class),
+                        row.get("account", String.class),
+                        row.get("estimated_money", Integer.class)
+                    );
+                })),
+            Connection::close);
+
         Client client = clientFlux.blockLast();
 
         Assertions.assertEquals("John", client.firstName);
@@ -167,12 +168,12 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
         // here we simulate new launch
         properties.setResourcesPath("classpath:/migrations/mssql_append/*.sql");
         // and we assert that we able to add yet another database (nontransactional should work)
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
     }
 
     @Test
@@ -189,7 +190,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
             () -> {
-                R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
             },
             "Expected exception to throw, but it didn't"
         );
@@ -206,7 +207,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
             )));
 
         Mono<Boolean> r = Mono.usingWhen(
-            makeConnectionMono(mappedPort),
+            makeConnectionMono(mappedPort).create(),
             connection -> Mono.just(connection.createStatement("select locked from migrations_lock where id = 1"))
                             .flatMap(statement -> Mono.from(statement.execute()))
                             .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
@@ -216,4 +217,4 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         Assertions.assertFalse(block);
     }
 
-}*/
+}
