@@ -208,8 +208,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
 
         Mono<Boolean> r = Mono.usingWhen(
             makeConnectionMono(mappedPort).create(),
-            connection -> Mono.just(connection.createStatement("select locked from migrations_lock where id = 1"))
-                            .flatMap(statement -> Mono.from(statement.execute()))
+            connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
                             .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
             Connection::close);
         Boolean block = r.block();

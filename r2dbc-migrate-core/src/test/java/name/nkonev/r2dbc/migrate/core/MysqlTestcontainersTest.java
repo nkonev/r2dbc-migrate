@@ -1,4 +1,4 @@
-/*package name.nkonev.r2dbc.migrate.core;
+package name.nkonev.r2dbc.migrate.core;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -11,6 +11,7 @@ import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import name.nkonev.r2dbc.migrate.core.MssqlTestcontainersTest.Client;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +65,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         statementsLogger.setLevel(statementsPreviousLevel);
     }
 
-    private Mono<Connection> makeConnectionMono(int port) {
+    private ConnectionFactory makeConnectionMono(int port) {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(DRIVER, "mysql")
                 .option(HOST, "127.0.0.1")
@@ -73,8 +74,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
                 .option(PASSWORD, password)
                 .option(DATABASE, "r2dbc")
                 .build());
-        Publisher<? extends Connection> connectionPublisher = connectionFactory.create();
-        return Mono.from(connectionPublisher);
+        return connectionFactory;
     }
 
     @Override
@@ -106,17 +106,20 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MYSQL);
         properties.setResourcesPath("classpath:/migrations/mysql/*.sql");
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
-        Flux<Customer> clientFlux = makeConnectionMono(mappedPort)
-                .flatMapMany(connection -> Flux.from(connection.createStatement("select * from customer order by id").execute()).doFinally(signalType -> connection.close()))
+        Flux<Customer> clientFlux = Flux.usingWhen(
+            makeConnectionMono(mappedPort).create(),
+            connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
-                    return new Customer(
-                            row.get("id", Long.class),
-                            row.get("first_name", String.class),
-                            row.get("last_name", String.class)
-                    );
-                }));
+                  return new Customer(
+                      row.get("id", Long.class),
+                      row.get("first_name", String.class),
+                      row.get("last_name", String.class)
+                  );
+                })),
+            Connection::close);
+
         Customer client = clientFlux.blockLast();
 
         Assertions.assertEquals("Customer", client.firstName);
@@ -138,7 +141,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
             () -> {
-                R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
             },
             "Expected exception to throw, but it didn't"
         );
@@ -146,7 +149,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
 
         // get log
         List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
-        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(
+        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()!=null && iLoggingEvent.getArgumentArray().length > 0 ? iLoggingEvent.getArgumentArray()[0] : "_dummy").collect(
             Collectors.toList());
         // make asserts
         assertTrue(
@@ -155,9 +158,8 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
             )));
 
         Mono<Byte> r = Mono.usingWhen(
-            makeConnectionMono(mappedPort),
-            connection -> Mono.just(connection.createStatement("select locked from migrations_lock where id = 1"))
-                .flatMap(statement -> Mono.from(statement.execute()))
+            makeConnectionMono(mappedPort).create(),
+            connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
                 .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Byte.class, null)))),
             Connection::close);
         Byte block = r.block();
@@ -166,4 +168,3 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
     }
 
 }
-*/
