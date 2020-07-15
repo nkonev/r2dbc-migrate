@@ -1,4 +1,4 @@
-/*package name.nkonev.r2dbc.migrate.core;
+package name.nkonev.r2dbc.migrate.core;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -62,7 +62,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         statementsLogger.setLevel(statementsPreviousLevel);
     }
 
-    private Mono<Connection> makeConnectionMono(int port) {
+    private ConnectionFactory makeConnectionMono(int port) {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(DRIVER, "postgresql")
                 .option(HOST, "127.0.0.1")
@@ -71,8 +71,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                 .option(PASSWORD, "r2dbcPazZw0rd")
                 .option(DATABASE, "r2dbc")
                 .build());
-        Publisher<? extends Connection> connectionPublisher = connectionFactory.create();
-        return Mono.from(connectionPublisher);
+        return connectionFactory;
     }
 
     @Test
@@ -85,7 +84,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
         // get log
         List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
@@ -138,7 +137,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
             () -> {
-                R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
             },
             "Expected exception to throw, but it didn't"
         );
@@ -159,9 +158,8 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
             )));
 
         Mono<Boolean> r = Mono.usingWhen(
-            makeConnectionMono(mappedPort),
-            connection -> Mono.just(connection.createStatement("select locked from migrations_lock where id = 1"))
-                .flatMap(statement -> Mono.from(statement.execute()))
+            makeConnectionMono(mappedPort).create(),
+            connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
                 .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
             Connection::close);
         Boolean block = r.block();
@@ -179,7 +177,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
     }
 
     @Test
@@ -187,7 +185,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
     }
 
     @Test
@@ -203,7 +201,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                     properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
 
                     Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-                    R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
                 },
                 "Expected exception to throw, but it didn't"
         );
@@ -237,7 +235,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPath("file:./target/test-classes/oom_migrations/*.sql");
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(() -> makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
     }
 
 
@@ -251,4 +249,3 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         return statementsLogger;
     }
 }
-*/
