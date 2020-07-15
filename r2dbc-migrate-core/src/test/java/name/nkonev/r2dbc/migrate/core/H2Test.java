@@ -51,14 +51,13 @@ public class H2Test extends LogCaptureableTests {
         statementsLogger.setLevel(statementsPreviousLevel);
     }
 
-    private Mono<Connection> makeConnectionMono() {
+    private ConnectionFactory makeConnectionMono() {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
                 .option(DRIVER, "h2")
                 .option(PROTOCOL, "mem")
                 .option(DATABASE, "r2dbc:h2:mem:///testdb;DB_CLOSE_DELAY=-1")
                 .build());
-        Publisher<? extends Connection> connectionPublisher = connectionFactory.create();
-        return Mono.from(connectionPublisher);
+        return connectionFactory;
     }
 
     @Override
@@ -89,9 +88,9 @@ public class H2Test extends LogCaptureableTests {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.H2);
         properties.setResourcesPath("classpath:/migrations/h2/*.sql");
-        R2dbcMigrate.migrate(() -> makeConnectionMono(), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(), properties).block();
 
-        Flux<Customer> clientFlux = makeConnectionMono()
+        Flux<Customer> clientFlux = Mono.from(makeConnectionMono().create())
                 .flatMapMany(connection -> Flux.from(connection.createStatement("select * from customer order by id").execute()).doFinally(signalType -> connection.close()))
                 .flatMap(o -> o.map((row, rowMetadata) -> {
                     return new Customer(
