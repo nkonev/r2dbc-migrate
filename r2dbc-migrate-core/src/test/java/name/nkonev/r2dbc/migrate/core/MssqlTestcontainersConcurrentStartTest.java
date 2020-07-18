@@ -177,6 +177,8 @@ public class MssqlTestcontainersConcurrentStartTest {
         } catch (Throwable t) {
             if (t.getMessage().contains("Move the file to a local NTFS volume")) {
                 LOGGER.warn("Skipping Microsoft SQL Server Error message={}", t.getMessage());
+            } else {
+                throw t;
             }
         } finally {
             if (container!=null) {
