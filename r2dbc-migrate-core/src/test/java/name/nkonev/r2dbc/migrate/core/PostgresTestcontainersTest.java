@@ -8,6 +8,7 @@ import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import java.util.Collections;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -81,7 +82,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
-        properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
@@ -130,7 +131,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
-        properties.setResourcesPath("classpath:/migrations/postgresql_error/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql_error/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
 
@@ -174,7 +175,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setValidationQueryExpectedResultValue("super value");
         properties.setConnectionMaxRetries(1);
         properties.setDialect(Dialect.POSTGRESQL);
-        properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
@@ -183,7 +184,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
     @Test
     public void testDefaults() {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-        properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
     }
@@ -198,7 +199,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                     properties.setValidationQueryExpectedResultValue("super value");
                     properties.setConnectionMaxRetries(1);
                     properties.setDialect(Dialect.POSTGRESQL);
-                    properties.setResourcesPath("classpath:/migrations/postgresql/*.sql");
+                    properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
                     Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
                     R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
@@ -232,7 +233,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.POSTGRESQL);
-        properties.setResourcesPath("file:./target/test-classes/oom_migrations/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("file:./target/test-classes/oom_migrations/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();

@@ -3,10 +3,12 @@ package name.nkonev.r2dbc.migrate.core;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 
 public class R2dbcMigrateProperties {
     private long connectionMaxRetries = 500;
-    private String resourcesPath;
+    private List<String> resourcesPaths;
     private int chunkSize = 1000;
     private Dialect dialect;
     private String validationQuery = "select '42' as result";
@@ -21,12 +23,17 @@ public class R2dbcMigrateProperties {
     public R2dbcMigrateProperties() {
     }
 
-    public String getResourcesPath() {
-        return resourcesPath;
+    public List<String> getResourcesPaths() {
+        return resourcesPaths;
     }
 
+    public void setResourcesPaths(List<String> resourcesPaths) {
+        this.resourcesPaths = resourcesPaths;
+    }
+
+    @Deprecated
     public void setResourcesPath(String resourcesPath) {
-        this.resourcesPath = resourcesPath;
+        this.resourcesPaths = Collections.singletonList(resourcesPath);
     }
 
     public long getConnectionMaxRetries() {
@@ -122,7 +129,7 @@ public class R2dbcMigrateProperties {
     public String toString() {
         return "R2dbcMigrateProperties{" +
             "connectionMaxRetries=" + connectionMaxRetries +
-            ", resourcesPath='" + resourcesPath + '\'' +
+            ", resourcesPaths=" + resourcesPaths +
             ", chunkSize=" + chunkSize +
             ", dialect=" + dialect +
             ", validationQuery='" + validationQuery + '\'' +

@@ -9,6 +9,7 @@ import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
@@ -100,7 +101,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
 
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
@@ -131,7 +132,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
         properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
@@ -164,14 +165,14 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
         properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
         // here we simulate new launch
-        properties.setResourcesPath("classpath:/migrations/mssql_append/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql_append/*.sql"));
         // and we assert that we able to add yet another database (nontransactional should work)
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
     }
@@ -183,7 +184,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPath("classpath:/migrations/mssql_error/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql_error/*.sql"));
 
         Integer mappedPort = container.getMappedPort(MSSQL_PORT);
 

@@ -6,9 +6,9 @@
   }
 ],"properties": [
   {
-    "name": "r2dbc.migrate.resources-path",
-    "type": "java.lang.String",
-    "description": "Path to migrations. Internally uses \"PathMatchingResourcePatternResolver\" so it should starts from \"file:\" or \"classpath:\" prefix",
+    "name": "r2dbc.migrate.resources-paths",
+    "type": "java.util.List<java.lang.String>",
+    "description": "Paths to migrations. Internally uses \"PathMatchingResourcePatternResolver\" so it should starts from \"file:\" or \"classpath:\" prefix",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   },
   {
@@ -80,7 +80,7 @@
 
 ],"hints": [
   {
-    "name": "r2dbc.migrate.resources-path",
+    "name": "r2dbc.migrate.resources-paths",
     "values": [
       {
         "value": "classpath:/db/migration/*.sql",

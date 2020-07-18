@@ -9,6 +9,7 @@ import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import name.nkonev.r2dbc.migrate.core.MssqlTestcontainersTest.Client;
@@ -105,7 +106,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MYSQL);
-        properties.setResourcesPath("classpath:/migrations/mysql/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
@@ -134,7 +135,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MYSQL);
-        properties.setResourcesPath("classpath:/migrations/mysql_error/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql_error/*.sql"));
 
         Integer mappedPort = container.getMappedPort(MYSQL_PORT);
 

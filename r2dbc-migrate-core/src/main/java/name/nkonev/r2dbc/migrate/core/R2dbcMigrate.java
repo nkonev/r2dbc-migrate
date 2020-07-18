@@ -1,7 +1,9 @@
 package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.*;
+import java.util.ArrayList;
 import java.util.logging.Level;
+import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,23 +198,32 @@ public abstract class R2dbcMigrate {
         return transactionalWrapUnchecked(connection, true, waitForLock);
     }
 
+    private static List<Tuple2<Resource, FilenameParser.MigrationInfo>> getResourcesFromPath(String resourcesPath) {
+        List<Tuple2<Resource, FilenameParser.MigrationInfo>> collect = getResources(resourcesPath).stream()
+            .filter(Objects::nonNull)
+            .filter(Resource::isReadable)
+            .map(resource -> {
+                LOGGER.debug("Reading {}", resource);
+                FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
+                return Tuples.of(resource, migrationInfo);
+            })
+            .collect(Collectors.toList());
+        return collect;
+    }
+
     private static Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> getFileResources(R2dbcMigrateProperties properties) {
-        List<Tuple2<Resource, FilenameParser.MigrationInfo>> collect = getResources(properties.getResourcesPath()).stream()
-                .filter(Objects::nonNull)
-                .filter(Resource::isReadable)
-                .map(resource -> {
-                    LOGGER.debug("Reading {}", resource);
-                    FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-                    return Tuples.of(resource, migrationInfo);
-                }).sorted((o1, o2) -> {
-                    FilenameParser.MigrationInfo migrationInfo1 = o1.getT2();
-                    FilenameParser.MigrationInfo migrationInvo2 = o2.getT2();
-                    return Integer.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
-                }).peek(objects -> {
-                    LOGGER.info("From {} parsed metadata {}", objects.getT1(), objects.getT2());
-                })
-                .collect(Collectors.toList());
-        return Flux.fromIterable(collect);
+        List<Tuple2<Resource, FilenameParser.MigrationInfo>> allResources = new ArrayList<>();
+        for (String resource: properties.getResourcesPaths()) {
+            allResources.addAll(getResourcesFromPath(resource));
+        }
+        List<Tuple2<Resource, MigrationInfo>> sortedResources = allResources.stream().sorted((o1, o2) -> {
+            MigrationInfo migrationInfo1 = o1.getT2();
+            MigrationInfo migrationInvo2 = o2.getT2();
+            return Integer.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
+        }).peek(objects -> {
+            LOGGER.info("From {} parsed metadata {}", objects.getT1(), objects.getT2());
+        }).collect(Collectors.toList());
+        return Flux.fromIterable(sortedResources);
     }
 
     private static Mono<Void> releaseLock(Connection connection, SqlQueries sqlQueries) {

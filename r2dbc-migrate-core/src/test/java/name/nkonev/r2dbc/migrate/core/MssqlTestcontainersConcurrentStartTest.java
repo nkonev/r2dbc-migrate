@@ -16,6 +16,7 @@ import io.r2dbc.spi.Option;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -129,7 +130,7 @@ public class MssqlTestcontainersConcurrentStartTest {
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
             properties.setConnectionMaxRetries(1024);
             properties.setDialect(Dialect.MSSQL);
-            properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
+            properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
             properties.setValidationQuery("SELECT 'ololo' as result");
             properties.setValidationQueryExpectedResultValue("ololo");
             ConnectionFactory connectionFactory = makeConnectionMono(MSSQL_HARDCODED_PORT);

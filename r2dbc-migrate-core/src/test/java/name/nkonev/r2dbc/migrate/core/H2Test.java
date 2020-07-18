@@ -22,6 +22,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
@@ -87,7 +88,7 @@ public class H2Test extends LogCaptureableTests {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.H2);
-        properties.setResourcesPath("classpath:/migrations/h2/*.sql");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/h2/*.sql"));
         R2dbcMigrate.migrate(makeConnectionMono(), properties).block();
 
         Flux<Customer> clientFlux = Mono.from(makeConnectionMono().create())
