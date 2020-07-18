@@ -135,10 +135,8 @@ public abstract class R2dbcMigrate {
                                 properties.getValidationQueryExpectedResultValue(), s);
                             return properties.getValidationQueryExpectedResultValue().equals(s);
                         })
-                        .last()
                         .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
-                        //.timeout(properties.getValidationQueryTimeout())
-
+                        .last()
                 ),
             connection -> {
                 LOGGER.info("Closing test connection");
