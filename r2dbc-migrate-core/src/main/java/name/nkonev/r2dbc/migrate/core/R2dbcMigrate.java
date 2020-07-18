@@ -119,7 +119,7 @@ public abstract class R2dbcMigrate {
         }
 
         Mono<String> testResult = Mono.usingWhen(Mono.defer(() -> {
-                LOGGER.info("Creating new test connection");
+                LOGGER.info("Creating new test connection Publisher");
                 return Mono.from(connectionFactory.create());
             }),
             connection -> Flux
