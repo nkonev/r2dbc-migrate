@@ -70,7 +70,14 @@
     "type": "long",
     "description": "Count of retries to acquire lock from \"migrations_lock\" table",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.wait-for-database",
+    "type": "boolean",
+    "description": "Should we wait for database has been started ? See alse r2dbc.migrate.validation-query",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   }
+
 ],"hints": [
   {
     "name": "r2dbc.migrate.resources-path",

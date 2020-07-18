@@ -16,6 +16,7 @@ public class R2dbcMigrateProperties {
     private Duration acquireLockRetryDelay = Duration.ofSeconds(1);
     private long acquireLockMaxRetries = 100;
     private Charset fileCharset = StandardCharsets.UTF_8;
+    private boolean waitForDatabase = true;
 
     public R2dbcMigrateProperties() {
     }
@@ -109,6 +110,14 @@ public class R2dbcMigrateProperties {
         this.validationQueryExpectedResultValue = validationQueryExpectedResultValue;
     }
 
+    public boolean isWaitForDatabase() {
+        return waitForDatabase;
+    }
+
+    public void setWaitForDatabase(boolean waitForDatabase) {
+        this.waitForDatabase = waitForDatabase;
+    }
+
     @Override
     public String toString() {
         return "R2dbcMigrateProperties{" +
@@ -123,6 +132,7 @@ public class R2dbcMigrateProperties {
             ", acquireLockRetryDelay=" + acquireLockRetryDelay +
             ", acquireLockMaxRetries=" + acquireLockMaxRetries +
             ", fileCharset=" + fileCharset +
+            ", waitForDatabase=" + waitForDatabase +
             '}';
     }
 }

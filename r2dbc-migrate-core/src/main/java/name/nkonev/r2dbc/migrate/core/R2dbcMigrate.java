@@ -113,11 +113,12 @@ public abstract class R2dbcMigrate {
         return result;
     }
 
-    // entrypoint
-    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties) {
-        LOGGER.info("Configured with {}", properties);
+    private static Mono<Void> waitForDatabase(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties) {
+        if (!properties.isWaitForDatabase()) {
+            return Mono.empty();
+        }
 
-        Mono<String> stringMono = Mono.usingWhen(Mono.defer(()->{
+        Mono<String> testResult = Mono.usingWhen(Mono.defer(() -> {
                 LOGGER.info("Creating new test connection");
                 return Mono.from(connectionFactory.create());
             }),
@@ -125,30 +126,48 @@ public abstract class R2dbcMigrate {
                 .from(connection.validate(ValidationDepth.REMOTE))
                 .filter(Boolean.TRUE::equals)
                 .switchIfEmpty(Mono.error(new RuntimeException("Connection is not valid")))
-                .then(Flux.from(connection.createStatement(properties.getValidationQuery()).execute())
-                    .flatMap(o -> o.map(
-                        getResultSafely("result", String.class, "__VALIDATION_RESULT_NOT_PROVIDED")))
-                    .filter(s -> {
-                        LOGGER.info("Comparing expected value '{}' with provided result '{}'",
-                            properties.getValidationQueryExpectedResultValue(), s);
-                        return properties.getValidationQueryExpectedResultValue().equals(s);
-                    })
-                    .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
-                    .last()),
-            Connection::close).log("R2dbcMigrateCreatingTestConnection", Level.FINE);
+                .then(
+                    Flux.from(connection.createStatement(properties.getValidationQuery()).execute())
+                        .flatMap(o -> o.map(getResultSafely("result", String.class,
+                                "__VALIDATION_RESULT_NOT_PROVIDED")))
+                        .filter(s -> {
+                            LOGGER.info("Comparing expected value '{}' with provided result '{}'",
+                                properties.getValidationQueryExpectedResultValue(), s);
+                            return properties.getValidationQueryExpectedResultValue().equals(s);
+                        })
+                        .last()
+                        .switchIfEmpty(Mono.error(new RuntimeException("Not matched result of test query")))
+                        //.timeout(properties.getValidationQueryTimeout())
 
-        Mono<Void> migrationWork = stringMono.timeout(properties.getValidationQueryTimeout())
-            .retryWhen(Retry.fixedDelay(properties.getConnectionMaxRetries(), properties.getValidationRetryDelay()).doBeforeRetry(retrySignal -> {
-                LOGGER.warn("Retrying to get database connection due {}: {}", retrySignal.failure().getClass(), retrySignal.failure().getMessage());
+                ),
+            connection -> {
+                LOGGER.info("Closing test connection");
+                return connection.close();
+            }).log("R2dbcMigrateCreatingTestConnection", Level.FINE);
+
+        return testResult
+            .timeout(properties.getValidationQueryTimeout())
+            .retryWhen(Retry.fixedDelay(properties.getConnectionMaxRetries(),
+            properties.getValidationRetryDelay()).doBeforeRetry(retrySignal -> {
+                LOGGER.warn("Retrying to get database connection due {}: {}",
+                    retrySignal.failure().getClass(),
+                    retrySignal.failure().getMessage());
             }))
             .doOnSuccess(o -> LOGGER.info("Successfully got result '{}' of test query", o))
+            .then();
+    }
+
+    // entrypoint
+    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties) {
+        LOGGER.info("Configured with {}", properties);
+        Mono<Void> voidMono = waitForDatabase(connectionFactory, properties)
             // here we opens new connection and make all migration stuff
             .then(Mono.usingWhen(
                 connectionFactory.create(),
                 connection -> doWork(connection, properties),
                 Connection::close
             ));
-        return migrationWork;
+        return voidMono;
     }
 
     private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries) {
