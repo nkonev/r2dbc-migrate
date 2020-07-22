@@ -47,7 +47,7 @@ public abstract class R2dbcMigrate {
                 .map(s -> s.toLowerCase());
             if (maybeDb.isPresent()) {
                 if (maybeDb.get().contains("postgres")) {
-                    return new PostgreSqlQueries();
+                    return new PostgreSqlQueries(properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 } else if (maybeDb.get().contains("microsoft")) {
                     return new MSSqlQueries();
                 } else if (maybeDb.get().contains("mysql")) {
@@ -60,7 +60,7 @@ public abstract class R2dbcMigrate {
         } else {
             switch (properties.getDialect()) {
                 case POSTGRESQL:
-                    return new PostgreSqlQueries();
+                    return new PostgreSqlQueries(properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 case MSSQL:
                     return new MSSqlQueries();
                 case MYSQL:

@@ -8,22 +8,38 @@ import java.util.List;
 
 public class PostgreSqlQueries implements SqlQueries {
 
+    private final String migrationsTable;
+    private final String migrationsLockTable;
+
+    public PostgreSqlQueries(String migrationsTable, String migrationsLockTable) {
+        this.migrationsTable = migrationsTable;
+        this.migrationsLockTable = migrationsLockTable;
+    }
+
+    private String withMigrationsTable(String template) {
+        return String.format(template, migrationsTable);
+    }
+
+    private String withMigrationsLockTable(String template) {
+        return String.format(template, migrationsLockTable);
+    }
+
     @Override
     public List<String> createInternalTables() {
         return Arrays.asList(
-                "create table if not exists migrations (id int primary key, description text)",
-                "create table if not exists migrations_lock (id int primary key, locked boolean not null)",
-                "insert into migrations_lock(id, locked) values (1, false) on conflict (id) do nothing"
+                withMigrationsTable("create table if not exists %s(id int primary key, description text)"),
+                withMigrationsLockTable("create table if not exists %s(id int primary key, locked boolean not null)"),
+                withMigrationsLockTable("insert into %s(id, locked) values (1, false) on conflict (id) do nothing")
         );
     }
 
     @Override
     public String getMaxMigration() {
-        return "select max(id) from migrations";
+        return withMigrationsTable("select max(id) from %s");
     }
 
     public String insertMigration() {
-        return "insert into migrations(id, description) values ($1, $2)";
+        return withMigrationsTable("insert into %s(id, description) values ($1, $2)");
     }
 
     @Override
@@ -36,11 +52,11 @@ public class PostgreSqlQueries implements SqlQueries {
 
     @Override
     public String tryAcquireLock() {
-        return "update migrations_lock set locked = true where id = 1 and locked = false";
+        return withMigrationsLockTable("update %s set locked = true where id = 1 and locked = false");
     }
 
     @Override
     public String releaseLock() {
-        return "update migrations_lock set locked = false where id = 1";
+        return withMigrationsLockTable("update %s set locked = false where id = 1");
     }
 }

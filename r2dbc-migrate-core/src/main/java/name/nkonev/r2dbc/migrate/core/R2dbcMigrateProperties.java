@@ -19,6 +19,8 @@ public class R2dbcMigrateProperties {
     private long acquireLockMaxRetries = 100;
     private Charset fileCharset = StandardCharsets.UTF_8;
     private boolean waitForDatabase = true;
+    private String migrationsTable = "migrations";
+    private String migrationsLockTable = "migrations_lock";
 
     public R2dbcMigrateProperties() {
     }
@@ -125,6 +127,22 @@ public class R2dbcMigrateProperties {
         this.waitForDatabase = waitForDatabase;
     }
 
+    public String getMigrationsTable() {
+        return migrationsTable;
+    }
+
+    public void setMigrationsTable(String migrationsTable) {
+        this.migrationsTable = migrationsTable;
+    }
+
+    public String getMigrationsLockTable() {
+        return migrationsLockTable;
+    }
+
+    public void setMigrationsLockTable(String migrationsLockTable) {
+        this.migrationsLockTable = migrationsLockTable;
+    }
+
     @Override
     public String toString() {
         return "R2dbcMigrateProperties{" +
@@ -140,6 +158,8 @@ public class R2dbcMigrateProperties {
             ", acquireLockMaxRetries=" + acquireLockMaxRetries +
             ", fileCharset=" + fileCharset +
             ", waitForDatabase=" + waitForDatabase +
+            ", migrationsTable='" + migrationsTable + '\'' +
+            ", migrationsLockTable='" + migrationsLockTable + '\'' +
             '}';
     }
 }

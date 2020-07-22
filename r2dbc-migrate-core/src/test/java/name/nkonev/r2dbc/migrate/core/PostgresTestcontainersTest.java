@@ -9,6 +9,7 @@ import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.util.Collections;
+import name.nkonev.r2dbc.migrate.core.MssqlTestcontainersConcurrentStartTest.Client;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
@@ -237,6 +239,55 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
+    }
+
+    static class Customer {
+        String firstName, secondName;
+        int id;
+
+        public Customer(String firstName, String secondName, int id) {
+            this.firstName = firstName;
+            this.secondName = secondName;
+            this.id = id;
+        }
+    }
+
+    @Test
+    public void testOtherMigrationSchema() {
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setMigrationsTable("\"my scheme\".\"my migrations\"");
+        properties.setMigrationsLockTable("\"my scheme\".\"my migrations lock\"");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
+
+        Mono<Integer> integerMono = Mono.usingWhen(
+            connectionFactory.create(),
+            connection -> Mono
+                .from(connection.createStatement("create schema \"my scheme\"").execute())
+                .flatMap(o -> Mono.from(o.getRowsUpdated())),
+            Connection::close
+        );
+        integerMono.block();
+
+        R2dbcMigrate.migrate(connectionFactory, properties).block();
+
+        Flux<Customer> clientFlux = Flux.usingWhen(
+            connectionFactory.create(),
+            connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new Customer(
+                        row.get("first_name", String.class),
+                        row.get("last_name", String.class),
+                        row.get("id", Integer.class)
+                    );
+                })),
+            Connection::close
+        );
+        Customer client = clientFlux.blockLast();
+
+        Assertions.assertEquals("Customer", client.firstName);
+        Assertions.assertEquals("Surname 4", client.secondName);
     }
 
 
