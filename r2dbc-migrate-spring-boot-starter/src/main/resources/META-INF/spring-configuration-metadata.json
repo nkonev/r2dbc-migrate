@@ -76,6 +76,18 @@
     "type": "boolean",
     "description": "Should we wait for database has been started ? See alse r2dbc.migrate.validation-query",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.migrations-table",
+    "type": "java.lang.String",
+    "description": "Changes migration table name. It writes \"as is\" with String.format(), so you are responsible to wrap it with quotes, backtricks, ... if there are any whitespaces.",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.migrations-lock-table",
+    "type": "java.lang.String",
+    "description": "Changes migration lock table name. It writes \"as is\" with String.format(), so you are responsible to wrap it with quotes, backtricks, ... if there are any whitespaces.",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   }
 
 ],"hints": [
