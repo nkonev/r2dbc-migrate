@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.core.MssqlTestcontainersTest.Client;
 import name.nkonev.r2dbc.migrate.core.PostgresTestcontainersTest.Customer;
 import org.junit.jupiter.api.AfterEach;
@@ -199,5 +200,33 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         Assertions.assertEquals("Customer", client.firstName);
         Assertions.assertEquals("Surname 4", client.lastName);
         Assertions.assertEquals(6, client.id);
+
+
+        Flux<MigrationInfo> miFlux = Flux.usingWhen(
+            connectionFactory.create(),
+            connection -> Flux.from(connection.createStatement("select * from `my scheme`.`my migrations` order by id").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new MigrationInfo(
+                        row.get("id", Integer.class),
+                        row.get("description", String.class),
+                        false,
+                        false
+                    );
+                })),
+            Connection::close
+        );
+        List<MigrationInfo> migrationInfos = miFlux.collectList().block();
+        Assertions.assertFalse(migrationInfos.isEmpty());
+        Assertions.assertEquals("create customers", migrationInfos.get(0).getDescription());
+
+        Mono<Byte> r = Mono.usingWhen(
+            makeConnectionMono(mappedPort).create(),
+            connection -> Mono.from(connection.createStatement("select locked from `my scheme`.`my migrations lock` where id = 1").execute())
+                .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Byte.class, null)))),
+            Connection::close);
+        Byte block = r.block();
+        Assertions.assertNotNull(block);
+        Assertions.assertEquals((byte)0, block);
+
     }
 }
