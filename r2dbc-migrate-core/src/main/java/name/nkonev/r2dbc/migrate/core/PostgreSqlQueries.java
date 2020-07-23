@@ -23,10 +23,6 @@ public class PostgreSqlQueries implements SqlQueries {
         return !StringUtils.isEmpty(migrationsSchema);
     }
 
-    private String quoteAsString(String input) {
-        return "'" + input + "'";
-    }
-
     private String quoteAsObject(String input) {
         return "\"" + input + "\"";
     }

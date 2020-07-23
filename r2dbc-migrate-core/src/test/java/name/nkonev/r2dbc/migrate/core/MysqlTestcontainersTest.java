@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import name.nkonev.r2dbc.migrate.core.MssqlTestcontainersTest.Client;
+import name.nkonev.r2dbc.migrate.core.PostgresTestcontainersTest.Customer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -168,4 +169,35 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         Assertions.assertEquals((byte)0, block);
     }
 
+
+    @Test
+    public void testOtherMigrationSchema() {
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setMigrationsSchema("my scheme");
+        properties.setMigrationsTable("my migrations");
+        properties.setMigrationsLockTable("my migrations lock");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
+        Integer mappedPort = container.getMappedPort(MYSQL_PORT);
+        ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
+
+        R2dbcMigrate.migrate(connectionFactory, properties).block();
+
+        Flux<Customer> clientFlux = Flux.usingWhen(
+            connectionFactory.create(),
+            connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new Customer(
+                        row.get("id", Long.class),
+                        row.get("first_name", String.class),
+                        row.get("last_name", String.class)
+                    );
+                })),
+            Connection::close
+        );
+        Customer client = clientFlux.blockLast();
+
+        Assertions.assertEquals("Customer", client.firstName);
+        Assertions.assertEquals("Surname 4", client.lastName);
+        Assertions.assertEquals(6, client.id);
+    }
 }

@@ -5,25 +5,60 @@ import io.r2dbc.spi.Statement;
 
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.util.StringUtils;
 
 public class MySqlQueries implements SqlQueries {
+
+    private final String migrationsSchema;
+    private final String migrationsTable;
+    private final String migrationsLockTable;
+
+    public MySqlQueries(String migrationsSchema, String migrationsTable, String migrationsLockTable) {
+        this.migrationsSchema = migrationsSchema;
+        this.migrationsTable = migrationsTable;
+        this.migrationsLockTable = migrationsLockTable;
+    }
+
+    private boolean schemaIsDefined() {
+        return !StringUtils.isEmpty(migrationsSchema);
+    }
+
+    private String quoteAsObject(String input) {
+        return "`" + input + "`";
+    }
+
+    private String withMigrationsTable(String template) {
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsTable));
+        }
+    }
+
+    private String withMigrationsLockTable(String template) {
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsLockTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsLockTable));
+        }
+    }
 
     @Override
     public List<String> createInternalTables() {
         return Arrays.asList(
-                "create table if not exists migrations (id int primary key, description text)",
-                "create table if not exists migrations_lock (id int primary key, locked boolean not null)",
-                "insert ignore into migrations_lock(id, locked) values (1, false)"
+            withMigrationsTable("create table if not exists %s(id int primary key, description text)"),
+            withMigrationsLockTable("create table if not exists %s(id int primary key, locked boolean not null)"),
+            withMigrationsLockTable("insert ignore into %s(id, locked) values (1, false)")
         );
     }
 
     @Override
     public String getMaxMigration() {
-        return "select max(id) as max from migrations";
+        return withMigrationsTable("select max(id) as max from %s");
     }
 
     public String insertMigration() {
-        return "insert into migrations(id, description) values (?id, ?descr)";
+        return withMigrationsTable("insert into %s(id, description) values (?id, ?descr)");
     }
 
     @Override
@@ -36,11 +71,11 @@ public class MySqlQueries implements SqlQueries {
 
     @Override
     public String tryAcquireLock() {
-        return "update migrations_lock set locked = true where id = 1 and locked = false";
+        return withMigrationsLockTable("update %s set locked = true where id = 1 and locked = false");
     }
 
     @Override
     public String releaseLock() {
-        return "update migrations_lock set locked = false where id = 1";
+        return withMigrationsLockTable("update %s set locked = false where id = 1");
     }
 }
