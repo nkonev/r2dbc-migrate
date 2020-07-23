@@ -160,6 +160,53 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
     }
 
     @Test
+    public void testCreateMsSqlDatabaseThenSchemaInItThenTableInItWithSchema() {
+        Integer mappedPort = container.getMappedPort(MSSQL_PORT);
+
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setDialect(Dialect.MSSQL);
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
+        properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
+        properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
+        properties.setMigrationsSchema("my scheme");
+        properties.setMigrationsTable("my migrations");
+        properties.setMigrationsLockTable("my migrations lock");
+
+        ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
+
+        Mono<Integer> integerMono = Mono.usingWhen(
+            connectionFactory.create(),
+            connection -> Mono
+                .from(connection.createStatement("create schema \"my scheme\"").execute())
+                .flatMap(o -> Mono.from(o.getRowsUpdated())),
+            Connection::close
+        );
+        integerMono.block();
+
+        R2dbcMigrate.migrate(connectionFactory, properties).block();
+
+        Flux<Client> clientFlux = Flux.usingWhen(
+            connectionFactory.create(),
+            connection -> Flux.from(connection.createStatement("select * from sales_department.rich_clients.client").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new Client(
+                        row.get("first_name", String.class),
+                        row.get("second_name", String.class),
+                        row.get("account", String.class),
+                        row.get("estimated_money", Integer.class)
+                    );
+                })),
+            Connection::close);
+
+        Client client = clientFlux.blockLast();
+
+        Assertions.assertEquals("John", client.firstName);
+        Assertions.assertEquals("Smith", client.secondName);
+        Assertions.assertEquals("4444", client.account);
+        Assertions.assertEquals(9999999, client.estimatedMoney);
+    }
+
+    @Test
     public void testAppendCreateMsSqlDatabase() {
         Integer mappedPort = container.getMappedPort(MSSQL_PORT);
 

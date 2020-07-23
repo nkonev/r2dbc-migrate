@@ -49,7 +49,7 @@ public abstract class R2dbcMigrate {
                 if (maybeDb.get().contains("postgres")) {
                     return new PostgreSqlQueries(properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 } else if (maybeDb.get().contains("microsoft")) {
-                    return new MSSqlQueries();
+                    return new MSSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 } else if (maybeDb.get().contains("mysql")) {
                     return new MySqlQueries();
                 } else if (maybeDb.get().contains("h2")) {
@@ -62,7 +62,7 @@ public abstract class R2dbcMigrate {
                 case POSTGRESQL:
                     return new PostgreSqlQueries(properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 case MSSQL:
-                    return new MSSqlQueries();
+                    return new MSSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 case MYSQL:
                     return new MySqlQueries();
                 case H2:
