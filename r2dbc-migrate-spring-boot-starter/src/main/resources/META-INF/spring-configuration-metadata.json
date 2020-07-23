@@ -80,19 +80,19 @@
   {
     "name": "r2dbc.migrate.migrations-table",
     "type": "java.lang.String",
-    "description": "Changes migration table name. It is writes with corresponds wrapping (quotes in case PostgreSQL, backtricks in case MySQL).",
+    "description": "Changes migration table name. It is writes with corresponds wrapping (quotes in case PostgreSQL, backticks in case MySQL).",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.migrations-lock-table",
     "type": "java.lang.String",
-    "description": "Changes migration lock table name. It is writes with corresponds wrapping (quotes in case PostgreSQL, backtricks in case MySQL).",
+    "description": "Changes migration lock table name. It is writes with corresponds wrapping (quotes in case PostgreSQL, backticks in case MySQL).",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.migrations-schema",
     "type": "java.lang.String",
-    "description": "Changes migration schema. It is writes with corresponds wrapping (quotes in case PostgreSQL, backtricks in case MySQL). Default is null - it means that database's default will be selected (\"public\" for PostgreSQL, \"dbo\" for MsSQL).",
+    "description": "Changes migration schema. It is writes with corresponds wrapping (quotes in case PostgreSQL, backticks in case MySQL). Default is null - it means that database's default will be selected (\"public\" for PostgreSQL, \"dbo\" for MsSQL).",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   }
 
