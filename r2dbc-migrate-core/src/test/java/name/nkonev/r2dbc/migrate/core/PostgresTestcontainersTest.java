@@ -96,32 +96,32 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         assertTrue(
             hasSubList(collect, Arrays.asList(
                         "BEGIN",
-                        "create table if not exists migrations (id int primary key, description text); create table if not exists migrations_lock (id int primary key, locked boolean not null); insert into migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
+                        "create table if not exists \"migrations\"(id int primary key, description text); create table if not exists \"migrations_lock\"(id int primary key, locked boolean not null); insert into \"migrations_lock\"(id, locked) values (1, false) on conflict (id) do nothing",
                         "COMMIT",
                         "BEGIN",
-                        "update migrations_lock set locked = true where id = 1 and locked = false",
+                        "update \"migrations_lock\" set locked = true where id = 1 and locked = false",
                         "COMMIT",
-                        "select max(id) from migrations",
+                        "select max(id) from \"migrations\"",
                         "BEGIN",
                         "CREATE TABLE customer (id SERIAL PRIMARY KEY, first_name VARCHAR(255), last_name VARCHAR(255))",
                         "COMMIT",
                         "BEGIN",
-                        "insert into migrations(id, description) values ($1, $2)",
+                        "insert into \"migrations\"(id, description) values ($1, $2)",
                         "COMMIT",
                         "BEGIN",
                         "insert into customer(first_name, last_name) values ('Muhammad', 'Ali'), ('Name', 'Фамилия');",
                         "COMMIT",
                         "BEGIN",
-                        "insert into migrations(id, description) values ($1, $2)",
+                        "insert into \"migrations\"(id, description) values ($1, $2)",
                         "COMMIT",
                         "BEGIN",
                         "insert into customer(first_name, last_name) values ('Customer', 'Surname 1');; insert into customer(first_name, last_name) values ('Customer', 'Surname 2');; insert into customer(first_name, last_name) values ('Customer', 'Surname 3');; insert into customer(first_name, last_name) values ('Customer', 'Surname 4');",
                         "COMMIT",
                         "BEGIN",
-                        "insert into migrations(id, description) values ($1, $2)",
+                        "insert into \"migrations\"(id, description) values ($1, $2)",
                         "COMMIT",
                         "BEGIN",
-                        "update migrations_lock set locked = false where id = 1",
+                        "update \"migrations_lock\" set locked = false where id = 1",
                         "COMMIT"
                 )));
     }
@@ -157,12 +157,12 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                     + "ololo\n"
                     + "('Muhammad', 'Ali'), ('Name', 'Фамилия');",
                 "COMMIT",
-                "update migrations_lock set locked = false where id = 1"
+                "update \"migrations_lock\" set locked = false where id = 1"
             )));
 
         Mono<Boolean> r = Mono.usingWhen(
             makeConnectionMono(mappedPort).create(),
-            connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
+            connection -> Mono.from(connection.createStatement("select locked from \"migrations_lock\" where id = 1").execute())
                 .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
             Connection::close);
         Boolean block = r.block();
@@ -255,8 +255,9 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
     @Test
     public void testOtherMigrationSchema() {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-        properties.setMigrationsTable("\"my scheme\".\"my migrations\"");
-        properties.setMigrationsLockTable("\"my scheme\".\"my migrations lock\"");
+        properties.setMigrationsSchema("my scheme");
+        properties.setMigrationsTable("my migrations");
+        properties.setMigrationsLockTable("my migrations lock");
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);

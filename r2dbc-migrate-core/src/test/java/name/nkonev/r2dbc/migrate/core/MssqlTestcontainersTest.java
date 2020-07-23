@@ -251,7 +251,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         // make asserts
         assertTrue(
             hasSubList(collect, Arrays.asList(
-                "update migrations_lock set locked = 'false' where id = 1"
+                "update \"migrations_lock\" set locked = 'false' where id = 1"
             )));
 
         Mono<Boolean> r = Mono.usingWhen(

@@ -5,23 +5,46 @@ import io.r2dbc.spi.Statement;
 
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.util.StringUtils;
 
 public class PostgreSqlQueries implements SqlQueries {
 
+    private final String migrationsSchema;
     private final String migrationsTable;
     private final String migrationsLockTable;
 
-    public PostgreSqlQueries(String migrationsTable, String migrationsLockTable) {
+    public PostgreSqlQueries(String migrationsSchema, String migrationsTable, String migrationsLockTable) {
+        this.migrationsSchema = migrationsSchema;
         this.migrationsTable = migrationsTable;
         this.migrationsLockTable = migrationsLockTable;
     }
 
+    private boolean schemaIsDefined() {
+        return !StringUtils.isEmpty(migrationsSchema);
+    }
+
+    private String quoteAsString(String input) {
+        return "'" + input + "'";
+    }
+
+    private String quoteAsObject(String input) {
+        return "\"" + input + "\"";
+    }
+
     private String withMigrationsTable(String template) {
-        return String.format(template, migrationsTable);
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsTable));
+        }
     }
 
     private String withMigrationsLockTable(String template) {
-        return String.format(template, migrationsLockTable);
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsLockTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsLockTable));
+        }
     }
 
     @Override
