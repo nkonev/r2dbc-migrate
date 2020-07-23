@@ -31,6 +31,22 @@ public class MSSqlQueries implements SqlQueries {
         return "\"" + input + "\"";
     }
 
+    private String withMigrationsTable(String template) {
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsTable));
+        }
+    }
+
+    private String withMigrationsLockTable(String template) {
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsLockTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsLockTable));
+        }
+    }
+
     @Override
     public List<String> createInternalTables() {
         if (schemaIsDefined()) {
@@ -59,19 +75,11 @@ public class MSSqlQueries implements SqlQueries {
 
     @Override
     public String getMaxMigration() {
-        if (schemaIsDefined()) {
-            return String.format("select max(id) as max from %s.%s", quoteAsObject(migrationsSchema), quoteAsObject(migrationsTable));
-        } else {
-            return String.format("select max(id) as max from %s", quoteAsObject(migrationsTable));
-        }
+        return withMigrationsTable("select max(id) from %s");
     }
 
     public String insertMigration() {
-        if (schemaIsDefined()) {
-            return String.format("insert into %s.%s(id, description) values (@id, @descr)", quoteAsObject(migrationsSchema), quoteAsObject(migrationsTable));
-        } else {
-            return String.format("insert into %s(id, description) values (@id, @descr)", quoteAsObject(migrationsTable));
-        }
+        return withMigrationsTable("insert into %s(id, description) values (@id, @descr)");
     }
 
     @Override
@@ -84,19 +92,11 @@ public class MSSqlQueries implements SqlQueries {
 
     @Override
     public String tryAcquireLock() {
-        if (schemaIsDefined()) {
-            return String.format("update %s.%s set locked = 'true' where id = 1 and locked = 'false'", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable));
-        } else {
-            return String.format("update %s set locked = 'true' where id = 1 and locked = 'false'", quoteAsObject(migrationsLockTable));
-        }
+        return withMigrationsLockTable("update %s set locked = 'true' where id = 1 and locked = 'false'");
     }
 
     @Override
     public String releaseLock() {
-        if (schemaIsDefined()) {
-            return String.format("update %s.%s set locked = 'false' where id = 1", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable));
-        } else {
-            return String.format("update %s set locked = 'false' where id = 1", quoteAsObject(migrationsLockTable));
-        }
+        return withMigrationsLockTable("update %s set locked = 'false' where id = 1");
     }
 }
