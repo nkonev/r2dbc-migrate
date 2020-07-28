@@ -144,7 +144,7 @@
         "description": "PostgreSQL connection check with result column."
       },
       {
-        "value": "SET LOCK_TIMEOUT 2000; SELECT collation_name as result FROM sys.databases WHERE name = N'master'",
+        "value": "SELECT collation_name as result FROM sys.databases WHERE name = N'master'",
         "description": "Checks that Microsoft SQL Server configuration completed and collation_name is set."
       }
     ],
@@ -183,6 +183,19 @@
     "providers": [
       {
         "name": "any"
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.wait-for-database",
+    "values": [
+      {
+        "value": "true",
+        "description": "Enable"
+      },
+      {
+        "value": "false",
+        "description": "Disable"
       }
     ]
   }
