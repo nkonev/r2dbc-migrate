@@ -8,21 +8,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.util.stream.BaseStream;
 
 public abstract class FileReader {
 
     public static Flux<String> readChunked(Resource resource, Charset fileCharset) {
-        try {
-            return Flux.using(() -> new BufferedReader(
-                            new InputStreamReader(resource.getInputStream(), fileCharset)
-                    ).lines(),
-                    Flux::fromStream,
-                    BaseStream::close
-            );
-        } catch (Exception e) {
-            return Flux.error(new RuntimeException("Error during get resources from '" + resource + "'", e));
-        }
+        return Flux.using(
+            () -> new BufferedReader(new InputStreamReader(resource.getInputStream(), fileCharset)),
+            bufferedReader -> Flux.fromStream(bufferedReader.lines()),
+            bufferedReader -> {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        );
     }
 
     public static String read(Resource resource, Charset fileCharset) {
