@@ -21,7 +21,7 @@ public abstract class FileReader {
                     BaseStream::close
             );
         } catch (Exception e) {
-            return Flux.error(new RuntimeException("Error during get resources from '" + resource + "'", e));
+            throw new RuntimeException("Error during get resources from '" + resource + "': ", e);
         }
     }
 
@@ -29,7 +29,7 @@ public abstract class FileReader {
         try (InputStream inputStream = resource.getInputStream()) {
             return StreamUtils.copyToString(inputStream, fileCharset);
         } catch (IOException e) {
-            throw new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e);
+            throw new RuntimeException("Error during reading file '" + resource.getFilename() + "': ", e);
         }
     }
 
