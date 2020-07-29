@@ -56,7 +56,7 @@ public abstract class R2dbcMigrate {
                     return new H2Queries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 }
             }
-            throw new RuntimeException("Dialect cannot be null");
+            throw new RuntimeException("Cannot recognize dialect. Try to set it explicitly.");
         } else {
             switch (properties.getDialect()) {
                 case POSTGRESQL:
@@ -121,7 +121,7 @@ public abstract class R2dbcMigrate {
         }
 
         Mono<String> testResult = Mono.usingWhen(Mono.defer(() -> {
-                LOGGER.info("Creating new test connection Publisher");
+                LOGGER.info("Creating new test connection");
                 return Mono.from(connectionFactory.create());
             }),
             connection -> Flux
@@ -221,7 +221,7 @@ public abstract class R2dbcMigrate {
             MigrationInfo migrationInvo2 = o2.getT2();
             return Integer.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
         }).peek(objects -> {
-            LOGGER.info("From {} parsed metadata {}", objects.getT1(), objects.getT2());
+            LOGGER.debug("From {} parsed metadata {}", objects.getT1(), objects.getT2());
         }).collect(Collectors.toList());
         return Flux.fromIterable(sortedResources);
     }
