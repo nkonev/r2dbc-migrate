@@ -6,6 +6,12 @@
   }
 ],"properties": [
   {
+    "name": "r2dbc.migrate.enable",
+    "type": "boolean",
+    "description": "Enable or disable migrations",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
     "name": "r2dbc.migrate.resources-paths",
     "type": "java.util.List<java.lang.String>",
     "description": "Paths to migrations. Internally uses \"PathMatchingResourcePatternResolver\" so it should starts from \"file:\" or \"classpath:\" prefix",
@@ -97,6 +103,19 @@
   }
 
 ],"hints": [
+  {
+    "name": "r2dbc.migrate.enable",
+    "values": [
+      {
+        "value": "true",
+        "description": "Enable migrations."
+      },
+      {
+        "value": "false",
+        "description": "Disable migrations."
+      }
+    ]
+  },
   {
     "name": "r2dbc.migrate.resources-paths",
     "values": [

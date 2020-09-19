@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class R2dbcMigrateProperties {
+    private boolean enable = true;
     private long connectionMaxRetries = 500;
     private List<String> resourcesPaths;
     private int chunkSize = 1000;
@@ -153,10 +154,19 @@ public class R2dbcMigrateProperties {
         this.migrationsSchema = migrationsSchema;
     }
 
+    public boolean isEnable() {
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
     @Override
     public String toString() {
         return "R2dbcMigrateProperties{" +
-            "connectionMaxRetries=" + connectionMaxRetries +
+            "enable=" + enable +
+            ", connectionMaxRetries=" + connectionMaxRetries +
             ", resourcesPaths=" + resourcesPaths +
             ", chunkSize=" + chunkSize +
             ", dialect=" + dialect +

@@ -160,14 +160,16 @@ public abstract class R2dbcMigrate {
     // entrypoint
     public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties) {
         LOGGER.info("Configured with {}", properties);
-        Mono<Void> voidMono = waitForDatabase(connectionFactory, properties)
+        if (!properties.isEnable()) {
+            return Mono.empty();
+        }
+        return waitForDatabase(connectionFactory, properties)
             // here we opens new connection and make all migration stuff
             .then(Mono.usingWhen(
                 connectionFactory.create(),
                 connection -> doWork(connection, properties),
                 Connection::close
             ));
-        return voidMono;
     }
 
     private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries) {
