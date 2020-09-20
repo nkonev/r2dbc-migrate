@@ -50,6 +50,16 @@ docker pull nkonev/r2dbc-migrate:latest
 </dependency>
 ```
 
+If you use library, you need also use some implementation of `r2dbc-migrate-resource-reader-api`, for example:
+```xml
+<dependency>
+    <groupId>name.nkonev.r2dbc-migrate</groupId>
+    <artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
+    <version>VERSION</version>
+</dependency>
+```
+See `Library example` below.
+
 ### Standalone application
 
 If you want to build your own docker image you will be able to do this
