@@ -50,15 +50,6 @@ docker pull nkonev/r2dbc-migrate:latest
 </dependency>
 ```
 
-It has weak dependency on `spring-core`, in order to read protocols like `file:/`, `classpath:/`, so you need to add
-```xml
-<dependency>
-    <groupId>org.springframework</groupId>
-    <artifactId>spring-core</artifactId>
-    <version>VERSION</version>
-</dependency>
-```
-
 ### Standalone application
 
 If you want to build your own docker image you will be able to do this

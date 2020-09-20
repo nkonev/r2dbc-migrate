@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -90,6 +91,8 @@ public class MssqlTestcontainersConcurrentStartTest {
         }
     }
 
+    private static SpringResourceReader springResourceReader = new SpringResourceReader();
+
     @RepeatedTest(50)
     public void testThatMigratorCanHandleSituationWhenDatabaseStillStarting() {
         int randomInteger = random.nextInt(10);
@@ -134,7 +137,7 @@ public class MssqlTestcontainersConcurrentStartTest {
             properties.setValidationQuery("SELECT 'ololo' as result");
             properties.setValidationQueryExpectedResultValue("ololo");
             ConnectionFactory connectionFactory = makeConnectionMono(MSSQL_HARDCODED_PORT);
-            R2dbcMigrate.migrate(connectionFactory, properties).block();
+            R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader).block();
             ConnectionFactory connectionFactory2 = makeAnotherConnectionMono(MSSQL_HARDCODED_PORT);
 
 

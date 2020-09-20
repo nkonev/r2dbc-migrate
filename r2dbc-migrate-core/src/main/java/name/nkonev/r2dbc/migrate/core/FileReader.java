@@ -1,7 +1,6 @@
 package name.nkonev.r2dbc.migrate.core;
 
-import org.springframework.core.io.Resource;
-import org.springframework.util.StreamUtils;
+import name.nkonev.r2dbc.migrate.reader.MigrateResource;
 import reactor.core.publisher.Flux;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,7 +10,7 @@ import java.nio.charset.Charset;
 
 public abstract class FileReader {
 
-    public static Flux<String> readChunked(Resource resource, Charset fileCharset) {
+    public static Flux<String> readChunked(MigrateResource resource, Charset fileCharset) {
         return Flux.using(
             () -> new BufferedReader(new InputStreamReader(resource.getInputStream(), fileCharset)),
             bufferedReader -> Flux.fromStream(bufferedReader.lines()),
@@ -25,7 +24,7 @@ public abstract class FileReader {
         );
     }
 
-    public static String read(Resource resource, Charset fileCharset) {
+    public static String read(MigrateResource resource, Charset fileCharset) {
         try (InputStream inputStream = resource.getInputStream()) {
             return StreamUtils.copyToString(inputStream, fileCharset);
         } catch (IOException e) {

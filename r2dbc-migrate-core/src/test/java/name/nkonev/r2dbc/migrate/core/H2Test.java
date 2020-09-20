@@ -82,7 +82,7 @@ public class H2Test extends LogCaptureableTests {
         }
     }
 
-
+/*
     @Test
     public void testMigrationWorks() {
 
@@ -105,6 +105,6 @@ public class H2Test extends LogCaptureableTests {
         Assertions.assertEquals("Customer", client.firstName);
         Assertions.assertEquals("Surname 4", client.lastName);
         Assertions.assertEquals(6, client.id);
-    }
+    }*/
 
 }

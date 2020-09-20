@@ -4,7 +4,7 @@
 
 	<groupId>name.nkonev.r2dbc-migrate</groupId>
 	<artifactId>r2dbc-migrate-parent</artifactId>
-	<version>1.3.3-SNAPSHOT</version>
+	<version>1.4.0-SNAPSHOT</version>
 	<name>r2dbc-migrate parent project</name>
 	<description>R2DBC migration tool and library</description>
 	<packaging>pom</packaging>
@@ -44,10 +44,14 @@
 		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
 		<maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
 		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+		<reflections.version>0.9.12</reflections.version>
 	</properties>
 
 	<modules>
 		<module>r2dbc-migrate-core</module>
+		<module>r2dbc-migrate-resource-reader-api</module>
+		<module>r2dbc-migrate-resource-reader-reflections</module>
+		<module>r2dbc-migrate-resource-reader-spring</module>
 		<module>r2dbc-migrate-spring-boot-starter</module>
 		<module>r2dbc-migrate-standalone</module>
 	</modules>

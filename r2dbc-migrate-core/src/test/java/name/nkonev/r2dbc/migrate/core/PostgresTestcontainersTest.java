@@ -8,28 +8,28 @@ import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
-import name.nkonev.r2dbc.migrate.core.MssqlTestcontainersConcurrentStartTest.Client;
+import name.nkonev.r2dbc.migrate.reader.ReflectionsClasspathResourceReader;
+import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import reactor.core.publisher.Mono;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 import static name.nkonev.r2dbc.migrate.core.ListUtils.hasSubList;
@@ -78,6 +78,19 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         return connectionFactory;
     }
 
+    static class Customer {
+        String firstName, secondName;
+        int id;
+
+        public Customer(String firstName, String secondName, int id) {
+            this.firstName = firstName;
+            this.secondName = secondName;
+            this.id = id;
+        }
+    }
+
+    private static SpringResourceReader springResourceReader = new SpringResourceReader();
+
     @Test
     public void testThatTransactionsWrapsQueriesAndTransactionsAreNotNested() {
         // create and start a ListAppender
@@ -88,11 +101,12 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
 
         // get log
         List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
-        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(Collectors.toList());
+        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(
+            Collectors.toList());
         // make asserts
         assertTrue(
             hasSubList(collect, Arrays.asList(
@@ -141,7 +155,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
             () -> {
-                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
+                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
             },
             "Expected exception to throw, but it didn't"
         );
@@ -181,7 +195,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
     }
 
     @Test
@@ -189,7 +203,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
     }
 
     @Test
@@ -205,7 +219,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                     properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
                     Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
+                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
                 },
                 "Expected exception to throw, but it didn't"
         );
@@ -239,19 +253,9 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPaths(Collections.singletonList("file:./target/test-classes/oom_migrations/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
     }
 
-    static class Customer {
-        String firstName, secondName;
-        int id;
-
-        public Customer(String firstName, String secondName, int id) {
-            this.firstName = firstName;
-            this.secondName = secondName;
-            this.id = id;
-        }
-    }
 
     @Test
     public void testOtherMigrationSchema() {
@@ -272,7 +276,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         );
         integerMono.block();
 
-        R2dbcMigrate.migrate(connectionFactory, properties).block();
+        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
             connectionFactory.create(),
@@ -320,6 +324,35 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         Assertions.assertFalse(block);
     }
 
+
+    @Test
+    public void testWithReflections() {
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setResourcesPaths(Collections.singletonList("migrations/postgresql/"));
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
+
+        ReflectionsClasspathResourceReader reflectionsClasspathResourceReader = new ReflectionsClasspathResourceReader();
+
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, reflectionsClasspathResourceReader).block();
+
+        Flux<Customer> clientFlux = Flux.usingWhen(
+            connectionFactory.create(),
+            connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new Customer(
+                        row.get("first_name", String.class),
+                        row.get("last_name", String.class),
+                        row.get("id", Integer.class)
+                    );
+                })),
+            Connection::close
+        );
+        Customer client = clientFlux.blockLast();
+
+        Assertions.assertEquals("Customer", client.firstName);
+        Assertions.assertEquals("Surname 4", client.secondName);
+    }
 
     @Override
     protected Level getStatementsPreviousLevel() {

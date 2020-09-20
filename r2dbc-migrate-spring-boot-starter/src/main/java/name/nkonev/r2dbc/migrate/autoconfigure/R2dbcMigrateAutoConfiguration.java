@@ -4,6 +4,8 @@ import io.r2dbc.spi.ConnectionFactory;
 import name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.R2dbcMigrateBlockingInvoker;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrate;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrateProperties;
+import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
+import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AbstractDependsOnBeanFactoryPostProcessor;
@@ -45,18 +47,20 @@ public class R2dbcMigrateAutoConfiguration {
     }
 
     public static class R2dbcMigrateBlockingInvoker {
-        private ConnectionFactory connectionFactory;
-        private R2dbcMigrateProperties properties;
+        private final ConnectionFactory connectionFactory;
+        private final R2dbcMigrateProperties properties;
+        private final MigrateResourceReader resourceReader;
 
         public R2dbcMigrateBlockingInvoker(ConnectionFactory connectionFactory,
                                            R2dbcMigrateProperties properties) {
             this.connectionFactory = connectionFactory;
             this.properties = properties;
+            this.resourceReader = new SpringResourceReader();
         }
 
         public void migrate() {
             LOGGER.info("Starting R2DBC migration");
-            R2dbcMigrate.migrate(connectionFactory, properties).block();
+            R2dbcMigrate.migrate(connectionFactory, properties, resourceReader).block();
             LOGGER.info("End of R2DBC migration");
         }
 

@@ -4,17 +4,15 @@ import io.r2dbc.spi.*;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
+import name.nkonev.r2dbc.migrate.reader.MigrateResource;
+import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,15 +27,8 @@ public abstract class R2dbcMigrate {
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
     private static final String ROWS_UPDATED = "By '{}' {} rows updated";
 
-    private static List<Resource> getResources(String resourcesPath) {
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        Resource[] resources;
-        try {
-            resources = resolver.getResources(resourcesPath);
-        } catch (IOException e) {
-            throw new RuntimeException("Error during get resources from '" + resourcesPath + "'", e);
-        }
-        return Arrays.asList(resources);
+    private static List<MigrateResource> getResources(String resourcesPath, MigrateResourceReader resourceReader) {
+        return resourceReader.getResources(resourcesPath);
     }
 
     private static SqlQueries getSqlQueries(R2dbcMigrateProperties properties, Connection connection) {
@@ -158,7 +149,7 @@ public abstract class R2dbcMigrate {
     }
 
     // entrypoint
-    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties) {
+    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
         LOGGER.info("Configured with {}", properties);
         if (!properties.isEnable()) {
             return Mono.empty();
@@ -167,7 +158,7 @@ public abstract class R2dbcMigrate {
             // here we opens new connection and make all migration stuff
             .then(Mono.usingWhen(
                 connectionFactory.create(),
-                connection -> doWork(connection, properties),
+                connection -> doWork(connection, properties, resourceReader),
                 Connection::close
             ));
     }
@@ -200,10 +191,10 @@ public abstract class R2dbcMigrate {
         return transactionalWrapUnchecked(connection, true, waitForLock);
     }
 
-    private static List<Tuple2<Resource, FilenameParser.MigrationInfo>> getResourcesFromPath(String resourcesPath) {
-        List<Tuple2<Resource, FilenameParser.MigrationInfo>> collect = getResources(resourcesPath).stream()
+    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> getResourcesFromPath(String resourcesPath, MigrateResourceReader resourceReader) {
+        List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> collect = getResources(resourcesPath, resourceReader).stream()
             .filter(Objects::nonNull)
-            .filter(Resource::isReadable)
+            .filter(MigrateResource::isReadable)
             .map(resource -> {
                 LOGGER.debug("Reading {}", resource);
                 FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
@@ -213,12 +204,12 @@ public abstract class R2dbcMigrate {
         return collect;
     }
 
-    private static Flux<Tuple2<Resource, FilenameParser.MigrationInfo>> getFileResources(R2dbcMigrateProperties properties) {
-        List<Tuple2<Resource, FilenameParser.MigrationInfo>> allResources = new ArrayList<>();
+    private static Flux<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> getFileResources(R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
+        List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> allResources = new ArrayList<>();
         for (String resource: properties.getResourcesPaths()) {
-            allResources.addAll(getResourcesFromPath(resource));
+            allResources.addAll(getResourcesFromPath(resource, resourceReader));
         }
-        List<Tuple2<Resource, MigrationInfo>> sortedResources = allResources.stream().sorted((o1, o2) -> {
+        List<Tuple2<MigrateResource, MigrationInfo>> sortedResources = allResources.stream().sorted((o1, o2) -> {
             MigrationInfo migrationInfo1 = o1.getT2();
             MigrationInfo migrationInvo2 = o2.getT2();
             return Integer.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
@@ -237,7 +228,7 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error");
     }
 
-    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties) {
+    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
         SqlQueries sqlQueries = getSqlQueries(properties, connection);
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
 
@@ -249,7 +240,7 @@ public abstract class R2dbcMigrate {
                         .flatMap(currentVersion -> {
                             LOGGER.info("Database version is {}", currentVersion);
 
-                            return getFileResources(properties).log("R2dbcMigrateRequestingMigrationFiles", Level.FINE)
+                            return getFileResources(properties, resourceReader).log("R2dbcMigrateRequestingMigrationFiles", Level.FINE)
                                     .filter(objects -> objects.getT2().getVersion() > currentVersion)
                                     // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
                                     .concatMap(tuple2 ->
@@ -262,12 +253,12 @@ public abstract class R2dbcMigrate {
 
     }
 
-    private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
+    private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<MigrateResource, FilenameParser.MigrationInfo> tt) {
         LOGGER.info("Applying {}", tt.getT2());
         return transactionalWrap(connection, tt.getT2().isTransactional(), getMigrateResultPublisher(properties, connection, tt.getT1(), tt.getT2()), tt.getT2().toString());
     }
 
-    private static Mono<Void> writeMigrationMetadata(Connection connection, SqlQueries sqlQueries, Tuple2<Resource, FilenameParser.MigrationInfo> tt) {
+    private static Mono<Void> writeMigrationMetadata(Connection connection, SqlQueries sqlQueries, Tuple2<MigrateResource, FilenameParser.MigrationInfo> tt) {
         return transactionalWrap(connection, true, sqlQueries.createInsertMigrationStatement(connection, tt.getT2()).execute(), "Writing metadata version " + tt.getT2().getVersion());
     }
 
@@ -297,7 +288,7 @@ public abstract class R2dbcMigrate {
     }
 
     private static Publisher<? extends Result> getMigrateResultPublisher(R2dbcMigrateProperties properties,
-                                                                         Connection connection, Resource resource,
+                                                                         Connection connection, MigrateResource resource,
                                                                          FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
             Flux<? extends Result> sequentFlux = FileReader

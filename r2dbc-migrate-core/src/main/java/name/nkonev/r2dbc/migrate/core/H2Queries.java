@@ -4,7 +4,6 @@ import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Statement;
 import java.util.Arrays;
 import java.util.List;
-import org.springframework.util.StringUtils;
 
 public class H2Queries implements SqlQueries {
 
