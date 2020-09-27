@@ -149,7 +149,7 @@ public abstract class R2dbcMigrate {
     }
 
     // entrypoint
-    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
+    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader, SqlQueries maybeUserDialect) {
         LOGGER.info("Configured with {}", properties);
         if (!properties.isEnable()) {
             return Mono.empty();
@@ -158,7 +158,7 @@ public abstract class R2dbcMigrate {
             // here we opens new connection and make all migration stuff
             .then(Mono.usingWhen(
                 connectionFactory.create(),
-                connection -> doWork(connection, properties, resourceReader),
+                connection -> doWork(connection, properties, resourceReader, maybeUserDialect),
                 Connection::close
             ));
     }
@@ -228,8 +228,8 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error");
     }
 
-    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
-        SqlQueries sqlQueries = getSqlQueries(properties, connection);
+    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader, SqlQueries maybeUserDialect) {
+        SqlQueries sqlQueries = maybeUserDialect == null ? getSqlQueries(properties, connection) : maybeUserDialect;
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
 
         return

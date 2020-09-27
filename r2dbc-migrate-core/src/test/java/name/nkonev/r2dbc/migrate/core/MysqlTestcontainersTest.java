@@ -108,7 +108,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MYSQL);
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
             makeConnectionMono(mappedPort).create(),
@@ -143,7 +143,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
             () -> {
-                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
             },
             "Expected exception to throw, but it didn't"
         );
@@ -180,7 +180,7 @@ public class MysqlTestcontainersTest extends LogCaptureableTests {
         Integer mappedPort = container.getMappedPort(MYSQL_PORT);
         ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
 
-        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader).block();
+        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
             connectionFactory.create(),

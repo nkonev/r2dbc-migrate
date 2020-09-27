@@ -4,10 +4,12 @@ import io.r2dbc.spi.ConnectionFactory;
 import name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.R2dbcMigrateBlockingInvoker;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrate;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrateProperties;
+import name.nkonev.r2dbc.migrate.core.SqlQueries;
 import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AbstractDependsOnBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -50,17 +52,20 @@ public class R2dbcMigrateAutoConfiguration {
         private final ConnectionFactory connectionFactory;
         private final R2dbcMigrateProperties properties;
         private final MigrateResourceReader resourceReader;
+        private final SqlQueries maybeUserDialect;
 
         public R2dbcMigrateBlockingInvoker(ConnectionFactory connectionFactory,
-                                           R2dbcMigrateProperties properties) {
+                                           R2dbcMigrateProperties properties,
+                                           SqlQueries maybeUserDialect) {
             this.connectionFactory = connectionFactory;
             this.properties = properties;
             this.resourceReader = new SpringResourceReader();
+            this.maybeUserDialect = maybeUserDialect;
         }
 
         public void migrate() {
             LOGGER.info("Starting R2DBC migration");
-            R2dbcMigrate.migrate(connectionFactory, properties, resourceReader).block();
+            R2dbcMigrate.migrate(connectionFactory, properties, resourceReader, maybeUserDialect).block();
             LOGGER.info("End of R2DBC migration");
         }
 
@@ -68,7 +73,8 @@ public class R2dbcMigrateAutoConfiguration {
 
     @Bean(name = MIGRATE_BEAN_NAME, initMethod = "migrate")
     public R2dbcMigrateBlockingInvoker r2dbcMigrate(ConnectionFactory connectionFactory,
-                                                    SpringBootR2dbcMigrateProperties properties) {
-        return new R2dbcMigrateBlockingInvoker(connectionFactory, properties);
+                                                    SpringBootR2dbcMigrateProperties properties,
+                                                    @Autowired(required = false) SqlQueries maybeUserDialect) {
+        return new R2dbcMigrateBlockingInvoker(connectionFactory, properties, maybeUserDialect);
     }
 }

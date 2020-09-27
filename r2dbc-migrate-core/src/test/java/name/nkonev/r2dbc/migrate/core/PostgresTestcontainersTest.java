@@ -8,6 +8,7 @@ import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import io.r2dbc.spi.Statement;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -101,7 +102,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
 
         // get log
         List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
@@ -155,7 +156,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
             () -> {
-                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
             },
             "Expected exception to throw, but it didn't"
         );
@@ -195,7 +196,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
     }
 
     @Test
@@ -203,7 +204,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
     }
 
     @Test
@@ -219,7 +220,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                     properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
                     Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
                 },
                 "Expected exception to throw, but it didn't"
         );
@@ -253,7 +254,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         properties.setResourcesPaths(Collections.singletonList("file:./target/test-classes/oom_migrations/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
     }
 
 
@@ -276,7 +277,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         );
         integerMono.block();
 
-        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader).block();
+        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
             connectionFactory.create(),
@@ -334,7 +335,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
 
         ReflectionsClasspathResourceReader reflectionsClasspathResourceReader = new ReflectionsClasspathResourceReader();
 
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, reflectionsClasspathResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, reflectionsClasspathResourceReader, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
             connectionFactory.create(),
@@ -362,5 +363,94 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
     @Override
     protected Logger getStatementsLogger() {
         return statementsLogger;
+    }
+
+
+    public static class SimplePostgresqlDialect implements SqlQueries {
+        @Override
+        public List<String> createInternalTables() {
+            return Arrays.asList(
+                "create table if not exists simple_migrations(id int primary key, description text)",
+                "create table if not exists simple_migrations_lock(id int primary key, locked boolean not null)",
+                "insert into simple_migrations_lock(id, locked) values (1, false) on conflict (id) do nothing"
+            );
+        }
+
+        @Override
+        public String getMaxMigration() {
+            return "select max(id) from simple_migrations";
+        }
+
+        public String insertMigration() {
+            return "insert into simple_migrations(id, description) values ($1, $2)";
+        }
+
+        @Override
+        public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
+            return connection
+                .createStatement(insertMigration())
+                .bind("$1", migrationInfo.getVersion())
+                .bind("$2", migrationInfo.getDescription());
+        }
+
+        @Override
+        public String tryAcquireLock() {
+            return "update simple_migrations_lock set locked = true where id = 1 and locked = false";
+        }
+
+        @Override
+        public String releaseLock() {
+            return "update simple_migrations_lock set locked = false where id = 1";
+        }
+    }
+
+    @Test
+    public void testCustomDialect() {
+        // create and start a ListAppender
+        ListAppender<ILoggingEvent> listAppender = startAppender();
+
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setDialect(Dialect.POSTGRESQL);
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
+
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, new SimplePostgresqlDialect()).block();
+
+        // get log
+        List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
+        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(
+            Collectors.toList());
+        // make asserts
+        assertTrue(
+            hasSubList(collect, Arrays.asList(
+                "BEGIN",
+                "create table if not exists simple_migrations(id int primary key, description text); create table if not exists simple_migrations_lock(id int primary key, locked boolean not null); insert into simple_migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
+                "COMMIT",
+                "BEGIN",
+                "update simple_migrations_lock set locked = true where id = 1 and locked = false",
+                "COMMIT",
+                "select max(id) from simple_migrations",
+                "BEGIN",
+                "CREATE TABLE customer (id SERIAL PRIMARY KEY, first_name VARCHAR(255), last_name VARCHAR(255))",
+                "COMMIT",
+                "BEGIN",
+                "insert into simple_migrations(id, description) values ($1, $2)",
+                "COMMIT",
+                "BEGIN",
+                "insert into customer(first_name, last_name) values ('Muhammad', 'Ali'), ('Name', 'Фамилия');",
+                "COMMIT",
+                "BEGIN",
+                "insert into simple_migrations(id, description) values ($1, $2)",
+                "COMMIT",
+                "BEGIN",
+                "insert into customer(first_name, last_name) values ('Customer', 'Surname 1');; insert into customer(first_name, last_name) values ('Customer', 'Surname 2');; insert into customer(first_name, last_name) values ('Customer', 'Surname 3');; insert into customer(first_name, last_name) values ('Customer', 'Surname 4');",
+                "COMMIT",
+                "BEGIN",
+                "insert into simple_migrations(id, description) values ($1, $2)",
+                "COMMIT",
+                "BEGIN",
+                "update simple_migrations_lock set locked = false where id = 1",
+                "COMMIT"
+            )));
     }
 }

@@ -137,7 +137,7 @@ public class MssqlTestcontainersConcurrentStartTest {
             properties.setValidationQuery("SELECT 'ololo' as result");
             properties.setValidationQueryExpectedResultValue("ololo");
             ConnectionFactory connectionFactory = makeConnectionMono(MSSQL_HARDCODED_PORT);
-            R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader).block();
+            R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null).block();
             ConnectionFactory connectionFactory2 = makeAnotherConnectionMono(MSSQL_HARDCODED_PORT);
 
 

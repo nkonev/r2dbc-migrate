@@ -108,7 +108,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
 
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
 
         Flux<Client> clientFlux = Flux.usingWhen(
             makeConnectionMono(mappedPort).create(),
@@ -141,7 +141,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
 
         Flux<Client> clientFlux = Flux.usingWhen(
             makeConnectionMono(mappedPort).create(),
@@ -188,7 +188,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         );
         integerMono.block();
 
-        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader).block();
+        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null).block();
 
         Flux<Client> clientFlux = Flux.usingWhen(
             connectionFactory.create(),
@@ -249,12 +249,12 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
 
         // here we simulate new launch
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql_append/*.sql"));
         // and we assert that we able to add yet another database (nontransactional should work)
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
     }
 
     @Test
@@ -271,7 +271,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
             () -> {
-                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader).block();
+                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
             },
             "Expected exception to throw, but it didn't"
         );
