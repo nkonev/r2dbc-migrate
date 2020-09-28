@@ -13,6 +13,8 @@ R2DBC [page](https://r2dbc.io/).
 * MySQL
 * H2
 
+It also supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/commit/86296acf0bbc6a7f4cbffe493cd2c3060d7885e2#diff-25735d05174bb55a45ca3d5986fc3ec1R369).
+
 ## Features
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
 * It waits until database have been started, there is test query, and validation result of. This can be useful to initial load data into database with docker-compose
