@@ -24,6 +24,7 @@ It also supports user-provided dialect. You can pass implementation of `SqlQueri
 * It also supports `nontransactional` migrations, due to SQL Server prohibits `CREATE DATABASE` in the transaction
 * Docker image
 * First-class Spring Boot integration, see example below
+* Also you can use this library without Spring (Boot) see library example below
 
 All available configuration options are in [R2dbcMigrateProperties](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-core/src/main/java/name/nkonev/r2dbc/migrate/core/R2dbcMigrateProperties.java) class.
 Their descriptions are available in your IDE Ctrl+Space help or in [spring-configuration-metadata.json](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-spring-boot-starter/src/main/resources/META-INF/spring-configuration-metadata.json) file.
