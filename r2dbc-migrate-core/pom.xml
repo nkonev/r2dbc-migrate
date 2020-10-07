@@ -8,14 +8,14 @@
 	<parent>
 		<artifactId>r2dbc-migrate-parent</artifactId>
 		<groupId>name.nkonev.r2dbc-migrate</groupId>
-		<version>1.5.1</version>
+		<version>1.5.2-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
 		<dependency>
 			<artifactId>r2dbc-migrate-resource-reader-api</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>1.5.1</version>
+			<version>1.5.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>io.r2dbc</groupId>
@@ -89,13 +89,13 @@
 		<dependency>
 			<artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>1.5.1</version>
+			<version>1.5.2-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>1.5.1</version>
+			<version>1.5.2-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 
