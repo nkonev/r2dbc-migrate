@@ -36,4 +36,9 @@ public class ReflectionsClasspathResource implements MigrateResource {
     final InputStream in = getContextClassLoader().getResourceAsStream(resource);
     return in == null ? getClass().getResourceAsStream(resource) : in;
   }
+
+  @Override
+  public String toString() {
+    return classpathPath;
+  }
 }

@@ -25,4 +25,9 @@ public class SpringResource implements MigrateResource {
   public String getFilename() {
     return springResource.getFilename();
   }
+
+  @Override
+  public String toString() {
+    return springResource.toString();
+  }
 }
