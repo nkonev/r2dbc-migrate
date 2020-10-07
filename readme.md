@@ -13,6 +13,8 @@ R2DBC [page](https://r2dbc.io/).
 * MySQL
 * H2
 
+It also supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/commit/86296acf0bbc6a7f4cbffe493cd2c3060d7885e2#diff-25735d05174bb55a45ca3d5986fc3ec1R369).
+
 ## Features
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
 * It waits until database have been started, there is test query, and validation result of. This can be useful to initial load data into database with docker-compose
@@ -21,6 +23,9 @@ R2DBC [page](https://r2dbc.io/).
 * Each migration runs in the separated transaction
 * It also supports `nontransactional` migrations, due to SQL Server prohibits `CREATE DATABASE` in the transaction
 * Docker image
+* First-class Spring Boot integration, see example below
+* Also you can use this library without Spring (Boot) see library example below
+* This library tends to be non-invasive, consequently it intentionally doesn't try to parse SQL and make some decisions relying on. So (in theory) you can freely update database and driver's version
 
 All available configuration options are in [R2dbcMigrateProperties](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-core/src/main/java/name/nkonev/r2dbc/migrate/core/R2dbcMigrateProperties.java) class.
 Their descriptions are available in your IDE Ctrl+Space help or in [spring-configuration-metadata.json](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-spring-boot-starter/src/main/resources/META-INF/spring-configuration-metadata.json) file.
