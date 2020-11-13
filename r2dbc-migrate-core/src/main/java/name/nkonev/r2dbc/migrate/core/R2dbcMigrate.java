@@ -81,8 +81,8 @@ public abstract class R2dbcMigrate {
 
         Mono<Void> result;
         if (transactional) {
-            result = Mono.from(connection.beginTransaction()) // 1
-                    .thenMany(integerFlux) // 2 create internals
+            result = Mono.from(connection.beginTransaction()) // 1 // ...Calling this method disables auto-commit mode.
+                .thenMany(integerFlux) // 2 create internals
                     .then(Mono.from(connection.commitTransaction())); // 3
         } else {
             result = withAutoCommit(connection, integerFlux).then();
@@ -155,13 +155,15 @@ public abstract class R2dbcMigrate {
             return Mono.empty();
         }
         return waitForDatabase(connectionFactory, properties)
-            // here we opens new connection and make all migration stuff
-            .then(Mono.usingWhen(
-                connectionFactory.create(),
-                connection -> doWork(connection, properties, resourceReader, maybeUserDialect),
-                Connection::close
-            ))
-            .onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeUserDialect).then(Mono.error(throwable)));
+            .then(
+                Mono.fromDirect(
+                    Mono.usingWhen(
+                        connectionFactory.create(), // here we opens new connection and make all migration stuff
+                        connection -> doWork(connection, properties, resourceReader, maybeUserDialect),
+                        Connection::close
+                    ).onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeUserDialect).then(Mono.error(throwable)))
+                )
+            );
     }
 
     private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries) {
@@ -225,13 +227,13 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Void> releaseLockAfterError(Throwable throwable, ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, SqlQueries maybeUserDialect) {
-        LOGGER.error("Got error", throwable);
+        LOGGER.error("Got error during migration, will release lock", throwable);
         return Mono.usingWhen(
             connectionFactory.create(),
             connection -> {
                 SqlQueries sqlQueries = getSqlQueries(connection, properties, maybeUserDialect);
                 return transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error");
-                },
+            },
             Connection::close
         );
     }
