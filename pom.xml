@@ -4,7 +4,7 @@
 
 	<groupId>name.nkonev.r2dbc-migrate</groupId>
 	<artifactId>r2dbc-migrate-parent</artifactId>
-	<version>1.5.2-SNAPSHOT</version>
+	<version>1.6.0-SNAPSHOT</version>
 	<name>r2dbc-migrate parent project</name>
 	<description>R2DBC migration tool and library</description>
 	<packaging>pom</packaging>
@@ -36,9 +36,9 @@
 
 	<properties>
 		<java.version>8</java.version>
-		<spring.boot.version>2.3.1.RELEASE</spring.boot.version>
+		<spring.boot.version>2.4.0</spring.boot.version>
 		<maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-		<testcontainers.version>1.14.3</testcontainers.version>
+		<testcontainers.version>1.15.0</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
