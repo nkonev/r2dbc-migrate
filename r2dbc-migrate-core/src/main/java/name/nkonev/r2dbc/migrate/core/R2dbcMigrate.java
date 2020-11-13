@@ -156,7 +156,12 @@ public abstract class R2dbcMigrate {
         }
         return waitForDatabase(connectionFactory, properties)
             // here we opens new connection and make all migration stuff
-            .then(doWork(connectionFactory, properties, resourceReader, maybeUserDialect));
+            .then(Mono.usingWhen(
+                connectionFactory.create(),
+                connection -> doWork(connection, properties, resourceReader, maybeUserDialect),
+                Connection::close
+            ))
+            .onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeUserDialect).then(Mono.error(throwable)));
     }
 
     private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries) {
@@ -219,43 +224,46 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, true, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock");
     }
 
-    private static Mono<Void> releaseLockAfterError(Throwable throwable, ConnectionFactory connectionFactory, SqlQueries sqlQueries) {
+    private static Mono<Void> releaseLockAfterError(Throwable throwable, ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, SqlQueries maybeUserDialect) {
         LOGGER.error("Got error", throwable);
         return Mono.usingWhen(
             connectionFactory.create(),
-            connection -> transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error"),
+            connection -> {
+                SqlQueries sqlQueries = getSqlQueries(connection, properties, maybeUserDialect);
+                return transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error");
+                },
             Connection::close
         );
     }
 
-    private static Mono<Void> doWork(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader, SqlQueries maybeUserDialect) {
-        return Mono.usingWhen(
-            connectionFactory.create(),
-            connection -> {
-                SqlQueries sqlQueries = maybeUserDialect == null ? getSqlQueries(properties, connection) : maybeUserDialect;
-                LOGGER.debug("Instantiated {}", sqlQueries.getClass());
+    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader, SqlQueries maybeUserDialect) {
+        SqlQueries sqlQueries = getSqlQueries(connection, properties, maybeUserDialect);
 
-                return
-                    ensureInternals(connection, sqlQueries)
-                        .log("R2dbcMigrateEnsuringInternals", Level.FINE)
-                        .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("R2dbcMigrateAcquiringLock", Level.FINE))
-                        .then(getDatabaseVersionOrZero(sqlQueries, connection, properties).log("R2dbcMigrateGetDatabaseVersion", Level.FINE))
-                        .flatMap(currentVersion -> {
-                            LOGGER.info("Database version is {}", currentVersion);
+        return
+            ensureInternals(connection, sqlQueries)
+                .log("R2dbcMigrateEnsuringInternals", Level.FINE)
+                .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("R2dbcMigrateAcquiringLock", Level.FINE))
+                .then(getDatabaseVersionOrZero(sqlQueries, connection, properties).log("R2dbcMigrateGetDatabaseVersion", Level.FINE))
+                .flatMap(currentVersion -> {
+                    LOGGER.info("Database version is {}", currentVersion);
 
-                            return getFileResources(properties, resourceReader).log("R2dbcMigrateRequestingMigrationFiles", Level.FINE)
-                                .filter(objects -> objects.getT2().getVersion() > currentVersion)
-                                // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
-                                .concatMap(tuple2 ->
-                                        makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakeMigrationWork", Level.FINE)
-                                            .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("R2dbcMigrateWritingMigrationMetadata", Level.FINE))
-                                    , 1)
-                                .onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, sqlQueries).then(Mono.error(throwable)))
-                                .then(releaseLock(connection, sqlQueries).log("R2dbcMigrateReleasingLock", Level.FINE));
-                        });
-            },
-            Connection::close
-        );
+                    return getFileResources(properties, resourceReader).log("R2dbcMigrateRequestingMigrationFiles", Level.FINE)
+                        .filter(objects -> objects.getT2().getVersion() > currentVersion)
+                        // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
+                        .concatMap(tuple2 ->
+                                makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakeMigrationWork", Level.FINE)
+                                    .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("R2dbcMigrateWritingMigrationMetadata", Level.FINE))
+                            , 1)
+                        .then(releaseLock(connection, sqlQueries).log("R2dbcMigrateReleasingLock", Level.FINE));
+                });
+
+    }
+
+    private static SqlQueries getSqlQueries(Connection connection, R2dbcMigrateProperties properties, SqlQueries maybeUserDialect) {
+        SqlQueries sqlQueries = maybeUserDialect == null ? getSqlQueries(properties,
+            connection) : maybeUserDialect;
+        LOGGER.debug("Instantiated {}", sqlQueries.getClass());
+        return sqlQueries;
     }
 
     private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<MigrateResource, FilenameParser.MigrationInfo> tt) {

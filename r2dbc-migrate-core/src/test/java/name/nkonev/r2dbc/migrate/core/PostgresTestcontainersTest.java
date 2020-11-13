@@ -171,7 +171,9 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                 "BEGIN",
                 "insert into customer(first_name, last_name) values\n"
                     + "ololo\n"
-                    + "('Muhammad', 'Ali'), ('Name', 'Фамилия');"
+                    + "('Muhammad', 'Ali'), ('Name', 'Фамилия');",
+                    "COMMIT",
+                    "update \"migrations_lock\" set locked = false where id = 1"
             )));
 
         Mono<Boolean> r = Mono.usingWhen(
