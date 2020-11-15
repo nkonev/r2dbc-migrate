@@ -7,7 +7,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.r2dbc.core.DatabaseClient;
-//import reactor.tools.agent.ReactorDebugAgent;
+
 
 @SpringBootApplication
 public class R2dbcMigrateApplication {
@@ -15,8 +15,8 @@ public class R2dbcMigrateApplication {
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrateApplication.class);
 
     public static void main(String[] args) {
-        // https://projectreactor.io/docs/core/release/reference/#reactor-tools-debug
-//        ReactorDebugAgent.init();
+
+
         SpringApplication.run(R2dbcMigrateApplication.class, args);
     }
 
