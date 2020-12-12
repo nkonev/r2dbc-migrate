@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 
-public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest {
+public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTest {
 
     final static int MYSQL_PORT = 3306;
 
@@ -38,12 +38,12 @@ public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest
 
     @BeforeEach
     public void beforeEach()  {
-        container = new GenericContainer("mysql:5.7")
-                .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
-                .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
-                .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
-                .withExposedPorts(MYSQL_PORT)
-                .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
+        container = new GenericContainer("mariadb:10.5.8-focal")
+            .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
+            .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
+            .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
+            .withExposedPorts(MYSQL_PORT)
+            .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
         container.start();
 
@@ -59,13 +59,13 @@ public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest
 
     protected ConnectionFactory makeConnectionMono(int port) {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
-                .option(DRIVER, "mysql")
-                .option(HOST, "127.0.0.1")
-                .option(PORT, port)
-                .option(USER, user)
-                .option(PASSWORD, password)
-                .option(DATABASE, "r2dbc")
-                .build());
+            .option(DRIVER, "mariadb")
+            .option(HOST, "127.0.0.1")
+            .option(PORT, port)
+            .option(USER, user)
+            .option(PASSWORD, password)
+            .option(DATABASE, "r2dbc")
+            .build());
         return connectionFactory;
     }
 

@@ -152,6 +152,10 @@
       {
         "value": "h2",
         "description": "h2 dialect."
+      },
+      {
+        "value": "mariadb",
+        "description": "MariaDB dialect."
       }
     ]
   },

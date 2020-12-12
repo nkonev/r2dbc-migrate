@@ -1,4 +1,4 @@
-FROM adoptopenjdk:11.0.6_10-jre-hotspot-bionic
+FROM adoptopenjdk:11.0.9.1_1-jre-hotspot-focal
 
 WORKDIR /
 

@@ -36,7 +36,7 @@
 
 	<properties>
 		<java.version>8</java.version>
-		<spring.boot.version>2.4.0</spring.boot.version>
+		<spring.boot.version>2.4.1</spring.boot.version>
 		<maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
 		<testcontainers.version>1.15.0</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,6 +45,7 @@
 		<maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
 		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
 		<reflections.version>0.9.12</reflections.version>
+		<mariadb.driver.version>1.0.0</mariadb.driver.version>
 	</properties>
 
 	<modules>

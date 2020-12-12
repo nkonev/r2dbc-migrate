@@ -39,6 +39,11 @@
 			<artifactId>r2dbc-mysql</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.mariadb</groupId>
+			<artifactId>r2dbc-mariadb</artifactId>
+			<version>${mariadb.driver.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-r2dbc</artifactId>
 		</dependency>

@@ -12,6 +12,7 @@ R2DBC [page](https://r2dbc.io/).
 * Microsoft SQL Server
 * MySQL
 * H2
+* MariaDB
 
 It also supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/commit/86296acf0bbc6a7f4cbffe493cd2c3060d7885e2#diff-25735d05174bb55a45ca3d5986fc3ec1R369).
 
@@ -77,3 +78,21 @@ https://github.com/nkonev/r2dbc-migrate-example
 
 ## Library example
 https://github.com/nkonev/r2dbc-migrate-example/tree/library
+
+## docker-compose v3 example
+```yml
+ migrate:
+   image: nkonev/r2dbc-migrate:VERSION
+   environment:
+     _JAVA_OPTIONS: -Xmx128m
+     spring.r2dbc.url: "r2dbc:pool:mssql://mssqlcontainer:1433"
+     spring.r2dbc.username: sa
+     spring.r2dbc.password: "yourSuperStrong(!)Password"
+     r2dbc.migrate.resourcesPath: "file:/migrations/*.sql"
+     r2dbc.migrate.validationQuery: "SELECT collation_name as result FROM sys.databases WHERE name = N'master'"
+     r2dbc.migrate.validationQueryExpectedResultValue: "Cyrillic_General_CI_AS"
+   depends_on:
+     - mssqlcontainer
+   volumes:
+     - ./migrations:/migrations
+```

@@ -87,6 +87,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.mariadb</groupId>
+			<artifactId>r2dbc-mariadb</artifactId>
+			<version>${mariadb.driver.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>
 			<version>1.6.1-SNAPSHOT</version>
