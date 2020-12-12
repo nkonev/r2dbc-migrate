@@ -235,7 +235,7 @@ public abstract class R2dbcMigrate {
         return Mono.usingWhen(
             connectionFactory.create(),
             connection -> {
-                SqlQueries sqlQueries = getSqlQueries(connection, properties, maybeUserDialect);
+                SqlQueries sqlQueries = getUserOrDeterminedSqlQueries(connection, properties, maybeUserDialect);
                 return transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error");
             },
             Connection::close
@@ -243,7 +243,7 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader, SqlQueries maybeUserDialect) {
-        SqlQueries sqlQueries = getSqlQueries(connection, properties, maybeUserDialect);
+        SqlQueries sqlQueries = getUserOrDeterminedSqlQueries(connection, properties, maybeUserDialect);
 
         return
             ensureInternals(connection, sqlQueries)
@@ -265,9 +265,8 @@ public abstract class R2dbcMigrate {
 
     }
 
-    private static SqlQueries getSqlQueries(Connection connection, R2dbcMigrateProperties properties, SqlQueries maybeUserDialect) {
-        SqlQueries sqlQueries = maybeUserDialect == null ? getSqlQueries(properties,
-            connection) : maybeUserDialect;
+    private static SqlQueries getUserOrDeterminedSqlQueries(Connection connection, R2dbcMigrateProperties properties, SqlQueries maybeUserDialect) {
+        SqlQueries sqlQueries = maybeUserDialect == null ? getSqlQueries(properties, connection) : maybeUserDialect;
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
         return sqlQueries;
     }

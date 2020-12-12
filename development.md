@@ -19,13 +19,10 @@ docker-compose exec postgresql psql -U r2dbc
 docker-compose exec mysql mysql -umysql-user -pmysql-password -Dr2dbc
 ```
 
-# Building
+# Making a release
 ```bash
 export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
-(cd ./docker; docker-compose down -v; docker-compose up -d)
-./mvnw clean package -DenableStandaloneTests=true -DenableOomTests=true
-./mvnw release:prepare -Dresume=false
-./mvnw release:perform
-
+./mvnw clean
+./mvnw -Dresume=false -DskipTests release:prepare release:perform
 git fetch
 ```
