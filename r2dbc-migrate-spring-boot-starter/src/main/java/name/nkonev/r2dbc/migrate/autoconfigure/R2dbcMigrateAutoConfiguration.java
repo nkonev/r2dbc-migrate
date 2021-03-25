@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.r2dbc.core.DatabaseClient;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties.class)
 @ConditionalOnClass(DatabaseClient.class)
 @ConditionalOnSingleCandidate(ConnectionFactory.class)
@@ -35,7 +35,7 @@ public class R2dbcMigrateAutoConfiguration {
     private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrateAutoConfiguration.class);
 
     // declares that DatabaseClient depends on r2dbcMigrate
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     public static class R2dbcConnectionFactoryDependsOnBeanFactoryPostProcessor extends AbstractDependsOnBeanFactoryPostProcessor {
 
         protected R2dbcConnectionFactoryDependsOnBeanFactoryPostProcessor() {
