@@ -26,6 +26,7 @@
 			<groupId>io.r2dbc</groupId>
 			<artifactId>r2dbc-pool</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>io.r2dbc</groupId>
 			<artifactId>r2dbc-mssql</artifactId>
@@ -43,6 +44,12 @@
 			<artifactId>r2dbc-mariadb</artifactId>
 			<version>${mariadb.driver.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.oracle.database.r2dbc</groupId>
+			<artifactId>oracle-r2dbc</artifactId>
+			<version>${oracle.driver.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-r2dbc</artifactId>

@@ -93,6 +93,13 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.oracle.database.r2dbc</groupId>
+			<artifactId>oracle-r2dbc</artifactId>
+			<version>${oracle.driver.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>
 			<version>1.6.2-SNAPSHOT</version>

@@ -46,6 +46,7 @@
 		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
 		<reflections.version>0.9.12</reflections.version>
 		<mariadb.driver.version>1.0.0</mariadb.driver.version>
+		<oracle.driver.version>0.1.0</oracle.driver.version>
 	</properties>
 
 	<modules>

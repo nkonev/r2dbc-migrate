@@ -156,6 +156,10 @@
       {
         "value": "mariadb",
         "description": "MariaDB dialect."
+      },
+      {
+        "value": "oracle",
+        "description": "Oracle Database dialect."
       }
     ]
   },

@@ -5,5 +5,6 @@ public enum Dialect {
     MSSQL,
     MYSQL,
     H2,
-    MARIADB
+    MARIADB,
+    ORACLE
 }
