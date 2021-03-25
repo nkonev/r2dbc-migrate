@@ -100,7 +100,7 @@ public class MssqlTestcontainersConcurrentStartTest {
         Thread thread = new Thread(() -> {
             LOGGER.info("Sleeping random {} seconds before start the container", randomInteger);
             Uninterruptibles.sleepUninterruptibly(randomInteger, TimeUnit.SECONDS);
-            container = new GenericContainer("mcr.microsoft.com/mssql/server:2019-CU5-ubuntu-16.04")
+            container = new GenericContainer("mcr.microsoft.com/mssql/server:2019-CU9-ubuntu-16.04")
                 .withExposedPorts(MSSQL_HARDCODED_PORT)
                 .withEnv("ACCEPT_EULA", "Y")
                 .withEnv("SA_PASSWORD", password)

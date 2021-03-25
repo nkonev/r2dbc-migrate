@@ -43,7 +43,7 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
 
     @BeforeEach
     public void beforeEach()  {
-        container = new GenericContainer("mcr.microsoft.com/mssql/server:2017-CU20-ubuntu-16.04")
+        container = new GenericContainer("mcr.microsoft.com/mssql/server:2017-CU22-ubuntu-16.04")
                 .withExposedPorts(MSSQL_PORT)
                 .withEnv("ACCEPT_EULA", "Y")
                 .withEnv("SA_PASSWORD", password)
