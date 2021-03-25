@@ -47,6 +47,8 @@ public abstract class R2dbcMigrate {
                     return new H2Queries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 } else if (maybeDb.get().contains("maria")) {
                     return new MariadbQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                } else if (maybeDb.get().contains("oracle")) {
+                    return new OracleQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 }
             }
             throw new RuntimeException("Cannot recognize dialect. Try to set it explicitly.");
@@ -62,6 +64,8 @@ public abstract class R2dbcMigrate {
                     return new H2Queries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 case MARIADB:
                     return new MariadbQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                case ORACLE:
+                    return new OracleQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
                 default:
                     throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
             }
