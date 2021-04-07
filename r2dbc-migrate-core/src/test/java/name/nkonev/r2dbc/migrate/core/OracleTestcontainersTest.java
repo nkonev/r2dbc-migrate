@@ -38,12 +38,12 @@ import reactor.core.publisher.Mono;
 
 public class OracleTestcontainersTest extends LogCaptureableTests {
 
-    final static int ORACLE_PORT = 3306;
+    final static int ORACLE_PORT = 1521;
 
     private GenericContainer container;
 
-    final static String user = "oracle-user";
-    final static String password = "oracle-password";
+    final static String user = "system";
+    final static String password = "oracle";
 
     static Logger statementsLogger;
     static Level statementsPreviousLevel;

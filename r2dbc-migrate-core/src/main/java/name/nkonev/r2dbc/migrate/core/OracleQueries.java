@@ -44,9 +44,9 @@ public class OracleQueries implements SqlQueries {
     @Override
     public List<String> createInternalTables() {
         return Arrays.asList(
-                withMigrationsTable("create table if not exists %s(id int primary key, description text)"),
-                withMigrationsLockTable("create table if not exists %s(id int primary key, locked boolean not null)"),
-                withMigrationsLockTable("insert into %s(id, locked) values (1, false) on conflict (id) do nothing")
+                withMigrationsTable("whenever sqlerror continue none create table %s(id int primary key, description text)"),
+                withMigrationsLockTable("whenever sqlerror continue none create table %s(id int primary key, locked boolean not null)"),
+                withMigrationsLockTable("insert into %s(id, locked) values (1, false) on conflict (id) do nothing") // todo https://stackoverflow.com/questions/17946595/oracle-db-insert-and-do-nothing-on-duplicate-key
         );
     }
 
@@ -56,15 +56,15 @@ public class OracleQueries implements SqlQueries {
     }
 
     public String insertMigration() {
-        return withMigrationsTable("insert into %s(id, description) values ($1, $2)");
+        return withMigrationsTable("insert into %s(id, description) values (:version, :description)");
     }
 
     @Override
     public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
         return connection
                 .createStatement(insertMigration())
-                .bind("$1", migrationInfo.getVersion())
-                .bind("$2", migrationInfo.getDescription());
+                .bind("version", migrationInfo.getVersion())
+                .bind("description", migrationInfo.getDescription());
     }
 
     @Override
