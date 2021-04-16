@@ -62,10 +62,7 @@ public class OracleTestcontainersTest extends LogCaptureableTests {
 
     @BeforeEach
     public void beforeEach()  {
-        container = new GenericContainer("mysql:5.7")
-                .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
-                .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
-                .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
+        container = new GenericContainer("oracle/database:18.4.0-xe")
                 .withExposedPorts(ORACLE_PORT)
                 .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
