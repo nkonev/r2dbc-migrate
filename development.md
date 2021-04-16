@@ -26,3 +26,11 @@ export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
 ./mvnw -Dresume=false -DskipTests release:prepare release:perform
 git fetch
 ```
+
+# Building Oracle database
+https://blogs.oracle.com/oraclemagazine/deliver-oracle-database-18c-express-edition-in-containers
+```
+git clone https://github.com/oracle/docker-images.git
+cd docker-images/OracleDatabase/SingleInstance/dockerfiles
+./buildContainerImage.sh -v 18.4.0 -x
+```
