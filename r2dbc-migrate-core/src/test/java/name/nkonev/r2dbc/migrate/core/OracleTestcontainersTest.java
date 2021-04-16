@@ -30,12 +30,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@EnabledIfSystemProperty(named = "enableOracleTests", matches = "true")
 public class OracleTestcontainersTest extends LogCaptureableTests {
 
     final static int ORACLE_PORT = 1521;
