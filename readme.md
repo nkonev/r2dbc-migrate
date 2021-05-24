@@ -81,18 +81,18 @@ https://github.com/nkonev/r2dbc-migrate-example/tree/library
 
 ## docker-compose v3 example
 ```yml
- migrate:
-   image: nkonev/r2dbc-migrate:VERSION
-   environment:
-     _JAVA_OPTIONS: -Xmx128m
-     spring.r2dbc.url: "r2dbc:pool:mssql://mssqlcontainer:1433"
-     spring.r2dbc.username: sa
-     spring.r2dbc.password: "yourSuperStrong(!)Password"
-     r2dbc.migrate.resourcesPath: "file:/migrations/*.sql"
-     r2dbc.migrate.validationQuery: "SELECT collation_name as result FROM sys.databases WHERE name = N'master'"
-     r2dbc.migrate.validationQueryExpectedResultValue: "Cyrillic_General_CI_AS"
-   depends_on:
-     - mssqlcontainer
-   volumes:
-     - ./migrations:/migrations
+version: '3.7'
+services:
+  migrate:
+    image: nkonev/r2dbc-migrate:VERSION
+    environment:
+      _JAVA_OPTIONS: -Xmx128m
+      spring.r2dbc.url: "r2dbc:pool:mssql://mssqlcontainer:1433"
+      spring.r2dbc.username: sa
+      spring.r2dbc.password: "yourSuperStrong(!)Password"
+      r2dbc.migrate.resourcesPath: "file:/migrations/*.sql"
+      r2dbc.migrate.validationQuery: "SELECT collation_name as result FROM sys.databases WHERE name = N'master'"
+      r2dbc.migrate.validationQueryExpectedResultValue: "Cyrillic_General_CI_AS"
+    volumes:
+      - ./migrations:/migrations
 ```
