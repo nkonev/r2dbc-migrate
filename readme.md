@@ -3,9 +3,7 @@
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/nkonev/r2dbc-migrate)](https://hub.docker.com/r/nkonev/r2dbc-migrate/tags)
 [![Build Status](https://github.com/nkonev/r2dbc-migrate/workflows/Java%20CI%20with%20Maven/badge.svg)](https://github.com/nkonev/r2dbc-migrate/actions)
 
-Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-available-now) announcement.
-
-R2DBC [page](https://r2dbc.io/).
+Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-available-now) announcement. R2DBC [page](https://r2dbc.io/).
 
 ## Supported databases
 * PostgreSQL
@@ -18,14 +16,14 @@ It also supports user-provided dialect. You can pass implementation of `SqlQueri
 
 ## Features
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
-* It waits until database have been started, there is test query, and validation result of. This can be useful to initial load data into database with docker-compose
-* Supports migrations files larger than `-Xmx`: file will be splitted line-by-line (`split` modifier), then it will be loaded by chunks into database
-* Lock support, that make you able to start number of replicas your microservice, without care of migrations will collide each other
-* Each migration runs in the separated transaction
-* It also supports `nontransactional` migrations, due to SQL Server prohibits `CREATE DATABASE` in the transaction
+* It waits until database has been started, then performs test query, and validates its result. This can be useful for the initial data loading into database with docker-compose
+* Supports migrations files larger than `-Xmx`: file will be split line-by-line (`split` modifier), then it will be loaded by chunks into the database
+* Supports lock, that make you able to start number of replicas your microservice, without care of migrations collide each other
+* Each migration runs in the separated transaction by default
+* It also supports `nontransactional` migrations, due to SQL Server 2017 prohibits `CREATE DATABASE` in the transaction
 * Docker image
 * First-class Spring Boot integration, see example below
-* Also you can use this library without Spring (Boot) see library example below
+* Also you can use this library without Spring (Boot), see library example below
 * This library tends to be non-invasive, consequently it intentionally doesn't try to parse SQL and make some decisions relying on. So (in theory) you can freely update database and driver's version
 
 All available configuration options are in [R2dbcMigrateProperties](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-core/src/main/java/name/nkonev/r2dbc/migrate/core/R2dbcMigrateProperties.java) class.
