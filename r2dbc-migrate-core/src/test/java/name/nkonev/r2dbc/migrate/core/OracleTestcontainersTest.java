@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
+import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -42,6 +43,9 @@ public class OracleTestcontainersTest extends LogCaptureableTests {
 
     final static int ORACLE_PORT = 1521;
 
+    private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 240;
+    private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 120;
+
     private GenericContainer container;
 
     final static String user = "system";
@@ -49,6 +53,19 @@ public class OracleTestcontainersTest extends LogCaptureableTests {
 
     static Logger statementsLogger;
     static Level statementsPreviousLevel;
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(OracleTestcontainersTest.class);
+
+    private String getSid() {
+        return "xe";
+    }
+
+    private int startupTimeoutSeconds = 120;
+//    private int connectTimeoutSeconds = 120;
+
+    private String getJdbcUrl() {
+        return "jdbc:oracle:thin:" + user + "/" + password + "@" + container.getHost() + ":" + getMappedPort() + ":" + getSid();
+    }
+
     static class Customer {
         Long id;
         String firstName, lastName;
@@ -60,11 +77,54 @@ public class OracleTestcontainersTest extends LogCaptureableTests {
         }
     }
 
+    public String getTestQueryString() {
+        return "SELECT 1 FROM DUAL";
+    }
+
+
+//    private void waitUntilContainerStarted() {
+//        LOGGER.info("Waiting for database connection to become available at {} using query '{}'", getJdbcUrl(), getTestQueryString());
+//
+//        // Repeatedly try and open a connection to the DB and execute a test query
+//        long start = System.currentTimeMillis();
+//        try {
+//            while (System.currentTimeMillis() < start + (1000 * startupTimeoutSeconds)) {
+//                try {
+//                    if (!isRunning()) {
+//                        Thread.sleep(100L);
+//                        continue; // Don't attempt to connect yet
+//                    }
+//
+//                    try (Connection connection = createConnection("")) {
+//                        boolean testQuerySucceeded = connection.createStatement().execute(this.getTestQueryString());
+//                        if (testQuerySucceeded) {
+//                            break;
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    // ignore so that we can try again
+//                    LOGGER.debug("Failure when trying test query", e);
+//                    Thread.sleep(100L);
+//                }
+//            }
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//            throw new ContainerLaunchException("Container startup wait was interrupted", e);
+//        }
+//
+//        LOGGER.info("Container is started (JDBC URL: {})", this.getJdbcUrl());
+//    }
+
+
     private static SpringResourceReader springResourceReader = new SpringResourceReader();
 
     @BeforeEach
     public void beforeEach()  {
-        container = new GenericContainer("oracle/database:18.4.0-xe")
+        String property = System.getProperty("image.oracle");
+        if (StringUtils.isEmpty(property)){
+            property = "oracle/database:18.4.0-xe";
+        }
+        container = new GenericContainer(property)
                 .withExposedPorts(ORACLE_PORT)
                 .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
