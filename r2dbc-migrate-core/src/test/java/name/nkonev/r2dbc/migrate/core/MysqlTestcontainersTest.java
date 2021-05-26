@@ -5,6 +5,7 @@ import static io.r2dbc.spi.ConnectionFactoryOptions.DRIVER;
 import static io.r2dbc.spi.ConnectionFactoryOptions.HOST;
 import static io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD;
 import static io.r2dbc.spi.ConnectionFactoryOptions.PORT;
+import static io.r2dbc.spi.ConnectionFactoryOptions.SSL;
 import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import ch.qos.logback.classic.Level;
@@ -12,6 +13,7 @@ import ch.qos.logback.classic.Logger;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import io.r2dbc.spi.Option;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,6 +67,7 @@ public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest
                 .option(USER, user)
                 .option(PASSWORD, password)
                 .option(DATABASE, "r2dbc")
+                .option(Option.valueOf("sslMode"), "disabled")
                 .build());
         return connectionFactory;
     }
