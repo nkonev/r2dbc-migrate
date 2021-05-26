@@ -38,6 +38,7 @@ import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 public class PostgresTestcontainersTest extends LogCaptureableTests {
     final static int POSTGRESQL_PORT = 5432;
     static GenericContainer container;

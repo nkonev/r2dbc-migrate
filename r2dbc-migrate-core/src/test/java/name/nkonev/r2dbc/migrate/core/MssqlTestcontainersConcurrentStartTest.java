@@ -22,6 +22,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
@@ -32,6 +33,7 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.shaded.com.google.common.util.concurrent.Uninterruptibles;
 import reactor.core.publisher.Flux;
 
+@Disabled
 @EnabledIfSystemProperty(named = "enableFuzzyStartMssqlTests", matches = "true")
 public class MssqlTestcontainersConcurrentStartTest {
 
