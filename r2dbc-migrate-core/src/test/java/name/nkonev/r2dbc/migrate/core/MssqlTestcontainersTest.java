@@ -17,7 +17,6 @@ import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -32,7 +31,6 @@ import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled
 public class MssqlTestcontainersTest extends LogCaptureableTests {
 
     final static int MSSQL_PORT = 1433;
