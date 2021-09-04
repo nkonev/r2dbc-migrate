@@ -1,4 +1,4 @@
-FROM adoptopenjdk:11.0.9.1_1-jre-hotspot-focal
+FROM bellsoft/liberica-openjdk-debian:11.0.12
 
 WORKDIR /
 
