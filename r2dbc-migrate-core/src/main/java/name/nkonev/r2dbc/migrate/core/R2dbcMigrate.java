@@ -7,10 +7,10 @@ import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.MigrateResource;
 import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.Logger;
+import reactor.util.Loggers;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 import java.util.List;
@@ -24,7 +24,7 @@ import static java.util.Optional.ofNullable;
 
 public abstract class R2dbcMigrate {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(R2dbcMigrate.class);
+    private static final Logger LOGGER = Loggers.getLogger(R2dbcMigrate.class);
     private static final String ROWS_UPDATED = "By '{}' {} rows updated";
 
     private static List<MigrateResource> getResources(String resourcesPath, MigrateResourceReader resourceReader) {
