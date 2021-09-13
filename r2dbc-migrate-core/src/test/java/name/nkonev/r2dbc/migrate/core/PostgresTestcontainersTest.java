@@ -49,7 +49,7 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
 
     @BeforeEach
     public void beforeEach()  {
-        container = new GenericContainer("postgres:12.2")
+        container = new GenericContainer("postgres:13.4")
                 .withExposedPorts(POSTGRESQL_PORT)
                 .withEnv("POSTGRES_PASSWORD", "postgresqlPassword")
                 .withClasspathResourceMapping("/docker/postgresql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)

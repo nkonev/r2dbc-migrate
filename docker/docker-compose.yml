@@ -5,7 +5,7 @@ version: '3.2'
 services:
   # https://hub.docker.com/_/microsoft-mssql-server
   mssql:
-    image: mcr.microsoft.com/mssql/server:2019-CU9-ubuntu-16.04
+    image: mcr.microsoft.com/mssql/server:2019-CU12-ubuntu-16.04
     restart: unless-stopped
     # https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-configure-environment-variables?view=sql-server-2017
     environment:
@@ -28,7 +28,7 @@ services:
         max-size: "50m"
         max-file: "1"
   postgresql:
-    image: postgres:12.2
+    image: postgres:13.4
     restart: unless-stopped
     ports:
       - 25433:5432
