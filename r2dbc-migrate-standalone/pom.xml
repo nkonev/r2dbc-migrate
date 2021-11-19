@@ -8,7 +8,7 @@
 	<parent>
 		<artifactId>r2dbc-migrate-parent</artifactId>
 		<groupId>name.nkonev.r2dbc-migrate</groupId>
-		<version>1.8.0-SNAPSHOT</version>
+		<version>1.8.0</version>
 	</parent>
 
 	<properties>
@@ -20,7 +20,7 @@
 		<dependency>
 			<artifactId>r2dbc-migrate-spring-boot-starter</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>1.8.0-SNAPSHOT</version>
+			<version>1.8.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.r2dbc</groupId>
