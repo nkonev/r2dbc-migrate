@@ -2,8 +2,13 @@ package name.nkonev.r2dbc.migrate.core;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public abstract class FilenameParser {
+
+    private static final String V = "V";
+
+    private static final String DECIMAL_POINT = ".";
 
     public static class MigrationInfo {
         private int version;
@@ -11,7 +16,7 @@ public abstract class FilenameParser {
         private boolean splitByLine;
         private boolean transactional;
 
-        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional) {
+        public MigrationInfo(String version, String description, boolean splitByLine, boolean transactional) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
@@ -22,7 +27,7 @@ public abstract class FilenameParser {
             return description;
         }
 
-        public int getVersion() {
+        public String getVersion() {
             return version;
         }
 
@@ -44,9 +49,21 @@ public abstract class FilenameParser {
                     ", transactional=" + transactional +
                     '}';
         }
+
+        public Double findDoubleVersion() {
+            return Optional.of(version)
+                    .filter(val -> val.contains(DECIMAL_POINT))
+                    .filter(val -> val.replace(DECIMAL_POINT, "").length() - val.length() == -2)
+                    .map(val -> val.indexOf(DECIMAL_POINT, val.indexOf(DECIMAL_POINT) + 1))
+                    .map(val -> version.substring(0, val - 1) + version.substring(val + 1, version.length()))
+                    .map(Double::parseDouble)
+                    .orElseGet(() -> Double.parseDouble(version));
+        }
+
     }
 
-    public static MigrationInfo getMigrationInfo(String filename) {
+    public static MigrationInfo getMigrationInfo(String filename) throws RuntimeException
+    {
         final String sql = ".sql";
         if (filename == null || !filename.endsWith(sql)) {
             throw new RuntimeException("File name should ends with " + sql);
@@ -67,9 +84,11 @@ public abstract class FilenameParser {
         }
     }
 
-    private static int getVersion(String vPart) {
-        String v = vPart.replace("V", "");
-        return Integer.parseInt(v);
+    private static String getVersion(String vPart)
+    {
+        return Optional.of(vPart)
+                .map(val -> val.substring(val.indexOf(V) + 1))
+                .orElseThrow(() -> new RuntimeException(String.format("Invalid version number %s", vPart)));
     }
 
     private static String getDescription(String descriptionPart) {
