@@ -10,6 +10,8 @@ public abstract class FilenameParser {
 
     private static final String DECIMAL_POINT = ".";
 
+    private static final String UNDERSCORE = "_";
+
     public static class MigrationInfo {
         private String version;
         private String description;
@@ -87,12 +89,14 @@ public abstract class FilenameParser {
                 .orElseThrow(() -> new RuntimeException(String.format("Invalid version number %s", vPart)));
     }
 
-    public static Double findDoubleVersion(final String version) {
+    public static Double findDoubleVersion(final String versionString) {
+        final String version = versionString.replace(UNDERSCORE, DECIMAL_POINT);
+
         return Optional.of(version)
                 .filter(val -> val.contains(DECIMAL_POINT))
                 .filter(val -> val.replace(DECIMAL_POINT, "").length() - val.length() == -2)
                 .map(val -> val.indexOf(DECIMAL_POINT, val.indexOf(DECIMAL_POINT) + 1))
-                .map(val -> version.substring(0, val - 1) + version.substring(val + 1, version.length()))
+                .map(val -> version.substring(0, val) + version.substring(val + 1))
                 .map(Double::parseDouble)
                 .orElseGet(() -> Double.parseDouble(version));
     }

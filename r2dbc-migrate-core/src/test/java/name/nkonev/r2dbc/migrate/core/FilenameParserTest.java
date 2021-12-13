@@ -30,10 +30,33 @@ class FilenameParserTest {
     }
 
     @Test
+    void testItParsesSemanticVersionsWithUnderscores() {
+        String s = "V1_2_3__create_customers__split.sql";
+        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        Assertions.assertEquals("1_2_3", migrationInfo.getVersion());
+        Assertions.assertEquals(1.23, migrationInfo.getDoubleVersion());
+        Assertions.assertEquals("create customers", migrationInfo.getDescription());
+        Assertions.assertEquals("create customers", migrationInfo.getDescription());
+        Assertions.assertTrue(migrationInfo.isSplitByLine());
+        Assertions.assertTrue(migrationInfo.isTransactional());
+    }
+
+    @Test
     void testItParsesVersionsWithSingleDecimals() {
         String s = "V1.2__create_customers__split.sql";
         FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
         Assertions.assertEquals("1.2", migrationInfo.getVersion());
+        Assertions.assertEquals(1.2, migrationInfo.getDoubleVersion());
+        Assertions.assertEquals("create customers", migrationInfo.getDescription());
+        Assertions.assertTrue(migrationInfo.isSplitByLine());
+        Assertions.assertTrue(migrationInfo.isTransactional());
+    }
+
+    @Test
+    void testItParsesVersionsWithSingleDecimalsAndUnderscores() {
+        String s = "V1_2__create_customers__split.sql";
+        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        Assertions.assertEquals("1_2", migrationInfo.getVersion());
         Assertions.assertEquals(1.2, migrationInfo.getDoubleVersion());
         Assertions.assertEquals("create customers", migrationInfo.getDescription());
         Assertions.assertTrue(migrationInfo.isSplitByLine());
