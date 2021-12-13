@@ -11,16 +11,18 @@ public abstract class FilenameParser {
     private static final String DECIMAL_POINT = ".";
 
     public static class MigrationInfo {
-        private int version;
+        private String version;
         private String description;
         private boolean splitByLine;
         private boolean transactional;
+        private Double doubleVersion;
 
         public MigrationInfo(String version, String description, boolean splitByLine, boolean transactional) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
             this.transactional = transactional;
+            this.doubleVersion = findDoubleVersion(version);
         }
 
         public String getDescription() {
@@ -29,6 +31,10 @@ public abstract class FilenameParser {
 
         public String getVersion() {
             return version;
+        }
+
+        public Double getDoubleVersion() {
+            return doubleVersion;
         }
 
         public boolean isSplitByLine() {
@@ -48,16 +54,6 @@ public abstract class FilenameParser {
                     ", splitByLine=" + splitByLine +
                     ", transactional=" + transactional +
                     '}';
-        }
-
-        public Double findDoubleVersion() {
-            return Optional.of(version)
-                    .filter(val -> val.contains(DECIMAL_POINT))
-                    .filter(val -> val.replace(DECIMAL_POINT, "").length() - val.length() == -2)
-                    .map(val -> val.indexOf(DECIMAL_POINT, val.indexOf(DECIMAL_POINT) + 1))
-                    .map(val -> version.substring(0, val - 1) + version.substring(val + 1, version.length()))
-                    .map(Double::parseDouble)
-                    .orElseGet(() -> Double.parseDouble(version));
         }
 
     }
@@ -89,6 +85,16 @@ public abstract class FilenameParser {
         return Optional.of(vPart)
                 .map(val -> val.substring(val.indexOf(V) + 1))
                 .orElseThrow(() -> new RuntimeException(String.format("Invalid version number %s", vPart)));
+    }
+
+    public static Double findDoubleVersion(final String version) {
+        return Optional.of(version)
+                .filter(val -> val.contains(DECIMAL_POINT))
+                .filter(val -> val.replace(DECIMAL_POINT, "").length() - val.length() == -2)
+                .map(val -> val.indexOf(DECIMAL_POINT, val.indexOf(DECIMAL_POINT) + 1))
+                .map(val -> version.substring(0, val - 1) + version.substring(val + 1, version.length()))
+                .map(Double::parseDouble)
+                .orElseGet(() -> Double.parseDouble(version));
     }
 
     private static String getDescription(String descriptionPart) {
