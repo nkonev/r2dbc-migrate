@@ -1,5 +1,6 @@
-DROP TABLE IF EXISTS supercustomer;
-CREATE TABLE supercustomer(
+DROP SCHEMA IF EXISTS gh15 CASCADE;
+CREATE SCHEMA gh15;
+CREATE TABLE gh15.supercustomer(
     id SERIAL PRIMARY KEY,
     customer_name TEXT
-)
+);

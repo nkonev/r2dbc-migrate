@@ -21,15 +21,12 @@ public class R2dbcMigrateAutoConfigurationTest {
         @Autowired
         private DatabaseClient client;
 
-        @Autowired
-        private List<ConnectionFactory> cf;
-
         private List<String> result;
 
         @Override
-        public void run(ApplicationArguments args) throws Exception {
-            result = client.sql("SELECT customer_name FROM supercustomer;")
-                    .map(row -> row.get("customer_name")).all().map(o -> o.toString())
+        public void run(ApplicationArguments args)  {
+            result = client.sql("SELECT * FROM gh15.supercustomer;")
+                    .map(row -> row.get("customer_name", String.class)).all()
                     .collectList().block();
         }
 
@@ -52,6 +49,7 @@ public class R2dbcMigrateAutoConfigurationTest {
         builder.properties("spring.sql.init.schema-locations=classpath:custom/schema/postgresql/init.sql");
 
         builder.properties("r2dbc.migrate.enable=false");
+        builder.properties("r2dbc.migrate.migrations-schema=gh15");
         builder.properties("r2dbc.migrate.resourcesPaths=classpath:custom/migrations/postgresql/*.sql");
         builder.properties("r2dbc.migrate.run-after-sql-initializer=true");
 

@@ -1,2 +1,2 @@
-INSERT INTO supercustomer(customer_name) VALUES
+INSERT INTO gh15.supercustomer(customer_name) VALUES
     ('Bobby');
