@@ -88,7 +88,7 @@ public class R2dbcMigrateAutoConfigurationTest {
 
         builder.properties("r2dbc.migrate.enable=true");
         builder.properties("r2dbc.migrate.migrations-schema=gh15");
-        builder.properties("r2dbc.migrate.resourcesPaths=classpath:custom/migrations/postgresql/*.sql");
+        builder.properties("r2dbc.migrate.resources-paths=classpath:custom/migrations/postgresql/*.sql");
 
         ConfigurableApplicationContext ctx = builder.build().run();
         SimpleApp bean = ctx.getBean(SimpleApp.class);
@@ -124,7 +124,7 @@ public class R2dbcMigrateAutoConfigurationTest {
 
         builder.properties("r2dbc.migrate.enable=true");
         builder.properties("r2dbc.migrate.migrations-schema=gh15noinit");
-        builder.properties("r2dbc.migrate.resourcesPaths=classpath:custom/migrations/postgresql-noinit/*.sql");
+        builder.properties("r2dbc.migrate.resources-paths=classpath:custom/migrations/postgresql-noinit/*.sql");
 
         ConfigurableApplicationContext ctx = builder.build().run();
         SimpleAppNoInit bean = ctx.getBean(SimpleAppNoInit.class);
