@@ -1,5 +1,6 @@
 package name.nkonev.r2dbc.migrate.autoconfigure;
 
+import io.r2dbc.spi.ConnectionFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ public class R2dbcMigrateAutoConfigurationTest {
 
         @Autowired
         private DatabaseClient client;
+
+        @Autowired
+        private List<ConnectionFactory> cf;
 
         private List<String> result;
 
@@ -47,6 +51,7 @@ public class R2dbcMigrateAutoConfigurationTest {
         builder.properties("spring.sql.init.mode=always");
         builder.properties("spring.sql.init.schema-locations=classpath:custom/schema/postgresql/init.sql");
 
+        builder.properties("r2dbc.migrate.enable=false");
         builder.properties("r2dbc.migrate.resourcesPaths=classpath:custom/migrations/postgresql/*.sql");
         builder.properties("r2dbc.migrate.run-after-sql-initializer=true");
 
