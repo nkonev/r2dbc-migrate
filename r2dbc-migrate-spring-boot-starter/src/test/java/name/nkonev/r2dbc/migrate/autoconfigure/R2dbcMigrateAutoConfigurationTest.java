@@ -37,13 +37,19 @@ public class R2dbcMigrateAutoConfigurationTest {
     @Test
     public void testAutoconfiguringAfterInit() {
         SpringApplicationBuilder builder = new SpringApplicationBuilder(SimpleApp.class);
+
         builder.properties("spring.r2dbc.url=r2dbc:postgresql://127.0.0.1:25433/r2dbc");
         builder.properties("spring.r2dbc.username=r2dbc");
         builder.properties("spring.r2dbc.password=r2dbcPazZw0rd");
+
+        // see org.springframework.boot.autoconfigure.sql.init.SettingsCreator
+        builder.properties("spring.sql.init.enabled=true");
+        builder.properties("spring.sql.init.mode=always");
+        builder.properties("spring.sql.init.schema-locations=classpath:custom/schema/postgresql/init.sql");
+
         builder.properties("r2dbc.migrate.resourcesPaths=classpath:custom/migrations/postgresql/*.sql");
         builder.properties("r2dbc.migrate.run-after-sql-initializer=true");
-        // see org.springframework.boot.autoconfigure.sql.init.SettingsCreator
-        builder.properties("spring.sql.init.schema-locations=classpath:custom/schema/postgresql");
+
         ConfigurableApplicationContext ctx = builder.build().run();
         SimpleApp bean = ctx.getBean(SimpleApp.class);
         List<String> result = bean.getResult();
