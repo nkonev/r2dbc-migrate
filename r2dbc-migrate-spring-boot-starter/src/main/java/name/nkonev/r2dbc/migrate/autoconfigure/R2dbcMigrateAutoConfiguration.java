@@ -43,8 +43,6 @@ public class R2dbcMigrateAutoConfiguration {
     }
 
     // declares that r2dbcMigrate depends on SqlR2dbcScriptDatabaseInitializer
-    @ConditionalOnBean(SqlR2dbcScriptDatabaseInitializer.class)
-    @ConditionalOnProperty(value = "r2dbc.migrate.run-after-sql-initializer", havingValue = "true")
     @Configuration(proxyBeanMethods = false)
     public static class R2dbcMigrateDependsOnBeanFactoryPostProcessor extends AbstractDependsOnBeanFactoryPostProcessor {
 
