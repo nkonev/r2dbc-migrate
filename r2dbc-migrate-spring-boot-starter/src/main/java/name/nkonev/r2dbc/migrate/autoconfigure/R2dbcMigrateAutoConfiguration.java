@@ -12,10 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AbstractDependsOnBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration;
+import org.springframework.boot.autoconfigure.sql.init.SqlR2dbcScriptDatabaseInitializer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -40,6 +39,17 @@ public class R2dbcMigrateAutoConfiguration {
 
         protected R2dbcConnectionFactoryDependsOnBeanFactoryPostProcessor() {
             super(DatabaseClient.class, MIGRATE_BEAN_NAME);
+        }
+    }
+
+    // declares that r2dbcMigrate depends on SqlR2dbcScriptDatabaseInitializer
+    @ConditionalOnBean(SqlR2dbcScriptDatabaseInitializer.class)
+    @ConditionalOnProperty(value = "r2dbc.migrate.run-after-sql-initializer", havingValue = "true")
+    @Configuration(proxyBeanMethods = false)
+    public static class R2dbcMigrateDependsOnBeanFactoryPostProcessor extends AbstractDependsOnBeanFactoryPostProcessor {
+
+        protected R2dbcMigrateDependsOnBeanFactoryPostProcessor() {
+            super(R2dbcMigrateBlockingInvoker.class, SqlR2dbcScriptDatabaseInitializer.class);
         }
     }
 

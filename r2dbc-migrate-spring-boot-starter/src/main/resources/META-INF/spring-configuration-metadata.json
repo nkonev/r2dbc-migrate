@@ -100,6 +100,11 @@
     "type": "java.lang.String",
     "description": "Changes migration schema. It will be written with corresponding wrapping (quotes in case PostgreSQL, backticks in case MySQL). Default is null - it means that database's default will be selected (\"public\" for PostgreSQL, \"dbo\" for MsSQL).",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.run-after-sql-initializer",
+    "type": "boolean",
+    "description": "Makes migration running after SqlR2dbcScriptDatabaseInitializer. Default is false."
   }
 
 ],"hints": [
@@ -211,6 +216,19 @@
   },
   {
     "name": "r2dbc.migrate.wait-for-database",
+    "values": [
+      {
+        "value": "true",
+        "description": "Enable"
+      },
+      {
+        "value": "false",
+        "description": "Disable"
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.run-after-sql-initializer",
     "values": [
       {
         "value": "true",
