@@ -26,9 +26,11 @@ import java.util.List;
  */
 public class R2dbcMigrateAutoConfigurationTest {
 
-    private static final String DB_URL = "r2dbc:postgresql://127.0.0.1:25433/r2dbc";
+    private static final int PORT = 25433;
+    private static final String DB_URL = "r2dbc:postgresql://127.0.0.1:"+PORT+"/r2dbc";
     private static final String DB_USER = "r2dbc";
     private static final String DB_PASSWORD = "r2dbcPazZw0rd";
+    private static final String FACTORY_URL = "r2dbc:postgresql://" + DB_USER + ":" + DB_PASSWORD + "@127.0.0.1:"+PORT+"/r2dbc";
 
     @Configuration
     @EnableAutoConfiguration
@@ -99,7 +101,7 @@ public class R2dbcMigrateAutoConfigurationTest {
 
     @Test
     public void testWithoutInitScripts() {
-        ConnectionFactory connectionFactory = ConnectionFactories.get("r2dbc:postgresql://"+DB_USER + ":" +DB_PASSWORD +"@127.0.0.1:25433/r2dbc");
+        ConnectionFactory connectionFactory = ConnectionFactories.get(FACTORY_URL);
 
         Flux.usingWhen(connectionFactory.create(),
                 connection -> {
