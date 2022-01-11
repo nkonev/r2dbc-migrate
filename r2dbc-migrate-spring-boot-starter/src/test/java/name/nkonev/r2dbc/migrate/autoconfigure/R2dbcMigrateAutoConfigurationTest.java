@@ -2,20 +2,20 @@ package name.nkonev.r2dbc.migrate.autoconfigure;
 
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
-import io.r2dbc.spi.Batch;
-import io.r2dbc.spi.Connection;
-import io.r2dbc.spi.ConnectionFactories;
-import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.r2dbc.core.DatabaseClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -30,7 +30,8 @@ public class R2dbcMigrateAutoConfigurationTest {
     private static final String DB_USER = "r2dbc";
     private static final String DB_PASSWORD = "r2dbcPazZw0rd";
 
-    @SpringBootApplication
+    @Configuration
+    @EnableAutoConfiguration
     public static class SimpleApp implements ApplicationRunner {
 
         @Autowired
@@ -50,7 +51,8 @@ public class R2dbcMigrateAutoConfigurationTest {
         }
     }
 
-    //@SpringBootApplication
+    @Configuration
+    @EnableAutoConfiguration
     public static class SimpleAppNoInit implements ApplicationRunner {
 
         @Autowired
@@ -97,14 +99,21 @@ public class R2dbcMigrateAutoConfigurationTest {
 
     @Test
     public void testWithoutInitScripts() {
-        ConnectionFactory connectionFactory = ConnectionFactories.get(DB_URL + "?username="+DB_USER+"&password=" + DB_PASSWORD);
-        Mono<Connection> connectionMono = Mono.from(connectionFactory.create());
-        connectionMono.map(connection -> {
-            Batch batch = connection.createBatch();
-            batch.add("DROP SCHEMA IF EXISTS gh15noinit CASCADE;");
-            batch.add("CREATE SCHEMA gh15noinit;");
-            return batch.execute();
-        }).block();
+        ConnectionFactory connectionFactory = ConnectionFactories.get("r2dbc:postgresql://"+DB_USER + ":" +DB_PASSWORD +"@127.0.0.1:25433/r2dbc");
+
+        Flux.usingWhen(connectionFactory.create(),
+                connection -> {
+                    Batch batch = connection.createBatch();
+                    batch.add("DROP SCHEMA IF EXISTS gh15noinit CASCADE;");
+                    batch.add("CREATE SCHEMA gh15noinit;");
+                    return Mono.from(connection.setAutoCommit(true))
+                            .thenMany(
+                                    Flux.from(batch.execute())
+                                            .flatMap(result -> Mono.from(result.getRowsUpdated()))
+                            );
+                },
+                Connection::close
+        ).blockLast();
 
         SpringApplicationBuilder builder = new SpringApplicationBuilder(SimpleAppNoInit.class);
 
@@ -114,7 +123,7 @@ public class R2dbcMigrateAutoConfigurationTest {
 
         builder.properties("r2dbc.migrate.enable=true");
         builder.properties("r2dbc.migrate.migrations-schema=gh15noinit");
-        builder.properties("r2dbc.migrate.resourcesPaths=classpath:custom/migrations/postgresql/*.sql");
+        builder.properties("r2dbc.migrate.resourcesPaths=classpath:custom/migrations/postgresql-noinit/*.sql");
 
         ConfigurableApplicationContext ctx = builder.build().run();
         SimpleAppNoInit bean = ctx.getBean(SimpleAppNoInit.class);
