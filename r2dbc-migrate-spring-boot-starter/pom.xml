@@ -31,8 +31,8 @@
 			<artifactId>spring-boot-starter-logging</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.data</groupId>
-			<artifactId>spring-data-r2dbc</artifactId>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-r2dbc</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
