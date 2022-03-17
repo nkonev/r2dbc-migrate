@@ -5,10 +5,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 
 public class SpringResourceReader implements MigrateResourceReader {
 
-  private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+  private final ResourcePatternResolver resolver;
+
+  public SpringResourceReader() {
+      resolver =  new PathMatchingResourcePatternResolver();
+  }
+
+  public SpringResourceReader(ResourcePatternResolver resourcePatternResolver) {
+      resolver = resourcePatternResolver;
+  }
 
   @Override
   public List<MigrateResource> getResources(String resourcesPath) {
