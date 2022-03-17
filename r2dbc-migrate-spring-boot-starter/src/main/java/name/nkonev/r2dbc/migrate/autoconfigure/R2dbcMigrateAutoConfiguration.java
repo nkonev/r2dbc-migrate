@@ -7,6 +7,9 @@ import name.nkonev.r2dbc.migrate.core.R2dbcMigrateProperties;
 import name.nkonev.r2dbc.migrate.core.SqlQueries;
 import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
+
+import java.util.Collections;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +56,9 @@ public class R2dbcMigrateAutoConfiguration {
 
     @ConfigurationProperties("r2dbc.migrate")
     public static class SpringBootR2dbcMigrateProperties extends R2dbcMigrateProperties {
-
+        public SpringBootR2dbcMigrateProperties() {
+           setResourcesPaths(Collections.singletonList("classpath:/db/migration/*.sql"));
+        }
     }
 
     public static class R2dbcMigrateBlockingInvoker {

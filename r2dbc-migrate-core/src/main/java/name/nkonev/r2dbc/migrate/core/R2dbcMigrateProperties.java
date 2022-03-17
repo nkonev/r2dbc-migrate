@@ -9,7 +9,7 @@ import java.util.List;
 public class R2dbcMigrateProperties {
     private boolean enable = true;
     private long connectionMaxRetries = 500;
-    private List<String> resourcesPaths = Collections.singletonList("classpath:/db/migration/*.sql");
+    private List<String> resourcesPaths;
     private int chunkSize = 1000;
     private Dialect dialect;
     private String validationQuery = "select '42' as result";
