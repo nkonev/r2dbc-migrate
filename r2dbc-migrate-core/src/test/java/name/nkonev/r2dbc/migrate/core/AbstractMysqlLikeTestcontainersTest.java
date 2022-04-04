@@ -144,7 +144,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest extends LogCaptureable
             connection -> Flux.from(connection.createStatement("select * from `my scheme`.`my migrations` order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
                     return new MigrationInfo(
-                        row.get("id", Integer.class),
+                        String.valueOf(row.get("id", Integer.class)),
                         row.get("description", String.class),
                         false,
                         false

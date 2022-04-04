@@ -219,7 +219,7 @@ public abstract class R2dbcMigrate {
         List<Tuple2<MigrateResource, MigrationInfo>> sortedResources = allResources.stream().sorted((o1, o2) -> {
             MigrationInfo migrationInfo1 = o1.getT2();
             MigrationInfo migrationInvo2 = o2.getT2();
-            return Integer.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
+            return Double.compare(migrationInfo1.getDoubleVersion(), migrationInvo2.getDoubleVersion());
         }).peek(objects -> {
             LOGGER.debug("From {} parsed metadata {}", objects.getT1(), objects.getT2());
         }).collect(Collectors.toList());
@@ -254,7 +254,7 @@ public abstract class R2dbcMigrate {
                     LOGGER.info("Database version is {}", currentVersion);
 
                     return getFileResources(properties, resourceReader).log("R2dbcMigrateRequestingMigrationFiles", Level.FINE)
-                        .filter(objects -> objects.getT2().getVersion() > currentVersion)
+                        .filter(objects -> objects.getT2().getDoubleVersion() > currentVersion)
                         // We need to guarantee sequential queries for BEGIN; STATEMENTS; COMMIT; wrappings for PostgreSQL
                         .concatMap(tuple2 ->
                                 makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakeMigrationWork", Level.FINE)
