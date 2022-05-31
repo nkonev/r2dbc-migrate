@@ -16,6 +16,7 @@ It also supports user-provided dialect. You can pass implementation of `SqlQueri
 
 ## Features
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
+* Pre-migration scripts, for example `V0__create_schemas__premigration.sql`. Those scripts are invoked during every migration, so you need to make them idempotent. You can use zero or negative version number(s): `V-1__create_schemas__nontransactional,premigration.sql`
 * It waits until database has been started, then performs test query, and validates its result. This can be useful for the initial data loading into database with docker-compose
 * Supports migrations files larger than `-Xmx`: file will be split line-by-line (`split` modifier), then it will be loaded by chunks into the database
 * Supports lock, that make you able to start number of replicas your microservice, without care of migrations collide each other

@@ -219,7 +219,8 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
                         row.get("id", Integer.class),
                         row.get("description", String.class),
                         false,
-                        false
+                        false,
+                            false
                     );
                 })),
             Connection::close

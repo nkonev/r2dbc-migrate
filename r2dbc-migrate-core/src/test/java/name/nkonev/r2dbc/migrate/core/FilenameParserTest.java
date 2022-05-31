@@ -37,6 +37,17 @@ class FilenameParserTest {
     }
 
     @Test
+    void testPremigrateNontransactional() {
+        String s = "V-1__create_schemas__premigration,nontransactional.sql";
+        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        Assertions.assertEquals(-1, migrationInfo.getVersion());
+        Assertions.assertEquals("create schemas", migrationInfo.getDescription());
+        Assertions.assertFalse(migrationInfo.isSplitByLine());
+        Assertions.assertFalse(migrationInfo.isTransactional());
+        Assertions.assertTrue(migrationInfo.isPremigration());
+    }
+
+    @Test
     void test() {
         String s = "V5__create_customers.sql";
         FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);

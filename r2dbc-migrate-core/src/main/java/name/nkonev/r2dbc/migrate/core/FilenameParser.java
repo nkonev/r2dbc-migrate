@@ -11,11 +11,14 @@ public abstract class FilenameParser {
         private boolean splitByLine;
         private boolean transactional;
 
-        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional) {
+        private boolean premigration;
+
+        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional, boolean premigration) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
             this.transactional = transactional;
+            this.premigration = premigration;
         }
 
         public String getDescription() {
@@ -35,6 +38,10 @@ public abstract class FilenameParser {
             return transactional;
         }
 
+        public boolean isPremigration() {
+            return premigration;
+        }
+
         @Override
         public String toString() {
             return "MigrationInfo{" +
@@ -42,6 +49,7 @@ public abstract class FilenameParser {
                     ", description='" + description + '\'' +
                     ", splitByLine=" + splitByLine +
                     ", transactional=" + transactional +
+                    ", premigration=" + premigration +
                     '}';
         }
     }
@@ -57,11 +65,12 @@ public abstract class FilenameParser {
             String modifiersRaw = array[2];
             List<String> modifiers = Arrays.asList(modifiersRaw.split(","));
             boolean nonTransactional = modifiers.contains("nontransactional");
+            boolean premigration = modifiers.contains("premigration");
             boolean split = modifiers.contains("split");
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), split, !nonTransactional);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), split, !nonTransactional, premigration);
         } else if (array.length == 2) {
             // no split
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true, false);
         } else {
             throw new RuntimeException("Invalid file name '" + filename + "'");
         }

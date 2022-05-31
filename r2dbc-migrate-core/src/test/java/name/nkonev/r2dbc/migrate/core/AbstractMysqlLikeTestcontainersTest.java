@@ -147,7 +147,8 @@ public abstract class AbstractMysqlLikeTestcontainersTest extends LogCaptureable
                         row.get("id", Integer.class),
                         row.get("description", String.class),
                         false,
-                        false
+                        false,
+                            false
                     );
                 })),
             Connection::close

@@ -304,7 +304,8 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
                         row.get("id", Integer.class),
                         row.get("description", String.class),
                         false,
-                        false
+                        false,
+                            false
                     );
                 })),
             Connection::close
@@ -323,6 +324,64 @@ public class PostgresTestcontainersTest extends LogCaptureableTests {
         Assertions.assertFalse(block);
     }
 
+    @Test
+    public void testOtherMigrationSchemaPremigration() {
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setMigrationsSchema("my premigrable scheme");
+        properties.setMigrationsTable("my migrations");
+        properties.setMigrationsLockTable("my migrations lock");
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql_premigration/*.sql"));
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
+
+        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null).block();
+
+        Flux<Customer> clientFlux = Flux.usingWhen(
+                connectionFactory.create(),
+                connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
+                        .flatMap(o -> o.map((row, rowMetadata) -> {
+                            return new Customer(
+                                    row.get("first_name", String.class),
+                                    row.get("last_name", String.class),
+                                    row.get("id", Integer.class)
+                            );
+                        })),
+                Connection::close
+        );
+        Customer client = clientFlux.blockLast();
+
+        Assertions.assertEquals("Customer", client.firstName);
+        Assertions.assertEquals("Surname 4", client.secondName);
+
+
+
+        Flux<MigrationInfo> miFlux = Flux.usingWhen(
+                connectionFactory.create(),
+                connection -> Flux.from(connection.createStatement("select * from \"my premigrable scheme\".\"my migrations\" order by id").execute())
+                        .flatMap(o -> o.map((row, rowMetadata) -> {
+                            return new MigrationInfo(
+                                    row.get("id", Integer.class),
+                                    row.get("description", String.class),
+                                    false,
+                                    false,
+                                    false
+                            );
+                        })),
+                Connection::close
+        );
+        List<MigrationInfo> migrationInfos = miFlux.collectList().block();
+        Assertions.assertFalse(migrationInfos.isEmpty());
+        Assertions.assertEquals("create customers", migrationInfos.get(0).getDescription());
+
+        Mono<Boolean> r = Mono.usingWhen(
+                makeConnectionMono(mappedPort).create(),
+                connection -> Mono.from(connection.createStatement("select locked from \"my premigrable scheme\".\"my migrations lock\" where id = 1").execute())
+                        .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
+                Connection::close);
+        Boolean block = r.block();
+        Assertions.assertNotNull(block);
+        Assertions.assertFalse(block);
+    }
 
     @Test
     public void testWithReflections() {
