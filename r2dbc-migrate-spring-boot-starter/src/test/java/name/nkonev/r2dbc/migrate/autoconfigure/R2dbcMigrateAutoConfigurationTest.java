@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * Tests working with and without Spring Boot's init capabilities https://docs.spring.io/spring-boot/docs/2.6.0/reference/html/howto.html#howto.data-initialization.using-basic-sql-scripts.
- * Those tests assume that database already instantiated, this is done by r2dbc-migration-core tests
+ * Those tests assume that database already instantiated, this is done by r2dbc-migration-core tests docker-compose
  */
 public class R2dbcMigrateAutoConfigurationTest {
 

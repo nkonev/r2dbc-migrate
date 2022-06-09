@@ -36,16 +36,22 @@
 
 	<properties>
 		<java.version>8</java.version>
-		<spring.boot.version>2.6.0</spring.boot.version>
-		<maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-		<testcontainers.version>1.16.2</testcontainers.version>
+		<spring.boot.version>2.7.0</spring.boot.version>
+		<maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
+		<testcontainers.version>1.17.2</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
 		<maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
-		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-		<reflections.version>0.9.12</reflections.version>
-		<mariadb.driver.version>1.0.3</mariadb.driver.version>
+		<maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
+        <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
+        <maven.javadoc.plugin.version>3.4.0</maven.javadoc.plugin.version>
+        <maven.deploy.plugin.version>3.0.0-M2</maven.deploy.plugin.version>
+        <maven.release.plugin.version>3.0.0-M6</maven.release.plugin.version>
+        <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
+        <maven.gpg.plugin>3.0.1</maven.gpg.plugin>
+        <reflections.version>0.10.2</reflections.version>
+        <mysql.driver.version>0.8.2.RELEASE</mysql.driver.version>
 		<commons.io.version>2.11.0</commons.io.version>
 	</properties>
 
@@ -124,7 +130,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>${maven.source.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -138,7 +144,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>${maven.javadoc.plugin.version}</version>
 				<configuration>
 					<source>${java.version}</source>
 					<encoding>UTF-8</encoding>
@@ -155,7 +161,7 @@
 
 			<plugin>
 				<artifactId>maven-deploy-plugin</artifactId>
-				<version>2.8.2</version>
+				<version>${maven.deploy.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>default-deploy</id>
@@ -170,7 +176,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
-				<version>2.5.3</version>
+				<version>${maven.release.plugin.version}</version>
 				<configuration>
 					<localCheckout>true</localCheckout>
 					<pushChanges>true</pushChanges>
@@ -182,7 +188,7 @@
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.7</version>
+				<version>${nexus.staging.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
 					<serverId>ossrh</serverId>
@@ -209,7 +215,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
+						<version>${maven.gpg.plugin}</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>

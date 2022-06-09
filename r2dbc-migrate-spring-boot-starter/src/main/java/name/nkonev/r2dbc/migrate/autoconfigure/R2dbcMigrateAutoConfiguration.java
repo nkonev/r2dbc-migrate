@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AbstractDependsOnBeanFactoryPostProcessor;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration;
 import org.springframework.boot.autoconfigure.sql.init.SqlR2dbcScriptDatabaseInitializer;
@@ -24,12 +24,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.r2dbc.core.DatabaseClient;
 
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration(after = R2dbcAutoConfiguration.class)
 @EnableConfigurationProperties(R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties.class)
 @ConditionalOnClass(DatabaseClient.class)
 @ConditionalOnSingleCandidate(ConnectionFactory.class)
 @ConditionalOnMissingBean(R2dbcMigrateBlockingInvoker.class)
-@AutoConfigureAfter(R2dbcAutoConfiguration.class)
 public class R2dbcMigrateAutoConfiguration {
 
     private static final String MIGRATE_BEAN_NAME = "r2dbcMigrate";
