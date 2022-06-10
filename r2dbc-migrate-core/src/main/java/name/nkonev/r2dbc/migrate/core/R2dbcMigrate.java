@@ -68,8 +68,8 @@ public abstract class R2dbcMigrate {
         }
     }
 
-    private static <T> Mono<T> withAutoCommit(Connection connection, Publisher<T> action) {
-        return Mono.from(connection.setAutoCommit(true)).then(Mono.from(action));
+    private static <T> Mono<T> withAutoCommit(Connection connection, Mono<T> action) {
+        return Mono.from(connection.setAutoCommit(true)).then(action);
     }
 
     private static Mono<Void> transactionalWrap(Connection connection, boolean transactional,
@@ -97,12 +97,12 @@ public abstract class R2dbcMigrate {
     private static <T> Mono<Void> transactionalWrapUnchecked(Connection connection,
         boolean transactional, Publisher<T> migrationThings) {
 
-        Flux<T> integerFlux = Flux.from(migrationThings);
+        Mono<T> integerFlux = Mono.from(migrationThings);
 
         Mono<Void> result;
         if (transactional) {
             result = Mono.from(connection.beginTransaction()) // 1
-                    .thenMany(integerFlux) // 2 create internals
+                    .then(integerFlux) // 2 create internals
                     .then(Mono.from(connection.commitTransaction())); // 3
         } else {
             result = withAutoCommit(connection, integerFlux).then();
@@ -308,7 +308,7 @@ public abstract class R2dbcMigrate {
 
     private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection, R2dbcMigrateProperties properties) {
 
-        return withAutoCommit(connection, connection.createStatement(sqlQueries.getMaxMigration()).execute())
+        return withAutoCommit(connection, Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute()))
             .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0))))
             .switchIfEmpty(Mono.just(0));
     }
