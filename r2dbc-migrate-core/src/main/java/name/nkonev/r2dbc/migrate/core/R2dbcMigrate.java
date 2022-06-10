@@ -68,14 +68,14 @@ public abstract class R2dbcMigrate {
         }
     }
 
-    private static <T> Mono<T> withAutoCommit(Connection connection, Mono<T> action) {
-        return Mono.from(connection.setAutoCommit(true)).then(action);
+    private static <T> Flux<T> withAutoCommit(Connection connection, Publisher<T> action) {
+        return Mono.from(connection.setAutoCommit(true)).thenMany(action);
     }
 
     private static Mono<Void> transactionalWrap(Connection connection, boolean transactional,
         Publisher<? extends io.r2dbc.spi.Result> migrationThings, String info) {
 
-        Mono<Integer> integerFlux = Flux.from(migrationThings)
+        Mono<Integer> migrationResult = Flux.from(migrationThings)
                 .flatMap(Result::getRowsUpdated) // if we don't get rows updates we swallow potential errors from PostgreSQL
                 .switchIfEmpty(Mono.just(0)) // prevent emitting empty flux
                 .reduceWith(() -> 0, Integer::sum)
@@ -86,10 +86,10 @@ public abstract class R2dbcMigrate {
         Mono<Void> result;
         if (transactional) {
             result = Mono.from(connection.beginTransaction()) // 1 // ...Calling this method disables auto-commit mode.
-                .thenMany(integerFlux) // 2 create internals
+                .then(migrationResult) // 2 create internals
                     .then(Mono.from(connection.commitTransaction())); // 3
         } else {
-            result = withAutoCommit(connection, integerFlux).then();
+            result = withAutoCommit(connection, migrationResult).then();
         }
         return result;
     }
@@ -97,15 +97,15 @@ public abstract class R2dbcMigrate {
     private static <T> Mono<Void> transactionalWrapUnchecked(Connection connection,
         boolean transactional, Publisher<T> migrationThings) {
 
-        Mono<T> integerFlux = Mono.from(migrationThings);
+        Flux<T> migrationResult = Flux.from(migrationThings);
 
         Mono<Void> result;
         if (transactional) {
             result = Mono.from(connection.beginTransaction()) // 1
-                    .then(integerFlux) // 2 create internals
+                    .thenMany(migrationResult) // 2 create internals
                     .then(Mono.from(connection.commitTransaction())); // 3
         } else {
-            result = withAutoCommit(connection, integerFlux).then();
+            result = withAutoCommit(connection, migrationResult).then();
         }
         return result;
     }
@@ -308,9 +308,10 @@ public abstract class R2dbcMigrate {
 
     private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection, R2dbcMigrateProperties properties) {
 
-        return withAutoCommit(connection, Mono.from(connection.createStatement(sqlQueries.getMaxMigration()).execute()))
+        return withAutoCommit(connection, connection.createStatement(sqlQueries.getMaxMigration()).execute())
             .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0))))
-            .switchIfEmpty(Mono.just(0));
+            .switchIfEmpty(Mono.just(0))
+            .last();
     }
 
     static <ColumnType> BiFunction<Row, RowMetadata, ColumnType> getResultSafely(String resultColumn, Class<ColumnType> ct, ColumnType defaultValue) {
