@@ -52,7 +52,6 @@
         <maven.gpg.plugin>3.0.1</maven.gpg.plugin>
         <reflections.version>0.10.2</reflections.version>
         <mysql.driver.version>0.8.2.RELEASE</mysql.driver.version>
-        <mariadb.driver.version>1.0.3</mariadb.driver.version>
 		<commons.io.version>2.11.0</commons.io.version>
 	</properties>
 

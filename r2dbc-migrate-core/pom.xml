@@ -83,7 +83,6 @@
 			<groupId>org.mariadb</groupId>
 			<artifactId>r2dbc-mariadb</artifactId>
 			<scope>test</scope>
-            <version>${mariadb.driver.version}</version>
 		</dependency>
 		<dependency>
 			<artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>

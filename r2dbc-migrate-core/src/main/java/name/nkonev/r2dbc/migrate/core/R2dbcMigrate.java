@@ -68,8 +68,8 @@ public abstract class R2dbcMigrate {
         }
     }
 
-    private static <T> Flux<T> withAutoCommit(Connection connection, Publisher<T> action) {
-        return Mono.from(connection.setAutoCommit(true)).thenMany(action);
+    private static <T> Mono<T> withAutoCommit(Connection connection, Publisher<T> action) {
+        return Mono.from(connection.setAutoCommit(true)).then(Mono.from(action));
     }
 
     private static Mono<Void> transactionalWrap(Connection connection, boolean transactional,
@@ -309,7 +309,6 @@ public abstract class R2dbcMigrate {
     private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection, R2dbcMigrateProperties properties) {
 
         return withAutoCommit(connection, connection.createStatement(sqlQueries.getMaxMigration()).execute())
-            .last()
             .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0))))
             .switchIfEmpty(Mono.just(0));
     }
