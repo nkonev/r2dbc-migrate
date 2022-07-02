@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +39,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public class H2Test extends LogCaptureableTests {
+
+    private static SpringResourceReader springResourceReader = new SpringResourceReader();
 
     static Logger statementsLogger;
     static Level statementsPreviousLevel;
@@ -82,14 +86,13 @@ public class H2Test extends LogCaptureableTests {
         }
     }
 
-/*
     @Test
     public void testMigrationWorks() {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.H2);
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/h2/*.sql"));
-        R2dbcMigrate.migrate(makeConnectionMono(), properties).block();
+        R2dbcMigrate.migrate(makeConnectionMono(), properties, springResourceReader, null).block();
 
         Flux<Customer> clientFlux = Mono.from(makeConnectionMono().create())
                 .flatMapMany(connection -> Flux.from(connection.createStatement("select * from customer order by id").execute()).doFinally(signalType -> connection.close()))
@@ -105,6 +108,6 @@ public class H2Test extends LogCaptureableTests {
         Assertions.assertEquals("Customer", client.firstName);
         Assertions.assertEquals("Surname 4", client.lastName);
         Assertions.assertEquals(6, client.id);
-    }*/
+    }
 
 }
