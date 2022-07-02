@@ -84,6 +84,12 @@
 			<artifactId>r2dbc-mariadb</artifactId>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>io.github.hakky54</groupId>
+            <artifactId>logcaptor</artifactId>
+            <version>${logcaptor.version}</version>
+            <scope>test</scope>
+        </dependency>
 		<dependency>
 			<artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
 			<groupId>name.nkonev.r2dbc-migrate</groupId>

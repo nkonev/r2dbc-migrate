@@ -1,45 +1,40 @@
 package name.nkonev.r2dbc.migrate.core;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
-import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
-import static name.nkonev.r2dbc.migrate.core.ListUtils.hasSubList;
 import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MssqlTestcontainersTest extends LogCaptureableTests {
+public class MssqlTestcontainersTest {
 
     final static int MSSQL_PORT = 1433;
 
     static GenericContainer container;
     final static String password = "yourStrong(!)Password";
 
-    static Logger statementsLogger;
-    static Level statementsPreviousLevel;
+    private static final String MSSQL_QUERY_LOGGER = "io.r2dbc.mssql.QUERY";
 
     @BeforeEach
     public void beforeEach()  {
@@ -52,15 +47,11 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
                         .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds)));
 
         container.start();
-
-        statementsLogger = (Logger) LoggerFactory.getLogger("io.r2dbc.mssql.QUERY");
-        statementsPreviousLevel = statementsLogger.getEffectiveLevel();
     }
 
     @AfterEach
     public void afterEach() {
         container.stop();
-        statementsLogger.setLevel(statementsPreviousLevel);
     }
 
     private ConnectionFactory makeConnectionMono(int port) {
@@ -73,16 +64,6 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
                 .option(DATABASE, "master")
                 .build());
         return connectionFactory;
-    }
-
-    @Override
-    protected Level getStatementsPreviousLevel() {
-        return statementsPreviousLevel;
-    }
-
-    @Override
-    protected Logger getStatementsLogger() {
-        return statementsLogger;
     }
 
     static class Client {
@@ -261,41 +242,43 @@ public class MssqlTestcontainersTest extends LogCaptureableTests {
     @Test
     public void testThatLockIsReleasedAfterError() {
         // create and start a ListAppender
-        ListAppender<ILoggingEvent> listAppender = startAppender();
+        try(LogCaptor logCaptor = LogCaptor.forName(MSSQL_QUERY_LOGGER)) {
+            logCaptor.setLogLevelToDebug();
 
-        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-        properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql_error/*.sql"));
+            R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+            properties.setDialect(Dialect.MSSQL);
+            properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql_error/*.sql"));
 
-        Integer mappedPort = container.getMappedPort(MSSQL_PORT);
+            Integer mappedPort = container.getMappedPort(MSSQL_PORT);
 
-        RuntimeException thrown = Assertions.assertThrows(
-            RuntimeException.class,
-            () -> {
-                R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
-            },
-            "Expected exception to throw, but it didn't"
-        );
-        Assertions.assertTrue(thrown.getMessage().contains("Incorrect syntax near 'schyachne'."));
+            RuntimeException thrown = Assertions.assertThrows(
+                    RuntimeException.class,
+                    () -> {
+                        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+                    },
+                    "Expected exception to throw, but it didn't"
+            );
+            Assertions.assertTrue(thrown.getMessage().contains("Incorrect syntax near 'schyachne'."));
 
-        // get log
-        List<ILoggingEvent> logsList = stopAppenderAndGetLogsList(listAppender);
-        List<Object> collect = logsList.stream().map(iLoggingEvent -> iLoggingEvent.getArgumentArray()[0]).collect(
-            Collectors.toList());
-        // make asserts
-        assertTrue(
-            hasSubList(collect, Arrays.asList(
-                "update \"migrations_lock\" set locked = 'false' where id = 1"
-            )));
+            // make asserts
+            assertTrue(
+                    hasSubList(logCaptor.getDebugLogs(), Arrays.asList(
+                            "update \"migrations_lock\" set locked = 'false' where id = 1"
+                    )));
 
-        Mono<Boolean> r = Mono.usingWhen(
-            makeConnectionMono(mappedPort).create(),
-            connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
+            Mono<Boolean> r = Mono.usingWhen(
+                    makeConnectionMono(mappedPort).create(),
+                    connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
                             .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
-            Connection::close);
-        Boolean block = r.block();
-        Assertions.assertNotNull(block);
-        Assertions.assertFalse(block);
+                    Connection::close);
+            Boolean block = r.block();
+            Assertions.assertNotNull(block);
+            Assertions.assertFalse(block);
+        }
     }
 
+    private static boolean hasSubList(List<String> collect, List<String> sublist) {
+        sublist = sublist.stream().map(s -> "Executing query: " + s).collect(Collectors.toList());
+        return (Collections.indexOfSubList(collect, sublist) != -1);
+    }
 }

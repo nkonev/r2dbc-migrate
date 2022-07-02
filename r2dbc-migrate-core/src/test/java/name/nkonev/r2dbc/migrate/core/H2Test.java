@@ -1,60 +1,21 @@
 package name.nkonev.r2dbc.migrate.core;
 
-import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
-import static io.r2dbc.spi.ConnectionFactoryOptions.DRIVER;
-import static io.r2dbc.spi.ConnectionFactoryOptions.HOST;
-import static io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD;
-import static io.r2dbc.spi.ConnectionFactoryOptions.PORT;
-import static io.r2dbc.spi.ConnectionFactoryOptions.PROTOCOL;
-import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
-import static name.nkonev.r2dbc.migrate.core.ListUtils.hasSubList;
-import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
-import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
-import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Publisher;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.BindMode;
-import org.testcontainers.containers.GenericContainer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class H2Test extends LogCaptureableTests {
+import java.util.Collections;
+
+import static io.r2dbc.spi.ConnectionFactoryOptions.*;
+
+public class H2Test {
 
     private static SpringResourceReader springResourceReader = new SpringResourceReader();
-
-    static Logger statementsLogger;
-    static Level statementsPreviousLevel;
-
-    @BeforeEach
-    public void beforeEach()  {
-        statementsLogger = (Logger) LoggerFactory.getLogger("name.nkonev.r2dbc.migrate.core.R2dbcMigrate");
-        statementsPreviousLevel = statementsLogger.getEffectiveLevel();
-    }
-
-    @AfterEach
-    public void afterEach() {
-        statementsLogger.setLevel(statementsPreviousLevel);
-    }
 
     private ConnectionFactory makeConnectionMono() {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
@@ -63,16 +24,6 @@ public class H2Test extends LogCaptureableTests {
                 .option(DATABASE, "r2dbc:h2:mem:///testdb;DB_CLOSE_DELAY=-1")
                 .build());
         return connectionFactory;
-    }
-
-    @Override
-    protected Level getStatementsPreviousLevel() {
-        return statementsPreviousLevel;
-    }
-
-    @Override
-    protected Logger getStatementsLogger() {
-        return statementsLogger;
     }
 
     static class Customer {

@@ -1,23 +1,18 @@
 package name.nkonev.r2dbc.migrate.core;
 
-import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
-import static io.r2dbc.spi.ConnectionFactoryOptions.DRIVER;
-import static io.r2dbc.spi.ConnectionFactoryOptions.HOST;
-import static io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD;
-import static io.r2dbc.spi.ConnectionFactoryOptions.PORT;
-import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
-import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
-import java.time.Duration;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
+
+import java.time.Duration;
+
+import static io.r2dbc.spi.ConnectionFactoryOptions.*;
+import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 
 public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTest {
 
@@ -27,14 +22,6 @@ public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTe
 
     final static String user = "mysql-user";
     final static String password = "mysql-password";
-
-    static Logger statementsLogger;
-    static Level statementsPreviousLevel;
-
-    @Override
-    protected GenericContainer getContainer() {
-        return container;
-    }
 
     @BeforeEach
     public void beforeEach()  {
@@ -46,15 +33,11 @@ public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTe
             .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
         container.start();
-
-        statementsLogger = (Logger) LoggerFactory.getLogger("name.nkonev.r2dbc.migrate.core.R2dbcMigrate");
-        statementsPreviousLevel = statementsLogger.getEffectiveLevel();
     }
 
     @AfterEach
     public void afterEach() {
         container.stop();
-        statementsLogger.setLevel(statementsPreviousLevel);
     }
 
     protected ConnectionFactory makeConnectionMono(int port) {
@@ -75,14 +58,8 @@ public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTe
     }
 
     @Override
-    protected Level getStatementsPreviousLevel() {
-        return statementsPreviousLevel;
+    protected LogCaptor getStatementsLogger() {
+        return LogCaptor.forClass(R2dbcMigrate.class);
     }
-
-    @Override
-    protected Logger getStatementsLogger() {
-        return statementsLogger;
-    }
-
 
 }
