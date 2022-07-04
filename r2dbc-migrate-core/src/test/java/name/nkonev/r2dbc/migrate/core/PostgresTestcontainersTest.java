@@ -131,6 +131,55 @@ public class PostgresTestcontainersTest {
     }
 
     @Test
+    public void testPostmigration() {
+        // create and start a ListAppender
+        try(LogCaptor logCaptor = LogCaptor.forName(POSTGRES_QUERY_LOGGER)) {
+            logCaptor.setLogLevelToDebug();
+
+            R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+            properties.setDialect(Dialect.POSTGRESQL);
+            properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql_postmigration/*.sql"));
+
+            Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+            R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+
+            // get log
+            // make asserts
+            assertTrue(
+                    hasSubList(logCaptor.getDebugLogs(), Arrays.asList(
+                            "BEGIN",
+                            "create table if not exists \"migrations\"(id int primary key, description text); create table if not exists \"migrations_lock\"(id int primary key, locked boolean not null); insert into \"migrations_lock\"(id, locked) values (1, false) on conflict (id) do nothing",
+                            "COMMIT",
+                            "BEGIN",
+                            "update \"migrations_lock\" set locked = true where id = 1 and locked = false",
+                            "COMMIT",
+                            "select max(id) from \"migrations\"",
+                            "BEGIN",
+                            "CREATE TABLE customer (id SERIAL PRIMARY KEY, first_name VARCHAR(255), last_name VARCHAR(255))",
+                            "COMMIT",
+                            "BEGIN",
+                            "insert into \"migrations\"(id, description) values ($1, $2)",
+                            "COMMIT",
+                            "BEGIN",
+                            "insert into customer(first_name, last_name) values ('Muhammad', 'Ali'), ('Name', 'Фамилия');",
+                            "COMMIT",
+                            "BEGIN",
+                            "insert into \"migrations\"(id, description) values ($1, $2)",
+                            "COMMIT",
+                            "BEGIN",
+                            "insert into customer(first_name, last_name) values ('Customer', 'Surname 1');; insert into customer(first_name, last_name) values ('Customer', 'Surname 2');; insert into customer(first_name, last_name) values ('Customer', 'Surname 3');; insert into customer(first_name, last_name) values ('Customer', 'Surname 4');",
+                            "COMMIT",
+                            "BEGIN",
+                            "insert into \"migrations\"(id, description) values ($1, $2)",
+                            "COMMIT",
+                            "BEGIN",
+                            "update \"migrations_lock\" set locked = false where id = 1",
+                            "COMMIT"
+                    )));
+        }
+    }
+
+    @Test
     public void testThatLockIsReleasedAfterError() {
         // create and start a ListAppender
         try(LogCaptor logCaptor = LogCaptor.forName(POSTGRES_QUERY_LOGGER)) {
@@ -292,6 +341,7 @@ public class PostgresTestcontainersTest {
                         row.get("description", String.class),
                         false,
                         false,
+                            false,
                             false
                     );
                 })),
@@ -349,6 +399,7 @@ public class PostgresTestcontainersTest {
                             return new MigrationInfo(
                                     row.get("id", Integer.class),
                                     row.get("description", String.class),
+                                    false,
                                     false,
                                     false,
                                     false

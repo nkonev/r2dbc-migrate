@@ -165,13 +165,16 @@ public abstract class R2dbcMigrate {
         LOGGER.info("Found {} premigration sql scripts", premigrationResources.size());
         List<Tuple2<MigrateResource, MigrationInfo>> migrationResources = allFileResources.stream().filter(objects -> !objects.getT2().isPremigration()).collect(Collectors.toList());
         LOGGER.info("Found {} migration sql scripts", migrationResources.size());
+        List<Tuple2<MigrateResource, MigrationInfo>> postmigrationResources = allFileResources.stream().filter(objects -> objects.getT2().isPostmigration()).collect(Collectors.toList());
+        LOGGER.info("Found {} postmigration sql scripts", postmigrationResources.size());
+
 
         return waitForDatabase(connectionFactory, properties)
             .then(premigrate(connectionFactory, properties, premigrationResources))
             .then(
                 Mono.usingWhen(
                     connectionFactory.create(), // here we opens new connection and make all migration stuff
-                    connection -> doWork(connection, properties, migrationResources, maybeUserDialect),
+                    connection -> doWork(connection, properties, migrationResources, maybeUserDialect, postmigrationResources),
                     Connection::close
                 ).onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeUserDialect).then(Mono.error(throwable)))
             );
@@ -267,7 +270,17 @@ public abstract class R2dbcMigrate {
                 }).log("R2dbcMigrateCreatingPreMigrationConnection", Level.FINE);
     }
 
-    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> migrationResources, SqlQueries maybeUserDialect) {
+    private static Mono<Void> postmigrate(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> postmigrationResources) {
+        if (postmigrationResources.isEmpty()) {
+            return Mono.empty();
+        }
+
+        return Flux.fromIterable(postmigrationResources)
+                .concatMap(tuple2 -> makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakePostMigrationWork", Level.FINE), 1)
+                .then();
+    }
+
+    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> migrationResources, SqlQueries maybeUserDialect, List<Tuple2<MigrateResource, MigrationInfo>> postmigrationResources) {
         SqlQueries sqlQueries = getUserOrDeterminedSqlQueries(connection, properties, maybeUserDialect);
 
         return
@@ -284,6 +297,7 @@ public abstract class R2dbcMigrate {
                                 makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakeMigrationWork", Level.FINE)
                                     .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("R2dbcMigrateWritingMigrationMetadata", Level.FINE))
                             , 1)
+                        .then(postmigrate(connection, properties, postmigrationResources))
                         .then(releaseLock(connection, sqlQueries).log("R2dbcMigrateReleasingLock", Level.FINE));
                 });
 

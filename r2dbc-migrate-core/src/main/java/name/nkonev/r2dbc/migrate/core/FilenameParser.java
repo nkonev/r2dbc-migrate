@@ -13,12 +13,15 @@ public abstract class FilenameParser {
 
         private boolean premigration;
 
-        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional, boolean premigration) {
+        private boolean postmigration;
+
+        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional, boolean premigration, boolean postmigration) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
             this.transactional = transactional;
             this.premigration = premigration;
+            this.postmigration = postmigration;
         }
 
         public String getDescription() {
@@ -40,6 +43,10 @@ public abstract class FilenameParser {
 
         public boolean isPremigration() {
             return premigration;
+        }
+
+        public boolean isPostmigration() {
+            return postmigration;
         }
 
         @Override
@@ -66,11 +73,12 @@ public abstract class FilenameParser {
             List<String> modifiers = Arrays.asList(modifiersRaw.split(","));
             boolean nonTransactional = modifiers.contains("nontransactional");
             boolean premigration = modifiers.contains("premigration");
+            boolean postmigration = modifiers.contains("postmigration");
             boolean split = modifiers.contains("split");
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), split, !nonTransactional, premigration);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), split, !nonTransactional, premigration, postmigration);
         } else if (array.length == 2) {
             // no split
-            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true, false);
+            return new MigrationInfo(getVersion(array[0]), getDescription(array[1]), false, true, false, false);
         } else {
             throw new RuntimeException("Invalid file name '" + filename + "'");
         }

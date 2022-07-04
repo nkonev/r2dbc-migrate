@@ -147,6 +147,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
                         row.get("description", String.class),
                         false,
                         false,
+                            false,
                             false
                     );
                 })),
