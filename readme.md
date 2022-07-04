@@ -32,8 +32,8 @@ Their descriptions are available in your IDE Ctrl+Space help or in [spring-confi
 
 ## Limitations
 * Currently, this library heavy relies on upsert-like syntax like `CREATE TABLE .. ON CONFLICT DO NOTHING`.
-As a result, this library [doesn't support](https://github.com/nkonev/r2dbc-migrate/issues/21) run against H2 with `MODE=PostgreSQL`. Use testcontainers with real PostgreSQL.
-* Only migration forward is supported. No `migrate back`.
+As a result, this library [doesn't support](https://github.com/nkonev/r2dbc-migrate/issues/21) run against H2 with `MODE=PostgreSQL`. Use [testcontainers](https://github.com/nkonev/r2dbc-migrate-example) with real PostgreSQL.
+* Only migration forward is supported. No `migration back`.
 * No [checksum](https://github.com/nkonev/r2dbc-migrate/issues/5) validation. So no [repeatable](https://github.com/nkonev/r2dbc-migrate/issues/9) migrations.
 
 ## Download
