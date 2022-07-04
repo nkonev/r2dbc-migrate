@@ -169,13 +169,11 @@ public abstract class R2dbcMigrate {
         return waitForDatabase(connectionFactory, properties)
             .then(premigrate(connectionFactory, properties, premigrationResources))
             .then(
-                Mono.fromDirect(
-                    Mono.usingWhen(
-                        connectionFactory.create(), // here we opens new connection and make all migration stuff
-                        connection -> doWork(connection, properties, migrationResources, maybeUserDialect),
-                        Connection::close
-                    ).onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeUserDialect).then(Mono.error(throwable)))
-                )
+                Mono.usingWhen(
+                    connectionFactory.create(), // here we opens new connection and make all migration stuff
+                    connection -> doWork(connection, properties, migrationResources, maybeUserDialect),
+                    Connection::close
+                ).onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeUserDialect).then(Mono.error(throwable)))
             );
     }
 
