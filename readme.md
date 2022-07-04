@@ -30,6 +30,12 @@ It also supports user-provided dialect. You can pass implementation of `SqlQueri
 All available configuration options are in [R2dbcMigrateProperties](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-core/src/main/java/name/nkonev/r2dbc/migrate/core/R2dbcMigrateProperties.java) class.
 Their descriptions are available in your IDE Ctrl+Space help or in [spring-configuration-metadata.json](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-spring-boot-starter/src/main/resources/META-INF/spring-configuration-metadata.json) file.
 
+## Limitations
+* Currently, this library heavy relies on upsert-like syntax like `CREATE TABLE .. ON CONFLICT DO NOTHING`.
+As a result, this library [doesn't support](https://github.com/nkonev/r2dbc-migrate/issues/21) run against H2 with `MODE=PostgreSQL`. Use testcontainers with real PostgreSQL.
+* Only migration forward is supported. No `migrate back`.
+* No [checksum](https://github.com/nkonev/r2dbc-migrate/issues/5) validation. So no [repeatable](https://github.com/nkonev/r2dbc-migrate/issues/9) migrations.
+
 ## Download
 
 ### Docker
