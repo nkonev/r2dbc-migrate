@@ -127,6 +127,7 @@ public class PostgresTestcontainersTest {
                             "update \"migrations_lock\" set locked = false where id = 1",
                             "COMMIT"
                     )));
+            logCaptor.setLogLevelToInfo();
         }
     }
 
@@ -168,6 +169,7 @@ public class PostgresTestcontainersTest {
             Boolean block = r.block();
             Assertions.assertNotNull(block);
             Assertions.assertFalse(block);
+            logCaptor.setLogLevelToInfo();
         }
     }
 
@@ -482,6 +484,7 @@ public class PostgresTestcontainersTest {
                             "update simple_migrations_lock set locked = false where id = 1",
                             "COMMIT"
                     )));
+            logCaptor.setLogLevelToInfo();
         }
     }
 
