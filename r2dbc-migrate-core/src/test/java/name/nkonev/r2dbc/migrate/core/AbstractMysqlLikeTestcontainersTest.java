@@ -103,6 +103,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
             Byte block = r.block();
             Assertions.assertNotNull(block);
             Assertions.assertEquals((byte) 0, block);
+            logCaptor.setLogLevelToInfo();
         }
     }
 

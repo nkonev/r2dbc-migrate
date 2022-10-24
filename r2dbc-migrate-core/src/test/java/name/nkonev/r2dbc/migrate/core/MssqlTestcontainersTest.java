@@ -274,6 +274,7 @@ public class MssqlTestcontainersTest {
             Boolean block = r.block();
             Assertions.assertNotNull(block);
             Assertions.assertFalse(block);
+            logCaptor.setLogLevelToInfo();
         }
     }
 
