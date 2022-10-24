@@ -6,6 +6,7 @@ import io.r2dbc.spi.ConnectionFactoryOptions;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 
@@ -14,6 +15,7 @@ import java.time.Duration;
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 
+@Disabled("Until https://github.com/mariadb-corporation/mariadb-connector-r2dbc will be released with R2DBC 1.0")
 public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTest {
 
     final static int MYSQL_PORT = 3306;
