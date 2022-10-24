@@ -35,8 +35,8 @@
 	</developers>
 
 	<properties>
-		<java.version>8</java.version>
-		<spring.boot.version>2.7.0</spring.boot.version>
+		<java.version>17</java.version>
+		<spring.boot.version>3.0.0-RC1</spring.boot.version>
 		<maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
 		<testcontainers.version>1.17.2</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -51,8 +51,10 @@
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <maven.gpg.plugin>3.0.1</maven.gpg.plugin>
         <reflections.version>0.10.2</reflections.version>
+        <mssql.driver.version>1.0.0.RC1</mssql.driver.version>
         <mysql.driver.version>0.8.2.RELEASE</mysql.driver.version>
-		<commons.io.version>2.11.0</commons.io.version>
+        <mariadb.driver.version>1.1.2</mariadb.driver.version>
+        <commons.io.version>2.11.0</commons.io.version>
         <logcaptor.version>2.7.10</logcaptor.version>
     </properties>
 
@@ -85,6 +87,14 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
 	</repositories>
 
 	<pluginRepositories>
@@ -95,6 +105,14 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</pluginRepository>
+        <pluginRepository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
 	</pluginRepositories>
 
 	<distributionManagement>
