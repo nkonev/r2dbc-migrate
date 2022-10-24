@@ -75,12 +75,12 @@ public abstract class R2dbcMigrate {
     private static Mono<Void> transactionalWrap(Connection connection, boolean transactional,
         Publisher<? extends io.r2dbc.spi.Result> migrationThings, String info) {
 
-        Mono<Integer> migrationResult = Flux.from(migrationThings)
+        Mono<Long> migrationResult = Flux.from(migrationThings)
                 .flatMap(Result::getRowsUpdated) // if we don't get rows updates we swallow potential errors from PostgreSQL
-                .switchIfEmpty(Mono.just(0)) // prevent emitting empty flux
-                .reduceWith(() -> 0, Integer::sum)
-                .doOnSuccess(integer -> {
-                    LOGGER.info(ROWS_UPDATED, info, integer);
+                .switchIfEmpty(Mono.just(0L)) // prevent emitting empty flux
+                .reduceWith(() -> 0L, Long::sum)
+                .doOnSuccess(aLong -> {
+                    LOGGER.info(ROWS_UPDATED, info, aLong);
                 });
 
         Mono<Void> result;
@@ -185,21 +185,21 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Void> acquireOrWaitForLock(Connection connection, SqlQueries sqlQueries, R2dbcMigrateProperties properties) {
-        Mono<Integer> lockUpdated = Mono.from(connection.createStatement(sqlQueries.tryAcquireLock()).execute())
+        Mono<Long> lockUpdated = Mono.from(connection.createStatement(sqlQueries.tryAcquireLock()).execute())
                 .flatMap(o -> Mono.from(o.getRowsUpdated()))
-                .switchIfEmpty(Mono.just(0))
-                .flatMap(integer -> {
-                    if (Integer.valueOf(0).equals(integer)) {
+                .switchIfEmpty(Mono.just(0L))
+                .flatMap(aLong -> {
+                    if (Integer.valueOf(0).equals(aLong)) {
                         return Mono.error(new RuntimeException("Equals zero"));
                     } else {
-                        return Mono.just(integer);
+                        return Mono.just(aLong);
                     }
                 })
                 .doOnSuccess(integer -> {
                     LOGGER.info(ROWS_UPDATED, "Acquiring lock", integer);
                 });
 
-        Mono<Integer> waitForLock = lockUpdated.retryWhen(reactor.util.retry.Retry.fixedDelay(properties.getAcquireLockMaxRetries(), properties.getAcquireLockRetryDelay()).doAfterRetry(retrySignal -> {
+        Mono<Long> waitForLock = lockUpdated.retryWhen(reactor.util.retry.Retry.fixedDelay(properties.getAcquireLockMaxRetries(), properties.getAcquireLockRetryDelay()).doAfterRetry(retrySignal -> {
             LOGGER.warn("Waiting for lock");
         }));
         return transactionalWrapUnchecked(connection, true, waitForLock);

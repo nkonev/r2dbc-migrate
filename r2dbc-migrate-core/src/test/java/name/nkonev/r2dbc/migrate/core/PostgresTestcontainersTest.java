@@ -253,7 +253,7 @@ public class PostgresTestcontainersTest {
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
 
-        Mono<Integer> integerMono = Mono.usingWhen(
+        Mono<Long> integerMono = Mono.usingWhen(
             connectionFactory.create(),
             connection -> Mono
                 .from(connection.createStatement("create schema \"my scheme\"").execute())
