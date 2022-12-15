@@ -36,7 +36,7 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<spring.boot.version>3.0.0-RC1</spring.boot.version>
+		<spring.boot.version>3.0.0</spring.boot.version>
 		<maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
 		<testcontainers.version>1.17.2</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -51,7 +51,7 @@
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <maven.gpg.plugin>3.0.1</maven.gpg.plugin>
         <reflections.version>0.10.2</reflections.version>
-        <mssql.driver.version>1.0.0.RC1</mssql.driver.version>
+        <mssql.driver.version>1.0.0.RELEASE</mssql.driver.version>
         <mysql.driver.version>0.8.2.RELEASE</mysql.driver.version>
         <mariadb.driver.version>1.1.2</mariadb.driver.version>
         <commons.io.version>2.11.0</commons.io.version>
