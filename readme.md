@@ -12,7 +12,7 @@ Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-availa
 * H2
 * MariaDB
 
-It also supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/commit/86296acf0bbc6a7f4cbffe493cd2c3060d7885e2#diff-25735d05174bb55a45ca3d5986fc3ec1R369).
+It also supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/commit/86296acf0bbc6a7f4cbffe493cd2c3060d7885e2#diff-ed1c7d95fcf0c0921c5b87c0d91c3f01a7c686f5e69059e8621f55de9e95a334R369).
 
 ## Features
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
