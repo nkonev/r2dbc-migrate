@@ -36,7 +36,7 @@ Because this syntax isn't supported in H2 in PostresSQL compatibility mode, as a
 * Only forward migrations are supported. No `back migrations`.
 * No [checksum](https://github.com/nkonev/r2dbc-migrate/issues/5) validation. As a result [repeatable](https://github.com/nkonev/r2dbc-migrate/issues/9) migrations aren't supported.
 
-## Compatilility (r2dbc-migrate, R2DBC Spec, Java Spring Boot)
+## Compatilility (r2dbc-migrate, R2DBC Spec, Java, Spring Boot ...)
 See [here](https://github.com/nkonev/r2dbc-migrate/issues/27#issuecomment-1404878933)
 
 ## Download
