@@ -31,10 +31,10 @@ All available configuration options are in [R2dbcMigrateProperties](https://gith
 Their descriptions are available in your IDE Ctrl+Space help or in [spring-configuration-metadata.json](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-spring-boot-starter/src/main/resources/META-INF/spring-configuration-metadata.json) file.
 
 ## Limitations
-* Currently, this library heavy relies on upsert-like syntax like `CREATE TABLE .. ON CONFLICT DO NOTHING`.
-As a result, this library [doesn't support](https://github.com/nkonev/r2dbc-migrate/issues/21) run against H2 with `MODE=PostgreSQL`. Use [testcontainers](https://github.com/nkonev/r2dbc-migrate-example) with real PostgreSQL.
-* Only migration forward is supported. No `migration back`.
-* No [checksum](https://github.com/nkonev/r2dbc-migrate/issues/5) validation. So no [repeatable](https://github.com/nkonev/r2dbc-migrate/issues/9) migrations.
+* Currently, this library heavy relies on upsert-like syntax like `CREATE TABLE ... ON CONFLICT DO NOTHING`.
+Because this syntax isn't supported in H2 in PostresSQL compatibility mode, as a result, this library [can't be](https://github.com/nkonev/r2dbc-migrate/issues/21) run against H2 with `MODE=PostgreSQL`. Use [testcontainers](https://github.com/nkonev/r2dbc-migrate-example) with real PostgreSQL.
+* Only forward migrations are supported. No `back migrations`.
+* No [checksum](https://github.com/nkonev/r2dbc-migrate/issues/5) validation. As a result [repeatable](https://github.com/nkonev/r2dbc-migrate/issues/9) migrations aren't supported.
 
 ## Download
 
