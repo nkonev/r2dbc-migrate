@@ -19,7 +19,7 @@ It also supports user-provided dialect. You can pass implementation of `SqlQueri
 * Pre-migration scripts, for example `V0__create_schemas__premigration.sql`. Those scripts are invoked every time before entire migration process(e. g. before migration tables created), so you need to make them idempotent. You can use zero or negative version number(s): `V-1__create_schemas__nontransactional,premigration.sql`. See [example](https://github.com/nkonev/r2dbc-migrate/tree/master/r2dbc-migrate-core/src/test/resources/migrations/postgresql_premigration).
 * It waits until database has been started, then performs test query, and validates its result. This can be useful for the initial data loading into database with docker-compose
 * Supports migrations files larger than `-Xmx`: file will be split line-by-line (`split` modifier), then it will be loaded by chunks into the database
-* Supports lock, that make you able to start number of replicas your microservice, without care of migrations collide each other
+* Supports lock, that make you able to start number of replicas your microservice, without care of migrations collide each other. Database-specific lock tracking [issue](https://github.com/nkonev/r2dbc-migrate/issues/28).
 * Each migration runs in the separated transaction by default
 * It also supports `nontransactional` migrations, due to SQL Server 2017 prohibits `CREATE DATABASE` in the transaction
 * Docker image
