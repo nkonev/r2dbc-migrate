@@ -31,37 +31,37 @@ public abstract class R2dbcMigrate {
         return resourceReader.getResources(resourcesPath);
     }
 
-    private static SqlQueries getSqlQueries(R2dbcMigrateProperties properties, Connection connection) {
+    private static Dialect getSqlDialect(R2dbcMigrateProperties properties, Connection connection) {
         if (properties.getDialect() == null) {
             Optional<String> maybeDb = ofNullable(connection.getMetadata())
                 .map(md -> md.getDatabaseProductName())
                 .map(s -> s.toLowerCase());
             if (maybeDb.isPresent()) {
                 if (maybeDb.get().contains("postgres")) {
-                    return new PostgreSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.POSTGRESQL;
                 } else if (maybeDb.get().contains("microsoft")) {
-                    return new MSSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.MSSQL;
                 } else if (maybeDb.get().contains("mysql")) {
-                    return new MySqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.MYSQL;
                 } else if (maybeDb.get().contains("h2")) {
-                    return new H2Queries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.H2;
                 } else if (maybeDb.get().contains("maria")) {
-                    return new MariadbQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.MARIADB;
                 }
             }
             throw new RuntimeException("Cannot recognize dialect. Try to set it explicitly.");
         } else {
             switch (properties.getDialect()) {
                 case POSTGRESQL:
-                    return new PostgreSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.POSTGRESQL;
                 case MSSQL:
-                    return new MSSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.MSSQL;
                 case MYSQL:
-                    return new MySqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.MYSQL;
                 case H2:
-                    return new H2Queries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.H2;
                 case MARIADB:
-                    return new MariadbQueries(properties.getMigrationsSchema(), properties.getMigrationsTable(), properties.getMigrationsLockTable());
+                    return Dialect.MARIADB;
                 default:
                     throw new RuntimeException("Unsupported dialect: " + properties.getDialect());
             }
@@ -153,7 +153,7 @@ public abstract class R2dbcMigrate {
     }
 
     // entrypoint
-    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader, SqlQueries maybeUserDialect) {
+    public static Mono<Void> migrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, MigrateResourceReader resourceReader, SqlQueries maybeUserSqlQueries, Locker maybeLocker) {
         LOGGER.info("Configured with {}", properties);
         if (!properties.isEnable()) {
             return Mono.empty();
@@ -170,22 +170,23 @@ public abstract class R2dbcMigrate {
             .then(premigrate(connectionFactory, properties, premigrationResources))
             .then(
                 Mono.usingWhen(
-                    connectionFactory.create(), // here we opens new connection and make all migration stuff
-                    connection -> doWork(connection, properties, migrationResources, maybeUserDialect),
+                    connectionFactory.create(), // here we open new connection and make all migration stuff
+                    connection -> doWork(connection, properties, migrationResources, maybeUserSqlQueries, maybeLocker),
                     Connection::close
-                ).onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeUserDialect).then(Mono.error(throwable)))
+                ).onErrorResume(throwable -> releaseLockAfterError(throwable, connectionFactory, properties, maybeLocker).then(Mono.error(throwable)))
             );
     }
 
-    private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries) {
+    private static Mono<Void> ensureInternals(Connection connection, SqlQueries sqlQueries, Locker locker) {
         Batch createInternals = connection.createBatch();
         sqlQueries.createInternalTables().forEach(createInternals::add);
+        locker.createInternalTables().forEach(createInternals::add);
         Publisher<? extends Result> createInternalTables = createInternals.execute();
         return transactionalWrap(connection, true, createInternalTables, "Making internal tables");
     }
 
-    private static Mono<Void> acquireOrWaitForLock(Connection connection, SqlQueries sqlQueries, R2dbcMigrateProperties properties) {
-        Mono<Long> lockUpdated = Mono.from(connection.createStatement(sqlQueries.tryAcquireLock()).execute())
+    private static Mono<Void> acquireOrWaitForLock(Connection connection, Locker locker, R2dbcMigrateProperties properties) {
+        Mono<Long> lockUpdated = Mono.from(connection.createStatement(locker.tryAcquireLock()).execute())
                 .flatMap(o -> Mono.from(o.getRowsUpdated()))
                 .switchIfEmpty(Mono.just(0L))
                 .flatMap(aLong -> {
@@ -233,17 +234,18 @@ public abstract class R2dbcMigrate {
         return sortedResources;
     }
 
-    private static Mono<Void> releaseLock(Connection connection, SqlQueries sqlQueries) {
-        return transactionalWrap(connection, true, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock");
+    private static Mono<Void> releaseLock(Connection connection, Locker locker) {
+        return transactionalWrap(connection, true, (connection.createStatement(locker.releaseLock()).execute()), "Releasing lock");
     }
 
-    private static Mono<Void> releaseLockAfterError(Throwable throwable, ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, SqlQueries maybeUserDialect) {
+    private static Mono<Void> releaseLockAfterError(Throwable throwable, ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, Locker maybeUserLocker) {
         LOGGER.error("Got error during migration, will release lock", throwable);
         return Mono.usingWhen(
             connectionFactory.create(),
             connection -> {
-                SqlQueries sqlQueries = getUserOrDeterminedSqlQueries(connection, properties, maybeUserDialect);
-                return transactionalWrap(connection, false, (connection.createStatement(sqlQueries.releaseLock()).execute()), "Releasing lock after error");
+                Dialect sqlDialect = getSqlDialect(properties, connection);
+                Locker locker = getUserOrDeterminedLocker(sqlDialect, properties, maybeUserLocker);
+                return transactionalWrap(connection, false, (connection.createStatement(locker.releaseLock()).execute()), "Releasing lock after error");
             },
             Connection::close
         );
@@ -267,13 +269,15 @@ public abstract class R2dbcMigrate {
                 }).log("R2dbcMigrateCreatingPreMigrationConnection", Level.FINE);
     }
 
-    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> migrationResources, SqlQueries maybeUserDialect) {
-        SqlQueries sqlQueries = getUserOrDeterminedSqlQueries(connection, properties, maybeUserDialect);
+    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> migrationResources, SqlQueries maybeUserSqlQueries, Locker maybeLocker) {
+        Dialect sqlDialect = getSqlDialect(properties, connection);
+        SqlQueries sqlQueries = getUserOrDeterminedSqlQueries(sqlDialect, properties, maybeUserSqlQueries);
+        Locker locker = getUserOrDeterminedLocker(sqlDialect, properties, maybeLocker);
 
         return
-            ensureInternals(connection, sqlQueries)
+            ensureInternals(connection, sqlQueries, locker)
                 .log("R2dbcMigrateEnsuringInternals", Level.FINE)
-                .then(acquireOrWaitForLock(connection, sqlQueries, properties).log("R2dbcMigrateAcquiringLock", Level.FINE))
+                .then(acquireOrWaitForLock(connection, locker, properties).log("R2dbcMigrateAcquiringLock", Level.FINE))
                 .then(getDatabaseVersionOrZero(sqlQueries, connection, properties).log("R2dbcMigrateGetDatabaseVersion", Level.FINE))
                 .flatMap(currentVersion -> {
                     LOGGER.info("Database version is {}", currentVersion);
@@ -284,15 +288,43 @@ public abstract class R2dbcMigrate {
                                 makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakeMigrationWork", Level.FINE)
                                     .then(writeMigrationMetadata(connection, sqlQueries, tuple2).log("R2dbcMigrateWritingMigrationMetadata", Level.FINE))
                             , 1)
-                        .then(releaseLock(connection, sqlQueries).log("R2dbcMigrateReleasingLock", Level.FINE));
+                        .then(releaseLock(connection, locker).log("R2dbcMigrateReleasingLock", Level.FINE));
                 });
 
     }
 
-    private static SqlQueries getUserOrDeterminedSqlQueries(Connection connection, R2dbcMigrateProperties properties, SqlQueries maybeUserDialect) {
-        SqlQueries sqlQueries = maybeUserDialect == null ? getSqlQueries(properties, connection) : maybeUserDialect;
+    private static SqlQueries getUserOrDeterminedSqlQueries(Dialect sqlDialect, R2dbcMigrateProperties properties, SqlQueries maybeUserSqlQueries) {
+        final SqlQueries sqlQueries = Objects.requireNonNullElseGet(maybeUserSqlQueries, () ->
+            switch (sqlDialect) {
+                case POSTGRESQL -> new PostgreSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
+                case MSSQL -> new MSSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
+                case MYSQL -> new MySqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
+                case H2 -> new H2Queries(properties.getMigrationsSchema(), properties.getMigrationsTable());
+                case MARIADB -> new MariadbQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
+            }
+        );
         LOGGER.debug("Instantiated {}", sqlQueries.getClass());
         return sqlQueries;
+    }
+
+    private static Locker getUserOrDeterminedLocker(Dialect sqlDialect, R2dbcMigrateProperties properties, Locker maybeUserLocker) {
+        final Locker locker = Objects.requireNonNullElseGet(maybeUserLocker, () ->
+            switch (sqlDialect) {
+                case POSTGRESQL -> {
+                    if (properties.isPreferDbSpecificLock()) {
+                        yield new PostgreSqlAdvisoryLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                    } else {
+                        yield new PostgreSqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                    }
+                }
+                case MSSQL -> new MSSqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                case MYSQL -> new MySqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                case H2 -> new H2TableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                case MARIADB -> new MariadbTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+            }
+        );
+        LOGGER.debug("Instantiated {}", locker.getClass());
+        return locker;
     }
 
     private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<MigrateResource, FilenameParser.MigrationInfo> tt) {

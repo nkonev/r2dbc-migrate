@@ -31,4 +31,5 @@ build/
 
 
 *.releaseBackup
+*.versionsBackup
 release.properties

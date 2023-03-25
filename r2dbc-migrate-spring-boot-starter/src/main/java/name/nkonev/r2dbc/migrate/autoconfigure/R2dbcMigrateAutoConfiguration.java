@@ -2,6 +2,7 @@ package name.nkonev.r2dbc.migrate.autoconfigure;
 
 import io.r2dbc.spi.ConnectionFactory;
 import name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.R2dbcMigrateBlockingInvoker;
+import name.nkonev.r2dbc.migrate.core.Locker;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrate;
 import name.nkonev.r2dbc.migrate.core.R2dbcMigrateProperties;
 import name.nkonev.r2dbc.migrate.core.SqlQueries;
@@ -64,29 +65,49 @@ public class R2dbcMigrateAutoConfiguration {
         private final ConnectionFactory connectionFactory;
         private final R2dbcMigrateProperties properties;
         private final MigrateResourceReader resourceReader;
-        private final SqlQueries maybeUserDialect;
+        private final SqlQueries maybeUserSqlQueries;
 
-        public R2dbcMigrateBlockingInvoker(ConnectionFactory connectionFactory,
-                                           R2dbcMigrateProperties properties,
-                                           SqlQueries maybeUserDialect) {
+        private final Locker maybeUserLocker;
+
+        public R2dbcMigrateBlockingInvoker(
+            ConnectionFactory connectionFactory,
+            R2dbcMigrateProperties properties,
+            SqlQueries maybeUserSqlQueries,
+            Locker maybeLocker
+        ) {
             this.connectionFactory = connectionFactory;
             this.properties = properties;
             this.resourceReader = new SpringResourceReader();
-            this.maybeUserDialect = maybeUserDialect;
+            this.maybeUserSqlQueries = maybeUserSqlQueries;
+            this.maybeUserLocker = maybeLocker;
         }
 
         public void migrate() {
             LOGGER.info("Starting R2DBC migration");
-            R2dbcMigrate.migrate(connectionFactory, properties, resourceReader, maybeUserDialect).block();
+            R2dbcMigrate.migrate(
+                    connectionFactory,
+                    properties,
+                    resourceReader,
+                    maybeUserSqlQueries,
+                    maybeUserLocker
+            ).block();
             LOGGER.info("End of R2DBC migration");
         }
 
     }
 
     @Bean(name = MIGRATE_BEAN_NAME, initMethod = "migrate")
-    public R2dbcMigrateBlockingInvoker r2dbcMigrate(ConnectionFactory connectionFactory,
-                                                    SpringBootR2dbcMigrateProperties properties,
-                                                    @Autowired(required = false) SqlQueries maybeUserDialect) {
-        return new R2dbcMigrateBlockingInvoker(connectionFactory, properties, maybeUserDialect);
+    public R2dbcMigrateBlockingInvoker r2dbcMigrate(
+        ConnectionFactory connectionFactory,
+        SpringBootR2dbcMigrateProperties properties,
+        @Autowired(required = false) SqlQueries maybeUserSqlQueries,
+        @Autowired(required = false) Locker maybeLocker
+    ) {
+        return new R2dbcMigrateBlockingInvoker(
+                connectionFactory,
+                properties,
+                maybeUserSqlQueries,
+                maybeLocker
+        );
     }
 }

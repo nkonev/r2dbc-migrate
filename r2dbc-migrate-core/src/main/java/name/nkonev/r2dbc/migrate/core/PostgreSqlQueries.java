@@ -2,20 +2,16 @@ package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Statement;
-
-import java.util.Arrays;
 import java.util.List;
 
 public class PostgreSqlQueries implements SqlQueries {
 
     private final String migrationsSchema;
     private final String migrationsTable;
-    private final String migrationsLockTable;
 
-    public PostgreSqlQueries(String migrationsSchema, String migrationsTable, String migrationsLockTable) {
+    public PostgreSqlQueries(String migrationsSchema, String migrationsTable) {
         this.migrationsSchema = migrationsSchema;
         this.migrationsTable = migrationsTable;
-        this.migrationsLockTable = migrationsLockTable;
     }
 
     private boolean schemaIsDefined() {
@@ -34,20 +30,10 @@ public class PostgreSqlQueries implements SqlQueries {
         }
     }
 
-    private String withMigrationsLockTable(String template) {
-        if (schemaIsDefined()) {
-            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsLockTable));
-        } else {
-            return String.format(template, quoteAsObject(migrationsLockTable));
-        }
-    }
-
     @Override
     public List<String> createInternalTables() {
-        return Arrays.asList(
-                withMigrationsTable("create table if not exists %s(id int primary key, description text)"),
-                withMigrationsLockTable("create table if not exists %s(id int primary key, locked boolean not null)"),
-                withMigrationsLockTable("insert into %s(id, locked) values (1, false) on conflict (id) do nothing")
+        return List.of(
+            withMigrationsTable("create table if not exists %s(id int primary key, description text)")
         );
     }
 
@@ -66,15 +52,5 @@ public class PostgreSqlQueries implements SqlQueries {
                 .createStatement(insertMigration())
                 .bind("$1", migrationInfo.getVersion())
                 .bind("$2", migrationInfo.getDescription());
-    }
-
-    @Override
-    public String tryAcquireLock() {
-        return withMigrationsLockTable("update %s set locked = true where id = 1 and locked = false");
-    }
-
-    @Override
-    public String releaseLock() {
-        return withMigrationsLockTable("update %s set locked = false where id = 1");
     }
 }

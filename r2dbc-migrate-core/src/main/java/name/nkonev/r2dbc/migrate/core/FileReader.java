@@ -26,7 +26,7 @@ public abstract class FileReader {
 
     public static String read(MigrateResource resource, Charset fileCharset) {
         try (InputStream inputStream = resource.getInputStream()) {
-            return StreamUtils.copyToString(inputStream, fileCharset);
+            return new String(inputStream.readAllBytes(), fileCharset);
         } catch (IOException e) {
             throw new RuntimeException("Error during reading file '" + resource.getFilename() + "'", e);
         }

@@ -90,9 +90,10 @@ public class PostgresTestcontainersTest {
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
             properties.setDialect(Dialect.POSTGRESQL);
             properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
+            properties.setPreferDbSpecificLock(false);
 
             Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-            R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+            R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
 
             // get log
             // make asserts
@@ -140,13 +141,14 @@ public class PostgresTestcontainersTest {
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
             properties.setDialect(Dialect.POSTGRESQL);
             properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql_error/*.sql"));
+            properties.setPreferDbSpecificLock(false);
 
             Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
 
             RuntimeException thrown = Assertions.assertThrows(
                     RuntimeException.class,
                     () -> {
-                        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+                        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
                     },
                     "Expected exception to throw, but it didn't"
             );
@@ -183,7 +185,7 @@ public class PostgresTestcontainersTest {
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
     }
 
     @Test
@@ -191,7 +193,7 @@ public class PostgresTestcontainersTest {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
     }
 
     @Test
@@ -207,7 +209,7 @@ public class PostgresTestcontainersTest {
                     properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
                     Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
                 },
                 "Expected exception to throw, but it didn't"
         );
@@ -241,7 +243,7 @@ public class PostgresTestcontainersTest {
         properties.setResourcesPaths(Collections.singletonList("file:./target/test-classes/oom_migrations/*.sql"));
 
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
     }
 
 
@@ -252,6 +254,7 @@ public class PostgresTestcontainersTest {
         properties.setMigrationsTable("my migrations");
         properties.setMigrationsLockTable("my migrations lock");
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
+        properties.setPreferDbSpecificLock(false);
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
 
@@ -264,7 +267,7 @@ public class PostgresTestcontainersTest {
         );
         integerMono.block();
 
-        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null).block();
+        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
             connectionFactory.create(),
@@ -320,10 +323,11 @@ public class PostgresTestcontainersTest {
         properties.setMigrationsTable("my migrations");
         properties.setMigrationsLockTable("my migrations lock");
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql_premigration/*.sql"));
+        properties.setPreferDbSpecificLock(false);
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
 
-        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null).block();
+        R2dbcMigrate.migrate(connectionFactory, properties, springResourceReader, null, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
                 connectionFactory.create(),
@@ -381,7 +385,7 @@ public class PostgresTestcontainersTest {
 
         ReflectionsClasspathResourceReader reflectionsClasspathResourceReader = new ReflectionsClasspathResourceReader();
 
-        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, reflectionsClasspathResourceReader, null).block();
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, reflectionsClasspathResourceReader, null, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
             connectionFactory.create(),
@@ -401,13 +405,11 @@ public class PostgresTestcontainersTest {
         Assertions.assertEquals("Surname 4", client.secondName);
     }
 
-    public static class SimplePostgresqlDialect implements SqlQueries {
+    static class SimplePostgresqlDialect implements SqlQueries {
         @Override
         public List<String> createInternalTables() {
-            return Arrays.asList(
-                "create table if not exists simple_migrations(id int primary key, description text)",
-                "create table if not exists simple_migrations_lock(id int primary key, locked boolean not null)",
-                "insert into simple_migrations_lock(id, locked) values (1, false) on conflict (id) do nothing"
+            return List.of(
+                "create table if not exists simple_migrations(id int primary key, description text)"
             );
         }
 
@@ -428,6 +430,17 @@ public class PostgresTestcontainersTest {
                 .bind("$2", migrationInfo.getDescription());
         }
 
+    }
+
+    static class SimplePostgresqlLocker implements Locker {
+
+        public List<String> createInternalTables() {
+            return List.of(
+                    "create table if not exists simple_migrations_lock(id int primary key, locked boolean not null)",
+                    "insert into simple_migrations_lock(id, locked) values (1, false) on conflict (id) do nothing"
+            );
+        }
+
         @Override
         public String tryAcquireLock() {
             return "update simple_migrations_lock set locked = true where id = 1 and locked = false";
@@ -437,6 +450,7 @@ public class PostgresTestcontainersTest {
         public String releaseLock() {
             return "update simple_migrations_lock set locked = false where id = 1";
         }
+
     }
 
     @Test
@@ -450,7 +464,7 @@ public class PostgresTestcontainersTest {
             properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/postgresql/*.sql"));
 
             Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
-            R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, new SimplePostgresqlDialect()).block();
+            R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, new SimplePostgresqlDialect(), new SimplePostgresqlLocker()).block();
 
             // make asserts
             assertTrue(

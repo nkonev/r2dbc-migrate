@@ -24,6 +24,7 @@ public class R2dbcMigrateProperties {
     private String migrationsSchema;
     private String migrationsTable = "migrations";
     private String migrationsLockTable = "migrations_lock";
+    private boolean preferDbSpecificLock = true;
 
     public R2dbcMigrateProperties() {
     }
@@ -162,6 +163,14 @@ public class R2dbcMigrateProperties {
         this.enable = enable;
     }
 
+    public boolean isPreferDbSpecificLock() {
+        return preferDbSpecificLock;
+    }
+
+    public void setPreferDbSpecificLock(boolean preferDbSpecificLock) {
+        this.preferDbSpecificLock = preferDbSpecificLock;
+    }
+
     @Override
     public String toString() {
         return "R2dbcMigrateProperties{" +
@@ -181,6 +190,7 @@ public class R2dbcMigrateProperties {
             ", migrationsSchema='" + migrationsSchema + '\'' +
             ", migrationsTable='" + migrationsTable + '\'' +
             ", migrationsLockTable='" + migrationsLockTable + '\'' +
+            ", preferDbSpecificLock='" + preferDbSpecificLock + '\'' +
             '}';
     }
 }
