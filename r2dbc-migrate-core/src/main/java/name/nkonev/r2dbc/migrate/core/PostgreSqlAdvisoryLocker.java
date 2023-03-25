@@ -19,7 +19,7 @@ public class PostgreSqlAdvisoryLocker implements Locker {
 
     @Override
     public String tryAcquireLock() {
-        return String.format("select pg_try_advisory_lock(%s, %s)", migrationsSchemaHashCode, migrationsLockTableHashCode);
+        return String.format("select pg_try_advisory_lock(%s, %s) as lock_result", migrationsSchemaHashCode, migrationsLockTableHashCode);
     }
 
     @Override
