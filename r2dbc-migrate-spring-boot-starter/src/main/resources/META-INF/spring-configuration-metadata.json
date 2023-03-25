@@ -92,7 +92,7 @@
   {
     "name": "r2dbc.migrate.migrations-lock-table",
     "type": "java.lang.String",
-    "description": "Changes migration lock table name. It will be written with corresponding wrapping (quotes in case PostgreSQL, backticks in case MySQL).",
+    "description": "Changes migration lock table name. It will be written with corresponding wrapping (quotes in case PostgreSQL, backticks in case MySQL). In case prefer-db-specific-lock it's recommended to set the different migrations-lock-table if several migrators (e. g. microservices) use the same database",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   },
   {
