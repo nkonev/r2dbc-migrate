@@ -1,4 +1,4 @@
-FROM bellsoft/liberica-openjdk-debian:11.0.15
+FROM bellsoft/liberica-openjdk-debian:17.0.6
 
 WORKDIR /
 
