@@ -8,7 +8,7 @@ Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-availa
 ## Supported databases
 * PostgreSQL
 * Microsoft SQL Server
-* * H2
+* H2
 * MariaDB
 * ~~MySQL~~ 
 In the moment of writing MySQL driver still hasn't migrated to R2DBC 1.0. Tracking [issue](https://github.com/mirromutth/r2dbc-mysql/pull/249).
@@ -19,7 +19,7 @@ r2dbc:
     dialect: mariadb 
 ```
 
-It also supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/commit/86296acf0bbc6a7f4cbffe493cd2c3060d7885e2#diff-ed1c7d95fcf0c0921c5b87c0d91c3f01a7c686f5e69059e8621f55de9e95a334R369).
+It supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/blob/79e69ff03fb8643134eef544744a8f95ab11230a/r2dbc-migrate-core/src/test/java/name/nkonev/r2dbc/migrate/core/PostgresTestcontainersTest.java#L408).
 
 ## Features
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
