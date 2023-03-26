@@ -11,7 +11,7 @@ Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-availa
 * H2
 * MariaDB
 * ~~MySQL~~ 
-In the moment of writing MySQL driver still hasn't migrated to R2DBC 1.0. Tracking [issue](https://github.com/mirromutth/r2dbc-mysql/pull/249).
+In the moment of writing MySQL driver still hasn't migrated to R2DBC 1.0. Tracking [issue](https://github.com/mirromutth/r2dbc-mysql/pull/249). Also there is [successor](https://github.com/asyncer-io/r2dbc-mysql).
 You can try MariaDB driver with explicit dialect
 ```yaml
 r2dbc:
