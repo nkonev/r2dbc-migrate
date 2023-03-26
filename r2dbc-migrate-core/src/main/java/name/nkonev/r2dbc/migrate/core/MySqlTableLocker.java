@@ -2,7 +2,7 @@ package name.nkonev.r2dbc.migrate.core;
 
 import java.util.List;
 
-public class MySqlTableLocker implements Locker {
+public class MySqlTableLocker extends AbstractTableLocker implements Locker {
 
     private final String migrationsSchema;
     private final String migrationsLockTable;

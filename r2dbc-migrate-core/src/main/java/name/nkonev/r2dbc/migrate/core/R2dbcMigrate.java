@@ -125,7 +125,7 @@ public abstract class R2dbcMigrate {
                 .switchIfEmpty(Mono.error(new RuntimeException("Connection is not valid")))
                 .then(
                     Flux.from(connection.createStatement(properties.getValidationQuery()).execute())
-                        .flatMap(o -> o.map(getResultSafely("result", String.class,
+                        .flatMap(o -> o.map(getResultSafely("validation_result", String.class,
                                 "__VALIDATION_RESULT_NOT_PROVIDED")))
                         .filter(s -> {
                             LOGGER.info("Comparing expected value '{}' with provided result '{}'",
@@ -187,34 +187,9 @@ public abstract class R2dbcMigrate {
 
     private static Mono<Void> acquireOrWaitForLock(Connection connection, Locker locker, R2dbcMigrateProperties properties) {
         Mono<? extends Result> lockStatement = Mono.from(connection.createStatement(locker.tryAcquireLock()).execute());
-        Mono<? extends Object> lockUpdated;
+        Mono<? extends Object> lockResult = locker.extractResultOrError(lockStatement);
 
-        if (!properties.isPreferDbSpecificLock()) {
-            lockUpdated = lockStatement.flatMap(o -> Mono.from(o.getRowsUpdated()))
-                .switchIfEmpty(Mono.just(0L))
-                .flatMap(aLong -> {
-                    if (Integer.valueOf(0).equals(aLong)) {
-                        return Mono.error(new RuntimeException("Equals zero"));
-                    } else {
-                        return Mono.just(aLong);
-                    }
-                }).doOnSuccess(integer -> {
-                    LOGGER.info(ROWS_UPDATED, "Acquiring lock", integer);
-                });
-        } else {
-            lockUpdated = lockStatement.flatMap(o -> Mono.from(o.map(getResultSafely("lock_result", Boolean.class, false))))
-            .flatMap(aBoolean -> {
-                if (!aBoolean) {
-                    return Mono.error(new RuntimeException("False result"));
-                } else {
-                    return Mono.just(aBoolean);
-                }
-            }).doOnSuccess(aBoolean -> {
-                LOGGER.info("Acquiring database-specific lock {}", aBoolean);
-            });
-        }
-
-        Mono<? extends Object> waitForLock = lockUpdated.retryWhen(reactor.util.retry.Retry.fixedDelay(properties.getAcquireLockMaxRetries(), properties.getAcquireLockRetryDelay()).doAfterRetry(retrySignal -> {
+        Mono<? extends Object> waitForLock = lockResult.retryWhen(reactor.util.retry.Retry.fixedDelay(properties.getAcquireLockMaxRetries(), properties.getAcquireLockRetryDelay()).doAfterRetry(retrySignal -> {
             LOGGER.warn("Waiting for lock");
         }));
         return transactionalWrapUnchecked(connection, true, waitForLock);

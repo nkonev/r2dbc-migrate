@@ -178,7 +178,7 @@ public class PostgresTestcontainersTest {
     @Test
     public void testValidationResultOk() {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-        properties.setValidationQuery("select 'super value' as result");
+        properties.setValidationQuery("select 'super value' as validation_result");
         properties.setValidationQueryExpectedResultValue("super value");
         properties.setConnectionMaxRetries(1);
         properties.setDialect(Dialect.POSTGRESQL);
@@ -202,7 +202,7 @@ public class PostgresTestcontainersTest {
                 RuntimeException.class,
                 () -> {
                     R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-                    properties.setValidationQuery("select 'not super value' as result");
+                    properties.setValidationQuery("select 'not super value' as validation_result");
                     properties.setValidationQueryExpectedResultValue("super value");
                     properties.setConnectionMaxRetries(1);
                     properties.setDialect(Dialect.POSTGRESQL);
@@ -432,7 +432,7 @@ public class PostgresTestcontainersTest {
 
     }
 
-    static class SimplePostgresqlLocker implements Locker {
+    static class SimplePostgresqlLocker extends AbstractTableLocker implements Locker {
 
         public List<String> createInternalTables() {
             return List.of(

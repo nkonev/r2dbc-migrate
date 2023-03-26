@@ -2,7 +2,7 @@ package name.nkonev.r2dbc.migrate.core;
 
 import java.util.List;
 
-public class H2TableLocker implements Locker {
+public class H2TableLocker extends AbstractTableLocker implements Locker {
 
   private final String migrationsSchema;
   private final String migrationsLockTable;

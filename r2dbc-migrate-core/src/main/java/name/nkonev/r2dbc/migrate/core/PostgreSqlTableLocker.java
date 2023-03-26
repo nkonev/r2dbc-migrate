@@ -2,7 +2,7 @@ package name.nkonev.r2dbc.migrate.core;
 
  import java.util.List;
 
-public class PostgreSqlTableLocker implements Locker {
+public class PostgreSqlTableLocker extends AbstractTableLocker implements Locker {
 
     private final String migrationsSchema;
     private final String migrationsLockTable;

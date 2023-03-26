@@ -12,7 +12,7 @@ public class R2dbcMigrateProperties {
     private List<String> resourcesPaths;
     private int chunkSize = 1000;
     private Dialect dialect;
-    private String validationQuery = "select '42' as result";
+    private String validationQuery = "select '42' as validation_result";
     private String validationQueryExpectedResultValue = "42";
     private Duration validationQueryTimeout = Duration.ofSeconds(5);
     private Duration validationRetryDelay = Duration.ofSeconds(1);

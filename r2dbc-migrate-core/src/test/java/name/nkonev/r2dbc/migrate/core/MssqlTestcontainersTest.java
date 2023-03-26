@@ -119,7 +119,7 @@ public class MssqlTestcontainersTest {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
-        properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
+        properties.setValidationQuery("SELECT collation_name as validation_result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
@@ -152,7 +152,7 @@ public class MssqlTestcontainersTest {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
-        properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
+        properties.setValidationQuery("SELECT collation_name as validation_result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
         properties.setMigrationsSchema("my scheme");
         properties.setMigrationsTable("my migrations");
@@ -228,7 +228,7 @@ public class MssqlTestcontainersTest {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
-        properties.setValidationQuery("SELECT collation_name as result FROM sys.databases WHERE name = N'master'");
+        properties.setValidationQuery("SELECT collation_name as validation_result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
