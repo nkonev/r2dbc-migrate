@@ -1,13 +1,13 @@
 package name.nkonev.r2dbc.migrate.core;
 
- import io.r2dbc.spi.Result;
- import reactor.core.publisher.Mono;
- import reactor.util.Logger;
- import reactor.util.Loggers;
+import io.r2dbc.spi.Result;
+import reactor.core.publisher.Mono;
+import reactor.util.Logger;
+import reactor.util.Loggers;
 
- import java.util.List;
+import java.util.List;
 
- import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
+import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 
 public class PostgreSqlAdvisoryLocker implements Locker {
 
