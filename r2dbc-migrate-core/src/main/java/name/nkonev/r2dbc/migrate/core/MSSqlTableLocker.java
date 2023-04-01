@@ -1,5 +1,7 @@
 package name.nkonev.r2dbc.migrate.core;
 
+import io.r2dbc.spi.Connection;
+
 import java.util.List;
 
 public class MSSqlTableLocker extends AbstractTableLocker implements Locker {
@@ -54,12 +56,12 @@ public class MSSqlTableLocker extends AbstractTableLocker implements Locker {
     }
 
     @Override
-    public String tryAcquireLock() {
-        return withMigrationsLockTable("update %s set locked = 'true' where id = 1 and locked = 'false'");
+    public io.r2dbc.spi.Statement tryAcquireLock(Connection connection) {
+        return connection.createStatement(withMigrationsLockTable("update %s set locked = 'true' where id = 1 and locked = 'false'"));
     }
 
     @Override
-    public String releaseLock() {
-        return withMigrationsLockTable("update %s set locked = 'false' where id = 1");
+    public io.r2dbc.spi.Statement releaseLock(Connection connection) {
+        return connection.createStatement(withMigrationsLockTable("update %s set locked = 'false' where id = 1"));
     }
 }

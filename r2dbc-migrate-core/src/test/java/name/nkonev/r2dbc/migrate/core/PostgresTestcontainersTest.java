@@ -442,13 +442,13 @@ public class PostgresTestcontainersTest {
         }
 
         @Override
-        public String tryAcquireLock() {
-            return "update simple_migrations_lock set locked = true where id = 1 and locked = false";
+        public io.r2dbc.spi.Statement tryAcquireLock(Connection connection) {
+            return connection.createStatement("update simple_migrations_lock set locked = true where id = 1 and locked = false");
         }
 
         @Override
-        public String releaseLock() {
-            return "update simple_migrations_lock set locked = false where id = 1";
+        public io.r2dbc.spi.Statement releaseLock(Connection connection) {
+            return connection.createStatement("update simple_migrations_lock set locked = false where id = 1");
         }
 
     }

@@ -68,13 +68,41 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
     }
 
     @Test
+    public void testMigrationWorksWithTableLock() {
+        Integer mappedPort = getMappedPort();
+
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
+        properties.setPreferDbSpecificLock(false);
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
+
+        Flux<Customer> clientFlux = Flux.usingWhen(
+                makeConnectionMono(mappedPort).create(),
+                connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
+                        .flatMap(o -> o.map((row, rowMetadata) -> {
+                            return new Customer(
+                                    row.get("id", Long.class),
+                                    row.get("first_name", String.class),
+                                    row.get("last_name", String.class)
+                            );
+                        })),
+                Connection::close);
+
+        Customer client = clientFlux.blockLast();
+
+        Assertions.assertEquals("Customer", client.firstName);
+        Assertions.assertEquals("Surname 4", client.lastName);
+        Assertions.assertEquals(6, client.id);
+    }
+
+    @Test
     public void testThatLockIsReleasedAfterError() {
         // create and start a ListAppender
         try(LogCaptor logCaptor = getStatementsLogger()) {
 
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
             properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql_error/*.sql"));
-
+            properties.setPreferDbSpecificLock(false);
             Integer mappedPort = getMappedPort();
 
             RuntimeException thrown = Assertions.assertThrows(
@@ -115,6 +143,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
         properties.setMigrationsTable("my migrations");
         properties.setMigrationsLockTable("my migrations lock");
         properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
+        properties.setPreferDbSpecificLock(false);
         Integer mappedPort = getMappedPort();
         ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
 

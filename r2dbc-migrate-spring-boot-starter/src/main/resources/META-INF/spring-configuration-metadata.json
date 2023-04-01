@@ -104,7 +104,7 @@
   {
     "name": "r2dbc.migrate.prefer-db-specific-lock",
     "type": "boolean",
-    "description": "Use db-specific (advisory lock for PostgreSQL) instead of lock table.",
+    "description": "Use db-specific (advisory lock for PostgreSQL, session lock for MySQL and MariaDB) instead of lock table.",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
   }
 

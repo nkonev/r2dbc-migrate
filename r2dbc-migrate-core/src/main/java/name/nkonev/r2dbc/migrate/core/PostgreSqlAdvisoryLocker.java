@@ -1,5 +1,6 @@
 package name.nkonev.r2dbc.migrate.core;
 
+import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Result;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
@@ -27,13 +28,17 @@ public class PostgreSqlAdvisoryLocker implements Locker {
     }
 
     @Override
-    public String tryAcquireLock() {
-        return String.format("select pg_try_advisory_lock(%s, %s) as lock_result", migrationsSchemaHashCode, migrationsLockTableHashCode);
+    public io.r2dbc.spi.Statement tryAcquireLock(Connection connection) {
+        return connection.createStatement("select pg_try_advisory_lock($1, $2) as lock_result")
+                .bind("$1", migrationsSchemaHashCode)
+                .bind("$2", migrationsLockTableHashCode);
     }
 
     @Override
-    public String releaseLock() {
-        return String.format("select pg_advisory_unlock(%s, %s)", migrationsSchemaHashCode, migrationsLockTableHashCode);
+    public io.r2dbc.spi.Statement releaseLock(Connection connection) {
+        return connection.createStatement("select pg_advisory_unlock($1, $2)")
+                .bind("$1", migrationsSchemaHashCode)
+                .bind("$2", migrationsLockTableHashCode);
     }
 
     @Override

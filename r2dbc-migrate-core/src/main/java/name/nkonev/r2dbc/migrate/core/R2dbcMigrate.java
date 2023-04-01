@@ -186,7 +186,7 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Void> acquireOrWaitForLock(Connection connection, Locker locker, R2dbcMigrateProperties properties) {
-        Mono<? extends Result> lockStatement = Mono.from(connection.createStatement(locker.tryAcquireLock()).execute());
+        Mono<? extends Result> lockStatement = Mono.from(locker.tryAcquireLock(connection).execute());
         Mono<? extends Object> lockResult = locker.extractResultOrError(lockStatement);
 
         Mono<? extends Object> waitForLock = lockResult.retryWhen(reactor.util.retry.Retry.fixedDelay(properties.getAcquireLockMaxRetries(), properties.getAcquireLockRetryDelay()).doAfterRetry(retrySignal -> {
@@ -224,7 +224,7 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Void> releaseLock(Connection connection, Locker locker) {
-        return transactionalWrap(connection, true, (connection.createStatement(locker.releaseLock()).execute()), "Releasing lock");
+        return transactionalWrap(connection, true, (locker.releaseLock(connection).execute()), "Releasing lock");
     }
 
     private static Mono<Void> releaseLockAfterError(Throwable throwable, ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, Locker maybeUserLocker) {
@@ -234,7 +234,7 @@ public abstract class R2dbcMigrate {
             connection -> {
                 Dialect sqlDialect = getSqlDialect(properties, connection);
                 Locker locker = getUserOrDeterminedLocker(sqlDialect, properties, maybeUserLocker);
-                return transactionalWrap(connection, false, (connection.createStatement(locker.releaseLock()).execute()), "Releasing lock after error");
+                return transactionalWrap(connection, false, (locker.releaseLock(connection).execute()), "Releasing lock after error");
             },
             Connection::close
         );
@@ -307,9 +307,21 @@ public abstract class R2dbcMigrate {
                     }
                 }
                 case MSSQL -> new MSSqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
-                case MYSQL -> new MySqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                case MYSQL -> {
+                    if (properties.isPreferDbSpecificLock()) {
+                        yield new MySqlSessionLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                    } else {
+                        yield new MySqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                    }
+                }
                 case H2 -> new H2TableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
-                case MARIADB -> new MariadbTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                case MARIADB -> {
+                    if (properties.isPreferDbSpecificLock()) {
+                        yield new MariadbSessionLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                    } else {
+                        yield new MariadbTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                    }
+                }
             }
         );
         LOGGER.debug("Instantiated {}", locker.getClass());
