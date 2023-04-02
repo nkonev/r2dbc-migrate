@@ -10,15 +10,7 @@ Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-availa
 * Microsoft SQL Server
 * H2
 * MariaDB
-* ~~MySQL~~ 
-In the moment of writing MySQL driver still hasn't migrated to R2DBC 1.0. Tracking [issue](https://github.com/mirromutth/r2dbc-mysql/pull/249).
-You can try MariaDB driver with explicit dialect
-```yaml
-r2dbc:
-  migrate:
-    dialect: mariadb 
-```
-Also there is [successor](https://github.com/asyncer-io/r2dbc-mysql) which was [migrated](https://github.com/asyncer-io/r2dbc-mysql/commit/8e211c2392402d1898b946871feff22e682e7a1b) to R2DBC 1.0 but still there isn't a release.
+* MySQL - see the new R2DBC 1.0 compatible [driver](https://github.com/asyncer-io/r2dbc-mysql)
 
 
 It supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/blob/79e69ff03fb8643134eef544744a8f95ab11230a/r2dbc-migrate-core/src/test/java/name/nkonev/r2dbc/migrate/core/PostgresTestcontainersTest.java#L408).

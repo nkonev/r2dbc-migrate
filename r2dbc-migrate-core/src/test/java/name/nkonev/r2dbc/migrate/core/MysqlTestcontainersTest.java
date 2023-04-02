@@ -16,7 +16,6 @@ import java.time.Duration;
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 
-@Disabled("Until https://github.com/mirromutth/r2dbc-mysql will be released with R2DBC 1.0")
 public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest {
 
     final static int MYSQL_PORT = 3306;

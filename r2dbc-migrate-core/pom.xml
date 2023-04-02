@@ -65,7 +65,7 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>dev.miku</groupId>
+			<groupId>io.asyncer</groupId>
 			<artifactId>r2dbc-mysql</artifactId>
             <version>${mysql.driver.version}</version>
             <scope>test</scope>

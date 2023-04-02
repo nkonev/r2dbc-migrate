@@ -36,7 +36,7 @@
 			<artifactId>r2dbc-postgresql</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>dev.miku</groupId>
+			<groupId>io.asyncer</groupId>
 			<artifactId>r2dbc-mysql</artifactId>
             <version>${mysql.driver.version}</version>
 		</dependency>
