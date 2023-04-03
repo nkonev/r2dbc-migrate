@@ -57,6 +57,9 @@ docker pull nkonev/r2dbc-migrate:latest
 </dependency>
 ```
 
+### Spring Native
+See example [here](https://github.com/nkonev/r2dbc-migrate-example/tree/native).
+
 ### Only library
 ```xml
 <dependency>
