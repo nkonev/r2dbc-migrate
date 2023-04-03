@@ -57,9 +57,6 @@ docker pull nkonev/r2dbc-migrate:latest
 </dependency>
 ```
 
-### Spring Native
-See example [here](https://github.com/nkonev/r2dbc-migrate-example/tree/native).
-
 ### Only library
 ```xml
 <dependency>
@@ -86,8 +83,11 @@ If you want to build your own docker image you will be able to do this
 curl -Ss https://repo.maven.apache.org/maven2/name/nkonev/r2dbc-migrate/r2dbc-migrate-standalone/VERSION/r2dbc-migrate-standalone-VERSION.jar > /tmp/migrate.jar
 ```
 
-## Spring Boot Example
+## Spring Boot example
 https://github.com/nkonev/r2dbc-migrate-example
+
+## Spring Native example
+See example [here](https://github.com/nkonev/r2dbc-migrate-example/tree/native).
 
 ## Library example
 https://github.com/nkonev/r2dbc-migrate-example/tree/library
