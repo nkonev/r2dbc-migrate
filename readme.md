@@ -10,7 +10,7 @@ Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-availa
 * Microsoft SQL Server
 * H2
 * MariaDB
-* MySQL - see the new R2DBC 1.0-compatible [driver](https://github.com/asyncer-io/r2dbc-mysql)
+* MySQL
 
 
 It supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/blob/d65c7c49512a598dc4cc664bc33f78cb57ef3c43/r2dbc-migrate-core/src/test/java/name/nkonev/r2dbc/migrate/core/PostgresTestcontainersTest.java#L408).
@@ -25,7 +25,6 @@ It supports user-provided dialect. You can pass implementation of `SqlQueries` i
 * Supports lock, that make you able to start number of replicas your microservice, without care of migrations collide each other. Database-specific lock tracking [issue](https://github.com/nkonev/r2dbc-migrate/issues/28).
 * Each migration runs in the separated transaction by default
 * It also supports `nontransactional` migrations, due to SQL Server 2017 prohibits `CREATE DATABASE` in the transaction
-* Docker image
 * First-class Spring Boot integration, see example below
 * Also you can use this library without Spring (Boot), see library example below
 * This library tends to be non-invasive, consequently it intentionally doesn't try to parse SQL and make some decisions relying on. So (in theory) you can freely update database and driver's version
@@ -77,12 +76,6 @@ If you use library, you need also use some implementation of `r2dbc-migrate-reso
 ```
 See `Library example` below.
 
-### Standalone application
-
-If you want to build your own docker image you will be able to do this
-```bash
-curl -Ss https://repo.maven.apache.org/maven2/name/nkonev/r2dbc-migrate/r2dbc-migrate-standalone/VERSION/r2dbc-migrate-standalone-VERSION.jar > /tmp/migrate.jar
-```
 
 ## Spring Boot example
 https://github.com/nkonev/r2dbc-migrate-example
@@ -92,21 +85,3 @@ See example [here](https://github.com/nkonev/r2dbc-migrate-example/tree/native).
 
 ## Library example
 https://github.com/nkonev/r2dbc-migrate-example/tree/library
-
-## docker-compose v3 example
-```yml
-version: '3.7'
-services:
-  migrate:
-    image: nkonev/r2dbc-migrate:VERSION
-    environment:
-      _JAVA_OPTIONS: -Xmx128m
-      spring.r2dbc.url: "r2dbc:pool:mssql://mssqlcontainer:1433"
-      spring.r2dbc.username: sa
-      spring.r2dbc.password: "yourSuperStrong(!)Password"
-      r2dbc.migrate.resourcesPath: "file:/migrations/*.sql"
-      r2dbc.migrate.validationQuery: "SELECT collation_name as result FROM sys.databases WHERE name = N'master'"
-      r2dbc.migrate.validationQueryExpectedResultValue: "Cyrillic_General_CI_AS"
-    volumes:
-      - ./migrations:/migrations
-```

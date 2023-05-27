@@ -32,5 +32,5 @@ jobs:
           (cd ./docker; docker-compose down -v; docker-compose up -d mssql postgresql)
           pwd
           ls -lah
-          ./mvnw clean package -DenableStandaloneTests=true -DenableOomTests=true -DenableFuzzyStartMssqlTests=true
+          ./mvnw clean package -DenableOomTests=true -DenableFuzzyStartMssqlTests=true
           rm -rf ~/.m2/repository/name/nkonev/r2dbc-migrate

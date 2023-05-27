@@ -4,7 +4,7 @@
 
 	<groupId>name.nkonev.r2dbc-migrate</groupId>
 	<artifactId>r2dbc-migrate-parent</artifactId>
-	<version>2.9.5-SNAPSHOT</version>
+	<version>2.10.0-SNAPSHOT</version>
 	<name>r2dbc-migrate parent project</name>
 	<description>R2DBC migration tool and library</description>
 	<packaging>pom</packaging>
@@ -36,9 +36,9 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<spring.boot.version>3.0.0</spring.boot.version>
+		<spring.boot.version>3.1.0</spring.boot.version>
 		<maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
-		<testcontainers.version>1.17.2</testcontainers.version>
+		<testcontainers.version>1.18.1</testcontainers.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
@@ -51,11 +51,11 @@
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <maven.gpg.plugin>3.0.1</maven.gpg.plugin>
         <reflections.version>0.10.2</reflections.version>
-        <mssql.driver.version>1.0.0.RELEASE</mssql.driver.version>
-        <mysql.driver.version>1.0.0</mysql.driver.version>
-        <mariadb.driver.version>1.1.3</mariadb.driver.version>
-        <commons.io.version>2.11.0</commons.io.version>
-        <logcaptor.version>2.7.10</logcaptor.version>
+        <mssql.driver.version>1.0.1.RELEASE</mssql.driver.version>
+        <mysql.driver.version>1.0.1</mysql.driver.version>
+        <mariadb.driver.version>1.1.4</mariadb.driver.version>
+        <commons.io.version>2.12.0</commons.io.version>
+        <logcaptor.version>2.9.0</logcaptor.version>
     </properties>
 
 	<modules>
@@ -64,7 +64,6 @@
 		<module>r2dbc-migrate-resource-reader-reflections</module>
 		<module>r2dbc-migrate-resource-reader-spring</module>
 		<module>r2dbc-migrate-spring-boot-starter</module>
-		<module>r2dbc-migrate-standalone</module>
 	</modules>
 
 	<dependencyManagement>
