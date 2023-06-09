@@ -19,25 +19,25 @@ It supports user-provided dialect. You can pass implementation of `SqlQueries` i
 * Convention-based file names, for example `V3__insert_to_customers__split,nontransactional.sql`
 * Reasonable defaults. For convention, in case [Spring Boot](https://github.com/nkonev/r2dbc-migrate/blob/d65c7c49512a598dc4cc664bc33f78cb57ef3c43/r2dbc-migrate-spring-boot-starter/src/main/java/name/nkonev/r2dbc/migrate/autoconfigure/R2dbcMigrateAutoConfiguration.java#L60) SQL files should be placed in `classpath:/db/migration/*.sql`. It is configurable through `r2dbc.migrate.resources-paths`.
 * Pre-migration scripts, for example `V0__create_schemas__premigration.sql`. Those scripts are invoked every time before entire migration process(e. g. before migration tables created), so you need to make them idempotent. You can use zero or negative version number(s): `V-1__create_schemas__nontransactional,premigration.sql`. See [example](https://github.com/nkonev/r2dbc-migrate/tree/master/r2dbc-migrate-core/src/test/resources/migrations/postgresql_premigration).
-* It waits until database has been started, then performs test query, and validates its result. This can be useful for the initial data loading into database with docker-compose
-* Supports migrations files larger than `-Xmx`: file will be split line-by-line (`split` modifier), then it will be loaded by chunks into the database
-* Supports lock, that make you able to start number of replicas your microservice, without care of migrations collide each other. Database-specific lock tracking [issue](https://github.com/nkonev/r2dbc-migrate/issues/28).
+* It waits until a database has been started, then performs test query, and validates its result. This can be useful for the initial data loading into database with docker-compose
+* Large SQL files supoort: migrations files larger than `-Xmx`: file will be split line-by-line (`split` modifier), then it will be loaded by chunks into the database
+* It supports lock, that make you able to start number of replicas your microservice, without care of migrations collide each other. Database-specific lock tracking [issue](https://github.com/nkonev/r2dbc-migrate/issues/28).
 * Each migration runs in the separated transaction by default
 * It also supports `nontransactional` migrations, due to SQL Server 2017 prohibits `CREATE DATABASE` in the transaction
 * First-class Spring Boot integration, see example below
 * Also you can use this library without Spring (Boot), see library example below
-* This library tends to be non-invasive, consequently it intentionally doesn't try to parse SQL and make some decisions relying on. So (in theory) you can freely update database and driver's version
+* This library tends to be non-invasive, consequently it intentionally doesn't try to parse SQL and make some decisions relying on. So (in theory) you can freely update the database and driver's version
 
 All available configuration options are in [R2dbcMigrateProperties](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-core/src/main/java/name/nkonev/r2dbc/migrate/core/R2dbcMigrateProperties.java) class.
 Their descriptions are available in your IDE Ctrl+Space help or in [spring-configuration-metadata.json](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-spring-boot-starter/src/main/resources/META-INF/spring-configuration-metadata.json) file.
 
 ## Limitations
-* Currently, this library heavy relies on upsert-like syntax like `CREATE TABLE ... ON CONFLICT DO NOTHING`.
-Because this syntax isn't supported in H2 in PostresSQL compatibility mode, as a result, this library [can't be](https://github.com/nkonev/r2dbc-migrate/issues/21) run against H2 with `MODE=PostgreSQL`. Use [testcontainers](https://github.com/nkonev/r2dbc-migrate-example) with real PostgreSQL.
-* Only forward migrations are supported. No `back migrations`.
+* Currently, this library heavy relies on the upsert-like syntax like `CREATE TABLE ... ON CONFLICT DO NOTHING`.
+Because this syntax isn't supported in H2 in PostresSQL compatibility mode, as a result, this library [can't be](https://github.com/nkonev/r2dbc-migrate/issues/21) run against H2 with `MODE=PostgreSQL`. Use [testcontainers](https://github.com/nkonev/r2dbc-migrate-example) with the real PostgreSQL.
+* Only forward migrations are supported. No backward migrations.
 * No [checksum](https://github.com/nkonev/r2dbc-migrate/issues/5) validation. As a result [repeatable](https://github.com/nkonev/r2dbc-migrate/issues/9) migrations aren't supported.
 
-## Compatilility (r2dbc-migrate, R2DBC Spec, Java, Spring Boot ...)
+## Compatibility (r2dbc-migrate, R2DBC Spec, Java, Spring Boot ...)
 See [here](https://github.com/nkonev/r2dbc-migrate/issues/27#issuecomment-1404878933)
 
 ## Download
