@@ -5,7 +5,6 @@ import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.ReflectionsClasspathResourceReader;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import nl.altindag.log.LogCaptor;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +21,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -222,12 +223,19 @@ public class PostgresTestcontainersTest {
     @Test
     public void testSplittedLargeMigrationsFitsInMemory() throws IOException {
         // _JAVA_OPTIONS: -Xmx128m
-        File generatedMigrationDir = new File("./target/test-classes/oom_migrations");
-        generatedMigrationDir.mkdirs();
+        var generatedMigrationToDir = new File("./target/test-classes/oom_migrations");
+        generatedMigrationToDir.mkdirs();
 
-        FileUtils.copyDirectory(new File("./src/test/resources/migrations/postgresql"), generatedMigrationDir);
+        var fromDir = new File("./src/test/resources/migrations/postgresql");
 
-        File generatedMigration = new File(generatedMigrationDir, "V20__generated__split.sql");
+        // copy to "to dir"
+        for (String sourceFileName : fromDir.list()) {
+            var sourceFile = fromDir.toPath().resolve(sourceFileName);
+            var destFile = generatedMigrationToDir.toPath().resolve(sourceFileName);
+            Files.copy(sourceFile, destFile);
+        }
+
+        File generatedMigration = new File(generatedMigrationToDir, "V20__generated__split.sql");
         if (!generatedMigration.exists()) {
             LOGGER.info("Generating large file");
             PrintWriter pw = new PrintWriter(new FileWriter(generatedMigration));
