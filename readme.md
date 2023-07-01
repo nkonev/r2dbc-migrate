@@ -42,11 +42,6 @@ See [here](https://github.com/nkonev/r2dbc-migrate/issues/27#issuecomment-140487
 
 ## Download
 
-### Docker
-```
-docker pull nkonev/r2dbc-migrate:latest
-```
-
 ### Spring Boot Starter
 ```xml
 <dependency>
