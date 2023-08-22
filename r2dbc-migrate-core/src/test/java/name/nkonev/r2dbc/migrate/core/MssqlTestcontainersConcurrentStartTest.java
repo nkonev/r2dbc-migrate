@@ -13,6 +13,7 @@ import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.r2dbc.spi.Option;
+
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
@@ -104,17 +106,17 @@ public class MssqlTestcontainersConcurrentStartTest {
                 .withExposedPorts(MSSQL_HARDCODED_PORT)
                 .withEnv("ACCEPT_EULA", "Y")
                 .withEnv("SA_PASSWORD", password)
-                .withEnv("MSSQL_TCP_PORT", ""+MSSQL_HARDCODED_PORT)
+                .withEnv("MSSQL_TCP_PORT", "" + MSSQL_HARDCODED_PORT)
                 .waitingFor(new LogMessageWaitStrategy().withRegEx(".*SQL Server 2019 will run as non-root by default.*\\s") // dummy read first message
                     .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds)));
-            container.setPortBindings(Arrays.asList(MSSQL_HARDCODED_PORT+":"+MSSQL_HARDCODED_PORT));
+            container.setPortBindings(Arrays.asList(MSSQL_HARDCODED_PORT + ":" + MSSQL_HARDCODED_PORT));
             container.start();
         });
         thread.setDaemon(true);
         thread.start();
 
         Thread thread2 = new Thread(() -> {
-            for (;;) {
+            for (; ; ) {
                 try {
                     container.followOutput(logConsumer);
                     LOGGER.info("Successfully subscribed to");
@@ -153,7 +155,7 @@ public class MssqlTestcontainersConcurrentStartTest {
                 Connection::close
             );
             List<Customer> block = customerFlux.collectList().block();
-            Customer customer = block.get(block.size()-1);
+            Customer customer = block.get(block.size() - 1);
 
             Assertions.assertEquals("Покупатель", customer.firstName);
             Assertions.assertEquals("Фамилия", customer.secondName);
@@ -185,7 +187,7 @@ public class MssqlTestcontainersConcurrentStartTest {
                 throw t;
             }
         } finally {
-            if (container!=null) {
+            if (container != null) {
                 container.stop();
             }
             try {

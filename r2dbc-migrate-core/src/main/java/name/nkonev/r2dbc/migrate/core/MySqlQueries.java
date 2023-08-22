@@ -50,8 +50,8 @@ public class MySqlQueries implements SqlQueries {
     @Override
     public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
         return connection
-                .createStatement(insertMigration())
-                .bind("id", migrationInfo.getVersion())
-                .bind("descr", migrationInfo.getDescription());
+            .createStatement(insertMigration())
+            .bind("id", migrationInfo.getVersion())
+            .bind("descr", migrationInfo.getDescription());
     }
 }

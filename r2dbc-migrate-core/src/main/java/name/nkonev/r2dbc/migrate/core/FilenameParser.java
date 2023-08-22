@@ -45,12 +45,12 @@ public abstract class FilenameParser {
         @Override
         public String toString() {
             return "MigrationInfo{" +
-                    "version=" + version +
-                    ", description='" + description + '\'' +
-                    ", splitByLine=" + splitByLine +
-                    ", transactional=" + transactional +
-                    ", premigration=" + premigration +
-                    '}';
+                "version=" + version +
+                ", description='" + description + '\'' +
+                ", splitByLine=" + splitByLine +
+                ", transactional=" + transactional +
+                ", premigration=" + premigration +
+                '}';
         }
     }
 

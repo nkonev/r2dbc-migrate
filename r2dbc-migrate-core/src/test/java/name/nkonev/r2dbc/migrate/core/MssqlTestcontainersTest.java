@@ -37,14 +37,14 @@ public class MssqlTestcontainersTest {
     private static final String MSSQL_QUERY_LOGGER = "io.r2dbc.mssql.QUERY";
 
     @BeforeEach
-    public void beforeEach()  {
+    public void beforeEach() {
         container = new GenericContainer("mcr.microsoft.com/mssql/server:2017-CU22-ubuntu-16.04")
-                .withExposedPorts(MSSQL_PORT)
-                .withEnv("ACCEPT_EULA", "Y")
-                .withEnv("SA_PASSWORD", password)
-                .withEnv("MSSQL_COLLATION", "cyrillic_general_ci_as")
-                .waitingFor(new LogMessageWaitStrategy().withRegEx(".*The default collation was successfully changed.*\\s")
-                        .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds)));
+            .withExposedPorts(MSSQL_PORT)
+            .withEnv("ACCEPT_EULA", "Y")
+            .withEnv("SA_PASSWORD", password)
+            .withEnv("MSSQL_COLLATION", "cyrillic_general_ci_as")
+            .waitingFor(new LogMessageWaitStrategy().withRegEx(".*The default collation was successfully changed.*\\s")
+                .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds)));
 
         container.start();
     }
@@ -56,13 +56,13 @@ public class MssqlTestcontainersTest {
 
     private ConnectionFactory makeConnectionMono(int port) {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
-                .option(DRIVER, "mssql")
-                .option(HOST, "127.0.0.1")
-                .option(PORT, port)
-                .option(USER, "sa")
-                .option(PASSWORD, password)
-                .option(DATABASE, "master")
-                .build());
+            .option(DRIVER, "mssql")
+            .option(HOST, "127.0.0.1")
+            .option(PORT, port)
+            .option(USER, "sa")
+            .option(PASSWORD, password)
+            .option(DATABASE, "master")
+            .build());
         return connectionFactory;
     }
 
@@ -201,7 +201,7 @@ public class MssqlTestcontainersTest {
                         row.get("description", String.class),
                         false,
                         false,
-                            false
+                        false
                     );
                 })),
             Connection::close
@@ -242,7 +242,7 @@ public class MssqlTestcontainersTest {
     @Test
     public void testThatLockIsReleasedAfterError() {
         // create and start a ListAppender
-        try(LogCaptor logCaptor = LogCaptor.forName(MSSQL_QUERY_LOGGER)) {
+        try (LogCaptor logCaptor = LogCaptor.forName(MSSQL_QUERY_LOGGER)) {
             logCaptor.setLogLevelToDebug();
 
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
@@ -252,25 +252,25 @@ public class MssqlTestcontainersTest {
             Integer mappedPort = container.getMappedPort(MSSQL_PORT);
 
             RuntimeException thrown = Assertions.assertThrows(
-                    RuntimeException.class,
-                    () -> {
-                        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
-                    },
-                    "Expected exception to throw, but it didn't"
+                RuntimeException.class,
+                () -> {
+                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
+                },
+                "Expected exception to throw, but it didn't"
             );
             Assertions.assertTrue(thrown.getMessage().contains("Incorrect syntax near 'schyachne'."));
 
             // make asserts
             assertTrue(
-                    hasSubList(logCaptor.getDebugLogs(), Arrays.asList(
-                            "update \"migrations_lock\" set locked = 'false' where id = 1"
-                    )));
+                hasSubList(logCaptor.getDebugLogs(), Arrays.asList(
+                    "update \"migrations_lock\" set locked = 'false' where id = 1"
+                )));
 
             Mono<Boolean> r = Mono.usingWhen(
-                    makeConnectionMono(mappedPort).create(),
-                    connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
-                            .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
-                    Connection::close);
+                makeConnectionMono(mappedPort).create(),
+                connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
+                    .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Boolean.class, null)))),
+                Connection::close);
             Boolean block = r.block();
             Assertions.assertNotNull(block);
             Assertions.assertFalse(block);

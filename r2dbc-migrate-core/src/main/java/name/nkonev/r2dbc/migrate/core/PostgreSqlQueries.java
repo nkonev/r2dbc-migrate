@@ -2,6 +2,7 @@ package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Statement;
+
 import java.util.List;
 
 public class PostgreSqlQueries implements SqlQueries {
@@ -49,8 +50,8 @@ public class PostgreSqlQueries implements SqlQueries {
     @Override
     public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
         return connection
-                .createStatement(insertMigration())
-                .bind("$1", migrationInfo.getVersion())
-                .bind("$2", migrationInfo.getDescription());
+            .createStatement(insertMigration())
+            .bind("$1", migrationInfo.getVersion())
+            .bind("$2", migrationInfo.getDescription());
     }
 }

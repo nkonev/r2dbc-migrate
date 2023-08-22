@@ -1,8 +1,10 @@
 package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.*;
+
 import java.util.ArrayList;
 import java.util.logging.Level;
+
 import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.MigrateResource;
 import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
@@ -13,11 +15,13 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+
 import reactor.util.retry.Retry;
 
 import static java.util.Optional.ofNullable;
@@ -73,21 +77,21 @@ public abstract class R2dbcMigrate {
     }
 
     private static Mono<Void> transactionalWrap(Connection connection, boolean transactional,
-        Publisher<? extends io.r2dbc.spi.Result> migrationThings, String info) {
+                                                Publisher<? extends io.r2dbc.spi.Result> migrationThings, String info) {
 
         Mono<Long> migrationResult = Flux.from(migrationThings)
-                .flatMap(Result::getRowsUpdated) // if we don't get rows updates we swallow potential errors from PostgreSQL
-                .switchIfEmpty(Mono.just(0L)) // prevent emitting empty flux
-                .reduceWith(() -> 0L, Long::sum)
-                .doOnSuccess(aLong -> {
-                    LOGGER.info(ROWS_UPDATED, info, aLong);
-                });
+            .flatMap(Result::getRowsUpdated) // if we don't get rows updates we swallow potential errors from PostgreSQL
+            .switchIfEmpty(Mono.just(0L)) // prevent emitting empty flux
+            .reduceWith(() -> 0L, Long::sum)
+            .doOnSuccess(aLong -> {
+                LOGGER.info(ROWS_UPDATED, info, aLong);
+            });
 
         Mono<Void> result;
         if (transactional) {
             result = Mono.from(connection.beginTransaction()) // 1 // ...Calling this method disables auto-commit mode.
                 .then(migrationResult) // 2 create internals
-                    .then(Mono.from(connection.commitTransaction())); // 3
+                .then(Mono.from(connection.commitTransaction())); // 3
         } else {
             result = withAutoCommit(connection, migrationResult).then();
         }
@@ -95,15 +99,15 @@ public abstract class R2dbcMigrate {
     }
 
     private static <T> Mono<Void> transactionalWrapUnchecked(Connection connection,
-        boolean transactional, Publisher<T> migrationThings) {
+                                                             boolean transactional, Publisher<T> migrationThings) {
 
         Flux<T> migrationResult = Flux.from(migrationThings);
 
         Mono<Void> result;
         if (transactional) {
             result = Mono.from(connection.beginTransaction()) // 1
-                    .thenMany(migrationResult) // 2 create internals
-                    .then(Mono.from(connection.commitTransaction())); // 3
+                .thenMany(migrationResult) // 2 create internals
+                .then(Mono.from(connection.commitTransaction())); // 3
         } else {
             result = withAutoCommit(connection, migrationResult).then();
         }
@@ -126,7 +130,7 @@ public abstract class R2dbcMigrate {
                 .then(
                     Flux.from(connection.createStatement(properties.getValidationQuery()).execute())
                         .flatMap(o -> o.map(getResultSafely("validation_result", String.class,
-                                "__VALIDATION_RESULT_NOT_PROVIDED")))
+                            "__VALIDATION_RESULT_NOT_PROVIDED")))
                         .filter(s -> {
                             LOGGER.info("Comparing expected value '{}' with provided result '{}'",
                                 properties.getValidationQueryExpectedResultValue(), s);
@@ -143,7 +147,7 @@ public abstract class R2dbcMigrate {
         return testResult
             .timeout(properties.getValidationQueryTimeout())
             .retryWhen(Retry.fixedDelay(properties.getConnectionMaxRetries(),
-            properties.getValidationRetryDelay()).doBeforeRetry(retrySignal -> {
+                properties.getValidationRetryDelay()).doBeforeRetry(retrySignal -> {
                 LOGGER.warn("Retrying to get database connection due {}: {}",
                     retrySignal.failure().getClass(),
                     retrySignal.failure().getMessage());
@@ -210,7 +214,7 @@ public abstract class R2dbcMigrate {
 
     private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> getFileResources(R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
         List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> allResources = new ArrayList<>();
-        for (String resource: properties.getResourcesPaths()) {
+        for (String resource : properties.getResourcesPaths()) {
             allResources.addAll(getResourcesFromPath(resource, resourceReader));
         }
         List<Tuple2<MigrateResource, MigrationInfo>> sortedResources = allResources.stream().sorted((o1, o2) -> {
@@ -246,16 +250,16 @@ public abstract class R2dbcMigrate {
         }
 
         return Mono.usingWhen(Mono.defer(() -> {
-                    LOGGER.info("Creating new premigration connection");
-                    return Mono.from(connectionFactory.create());
-                }),
-                connection -> Flux.fromIterable(premigrationResources)
-                        .concatMap(tuple2 -> makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakePreMigrationWork", Level.FINE), 1)
-                        .then(),
-                connection -> {
-                    LOGGER.info("Closing premigration connection");
-                    return connection.close();
-                }).log("R2dbcMigrateCreatingPreMigrationConnection", Level.FINE);
+                LOGGER.info("Creating new premigration connection");
+                return Mono.from(connectionFactory.create());
+            }),
+            connection -> Flux.fromIterable(premigrationResources)
+                .concatMap(tuple2 -> makeMigration(connection, properties, tuple2).log("R2dbcMigrateMakePreMigrationWork", Level.FINE), 1)
+                .then(),
+            connection -> {
+                LOGGER.info("Closing premigration connection");
+                return connection.close();
+            }).log("R2dbcMigrateCreatingPreMigrationConnection", Level.FINE);
     }
 
     private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> migrationResources, SqlQueries maybeUserSqlQueries, Locker maybeLocker) {
@@ -285,7 +289,8 @@ public abstract class R2dbcMigrate {
     private static SqlQueries getUserOrDeterminedSqlQueries(Dialect sqlDialect, R2dbcMigrateProperties properties, SqlQueries maybeUserSqlQueries) {
         final SqlQueries sqlQueries = Objects.requireNonNullElseGet(maybeUserSqlQueries, () ->
             switch (sqlDialect) {
-                case POSTGRESQL -> new PostgreSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
+                case POSTGRESQL ->
+                    new PostgreSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
                 case MSSQL -> new MSSqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
                 case MYSQL -> new MySqlQueries(properties.getMigrationsSchema(), properties.getMigrationsTable());
                 case H2 -> new H2Queries(properties.getMigrationsSchema(), properties.getMigrationsTable());
@@ -306,7 +311,8 @@ public abstract class R2dbcMigrate {
                         yield new PostgreSqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
                     }
                 }
-                case MSSQL -> new MSSqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
+                case MSSQL ->
+                    new MSSqlTableLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
                 case MYSQL -> {
                     if (properties.isPreferDbSpecificLock()) {
                         yield new MySqlSessionLocker(properties.getMigrationsSchema(), properties.getMigrationsLockTable());
@@ -367,12 +373,12 @@ public abstract class R2dbcMigrate {
                                                                          FilenameParser.MigrationInfo migrationInfo) {
         if (migrationInfo.isSplitByLine()) {
             Flux<? extends Result> sequentFlux = FileReader
-                    .readChunked(resource, properties.getFileCharset())
-                    .buffer(properties.getChunkSize())
-                    .concatMap(strings -> {
-                        LOGGER.debug("Creating batch - for {} processing {} strings", migrationInfo, strings.size());
-                        return makeBatch(connection, strings).execute();
-                    }, 1);
+                .readChunked(resource, properties.getFileCharset())
+                .buffer(properties.getChunkSize())
+                .concatMap(strings -> {
+                    LOGGER.debug("Creating batch - for {} processing {} strings", migrationInfo, strings.size());
+                    return makeBatch(connection, strings).execute();
+                }, 1);
             return sequentFlux;
         } else {
             return connection.createStatement(FileReader.read(resource, properties.getFileCharset())).execute();

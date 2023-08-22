@@ -19,10 +19,10 @@ public class H2Test {
 
     private ConnectionFactory makeConnectionMono() {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
-                .option(DRIVER, "h2")
-                .option(PROTOCOL, "mem")
-                .option(DATABASE, "r2dbc:h2:mem:///testdb;DB_CLOSE_DELAY=-1")
-                .build());
+            .option(DRIVER, "h2")
+            .option(PROTOCOL, "mem")
+            .option(DATABASE, "r2dbc:h2:mem:///testdb;DB_CLOSE_DELAY=-1")
+            .build());
         return connectionFactory;
     }
 
@@ -46,14 +46,14 @@ public class H2Test {
         R2dbcMigrate.migrate(makeConnectionMono(), properties, springResourceReader, null, null).block();
 
         Flux<Customer> clientFlux = Mono.from(makeConnectionMono().create())
-                .flatMapMany(connection -> Flux.from(connection.createStatement("select * from customer order by id").execute()).doFinally(signalType -> connection.close()))
-                .flatMap(o -> o.map((row, rowMetadata) -> {
-                    return new Customer(
-                            Long.valueOf(row.get("id", Integer.class)),
-                            row.get("first_name", String.class),
-                            row.get("last_name", String.class)
-                    );
-                }));
+            .flatMapMany(connection -> Flux.from(connection.createStatement("select * from customer order by id").execute()).doFinally(signalType -> connection.close()))
+            .flatMap(o -> o.map((row, rowMetadata) -> {
+                return new Customer(
+                    Long.valueOf(row.get("id", Integer.class)),
+                    row.get("first_name", String.class),
+                    row.get("last_name", String.class)
+                );
+            }));
         Customer client = clientFlux.blockLast();
 
         Assertions.assertEquals("Customer", client.firstName);

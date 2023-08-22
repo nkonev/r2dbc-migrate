@@ -26,13 +26,13 @@ public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest
     final static String password = "mysql-password";
 
     @BeforeEach
-    public void beforeEach()  {
+    public void beforeEach() {
         container = new GenericContainer("mysql:5.7")
-                .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
-                .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
-                .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
-                .withExposedPorts(MYSQL_PORT)
-                .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
+            .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
+            .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
+            .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
+            .withExposedPorts(MYSQL_PORT)
+            .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
         container.start();
     }
@@ -44,14 +44,14 @@ public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest
 
     protected ConnectionFactory makeConnectionMono(int port) {
         ConnectionFactory connectionFactory = ConnectionFactories.get(ConnectionFactoryOptions.builder()
-                .option(DRIVER, "mysql")
-                .option(HOST, "127.0.0.1")
-                .option(PORT, port)
-                .option(USER, user)
-                .option(PASSWORD, password)
-                .option(DATABASE, "r2dbc")
-                .option(Option.valueOf("sslMode"), "disabled")
-                .build());
+            .option(DRIVER, "mysql")
+            .option(HOST, "127.0.0.1")
+            .option(PORT, port)
+            .option(USER, user)
+            .option(PASSWORD, password)
+            .option(DATABASE, "r2dbc")
+            .option(Option.valueOf("sslMode"), "disabled")
+            .build());
         return connectionFactory;
     }
 

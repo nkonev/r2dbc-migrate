@@ -2,55 +2,57 @@ package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Statement;
+
 import java.util.List;
 
 public class H2Queries implements SqlQueries {
 
-  private final String migrationsSchema;
-  private final String migrationsTable;
-  public H2Queries(String migrationsSchema, String migrationsTable) {
-    this.migrationsSchema = migrationsSchema;
-    this.migrationsTable = migrationsTable;
-  }
+    private final String migrationsSchema;
+    private final String migrationsTable;
 
-  private boolean schemaIsDefined() {
-    return !StringUtils.isEmpty(migrationsSchema);
-  }
-
-  private String quoteAsObject(String input) {
-    return "\"" + input + "\"";
-  }
-
-  private String withMigrationsTable(String template) {
-    if (schemaIsDefined()) {
-      return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsTable));
-    } else {
-      return String.format(template, quoteAsObject(migrationsTable));
+    public H2Queries(String migrationsSchema, String migrationsTable) {
+        this.migrationsSchema = migrationsSchema;
+        this.migrationsTable = migrationsTable;
     }
-  }
 
-  @Override
-  public List<String> createInternalTables() {
-    return List.of(
-        withMigrationsTable("create table if not exists %s (id int primary key, description text)")
-    );
-  }
+    private boolean schemaIsDefined() {
+        return !StringUtils.isEmpty(migrationsSchema);
+    }
 
-  @Override
-  public String getMaxMigration() {
-    return withMigrationsTable("select max(id) as max from %s");
-  }
+    private String quoteAsObject(String input) {
+        return "\"" + input + "\"";
+    }
 
-  public String insertMigration() {
-    return withMigrationsTable("insert into %s(id, description) values ($1, $2)");
-  }
+    private String withMigrationsTable(String template) {
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsTable));
+        }
+    }
 
-  @Override
-  public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
-    return connection
-        .createStatement(insertMigration())
-        .bind("$1", migrationInfo.getVersion())
-        .bind("$2", migrationInfo.getDescription());
-  }
+    @Override
+    public List<String> createInternalTables() {
+        return List.of(
+            withMigrationsTable("create table if not exists %s (id int primary key, description text)")
+        );
+    }
+
+    @Override
+    public String getMaxMigration() {
+        return withMigrationsTable("select max(id) as max from %s");
+    }
+
+    public String insertMigration() {
+        return withMigrationsTable("insert into %s(id, description) values ($1, $2)");
+    }
+
+    @Override
+    public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
+        return connection
+            .createStatement(insertMigration())
+            .bind("$1", migrationInfo.getVersion())
+            .bind("$2", migrationInfo.getDescription());
+    }
 
 }

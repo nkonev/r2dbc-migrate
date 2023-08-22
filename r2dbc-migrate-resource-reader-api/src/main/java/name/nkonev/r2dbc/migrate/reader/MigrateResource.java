@@ -8,9 +8,9 @@ import java.io.InputStream;
  */
 public interface MigrateResource {
 
-	boolean isReadable();
+    boolean isReadable();
 
-	InputStream getInputStream() throws IOException;
+    InputStream getInputStream() throws IOException;
 
-	String getFilename();
+    String getFilename();
 }

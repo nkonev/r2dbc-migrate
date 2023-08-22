@@ -38,11 +38,11 @@ public class MSSqlTableLocker extends AbstractTableLocker implements Locker {
     public List<String> createInternalTables() {
         if (schemaIsDefined()) {
             return List.of(
-                    String.format("if not exists (select * from sys.tables t join sys.schemas s on (t.schema_id = s.schema_id) where s.name = %s and t.name = %s) ", quoteAsString(migrationsSchema), quoteAsString(migrationsLockTable))
-                        + String.format("create table %s.%s (id int primary key, locked bit not null)", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable)),
+                String.format("if not exists (select * from sys.tables t join sys.schemas s on (t.schema_id = s.schema_id) where s.name = %s and t.name = %s) ", quoteAsString(migrationsSchema), quoteAsString(migrationsLockTable))
+                    + String.format("create table %s.%s (id int primary key, locked bit not null)", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable)),
 
-                    String.format("if not exists (select * from %s.%s where id = 1) ", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable)) // dbo.migrations_lock
-                            + String.format("insert into %s.%s(id, locked) values (1, 'false')", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable))
+                String.format("if not exists (select * from %s.%s where id = 1) ", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable)) // dbo.migrations_lock
+                    + String.format("insert into %s.%s(id, locked) values (1, 'false')", quoteAsObject(migrationsSchema), quoteAsObject(migrationsLockTable))
             );
         } else {
             return List.of(

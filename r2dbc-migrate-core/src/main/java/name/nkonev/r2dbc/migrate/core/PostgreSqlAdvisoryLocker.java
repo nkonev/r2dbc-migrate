@@ -30,15 +30,15 @@ public class PostgreSqlAdvisoryLocker implements Locker {
     @Override
     public io.r2dbc.spi.Statement tryAcquireLock(Connection connection) {
         return connection.createStatement("select pg_try_advisory_lock($1, $2) as lock_result")
-                .bind("$1", migrationsSchemaHashCode)
-                .bind("$2", migrationsLockTableHashCode);
+            .bind("$1", migrationsSchemaHashCode)
+            .bind("$2", migrationsLockTableHashCode);
     }
 
     @Override
     public io.r2dbc.spi.Statement releaseLock(Connection connection) {
         return connection.createStatement("select pg_advisory_unlock($1, $2)")
-                .bind("$1", migrationsSchemaHashCode)
-                .bind("$2", migrationsLockTableHashCode);
+            .bind("$1", migrationsSchemaHashCode)
+            .bind("$2", migrationsLockTableHashCode);
     }
 
     @Override

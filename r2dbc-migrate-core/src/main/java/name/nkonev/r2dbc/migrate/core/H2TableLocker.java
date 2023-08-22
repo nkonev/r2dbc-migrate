@@ -6,45 +6,45 @@ import java.util.List;
 
 public class H2TableLocker extends AbstractTableLocker implements Locker {
 
-  private final String migrationsSchema;
-  private final String migrationsLockTable;
+    private final String migrationsSchema;
+    private final String migrationsLockTable;
 
-  public H2TableLocker(String migrationsSchema, String migrationsLockTable) {
-    this.migrationsSchema = migrationsSchema;
-    this.migrationsLockTable = migrationsLockTable;
-  }
-
-  private boolean schemaIsDefined() {
-    return !StringUtils.isEmpty(migrationsSchema);
-  }
-
-  private String quoteAsObject(String input) {
-    return "\"" + input + "\"";
-  }
-
-  private String withMigrationsLockTable(String template) {
-    if (schemaIsDefined()) {
-      return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsLockTable));
-    } else {
-      return String.format(template, quoteAsObject(migrationsLockTable));
+    public H2TableLocker(String migrationsSchema, String migrationsLockTable) {
+        this.migrationsSchema = migrationsSchema;
+        this.migrationsLockTable = migrationsLockTable;
     }
-  }
 
-  @Override
-  public List<String> createInternalTables() {
-    return List.of(
-        withMigrationsLockTable("create table if not exists %s (id int primary key, locked boolean not null)"),
-        withMigrationsLockTable("insert into %s(id, locked) select * from (select 1, false) x ")+withMigrationsLockTable(" where not exists(select * from %s)")
-    );
-  }
+    private boolean schemaIsDefined() {
+        return !StringUtils.isEmpty(migrationsSchema);
+    }
 
-  @Override
-  public io.r2dbc.spi.Statement tryAcquireLock(Connection connection) {
-    return connection.createStatement(withMigrationsLockTable("update %s set locked = true where id = 1 and locked = false"));
-  }
+    private String quoteAsObject(String input) {
+        return "\"" + input + "\"";
+    }
 
-  @Override
-  public io.r2dbc.spi.Statement releaseLock(Connection connection) {
-    return connection.createStatement(withMigrationsLockTable("update %s set locked = false where id = 1"));
-  }
+    private String withMigrationsLockTable(String template) {
+        if (schemaIsDefined()) {
+            return String.format(template, quoteAsObject(migrationsSchema) + "." + quoteAsObject(migrationsLockTable));
+        } else {
+            return String.format(template, quoteAsObject(migrationsLockTable));
+        }
+    }
+
+    @Override
+    public List<String> createInternalTables() {
+        return List.of(
+            withMigrationsLockTable("create table if not exists %s (id int primary key, locked boolean not null)"),
+            withMigrationsLockTable("insert into %s(id, locked) select * from (select 1, false) x ") + withMigrationsLockTable(" where not exists(select * from %s)")
+        );
+    }
+
+    @Override
+    public io.r2dbc.spi.Statement tryAcquireLock(Connection connection) {
+        return connection.createStatement(withMigrationsLockTable("update %s set locked = true where id = 1 and locked = false"));
+    }
+
+    @Override
+    public io.r2dbc.spi.Statement releaseLock(Connection connection) {
+        return connection.createStatement(withMigrationsLockTable("update %s set locked = false where id = 1"));
+    }
 }

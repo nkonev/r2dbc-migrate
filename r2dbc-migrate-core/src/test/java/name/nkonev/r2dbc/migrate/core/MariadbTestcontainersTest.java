@@ -24,7 +24,7 @@ public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTe
     final static String password = "mysql-password";
 
     @BeforeEach
-    public void beforeEach()  {
+    public void beforeEach() {
         container = new GenericContainer("mariadb:10.5.8-focal")
             .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
             .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)

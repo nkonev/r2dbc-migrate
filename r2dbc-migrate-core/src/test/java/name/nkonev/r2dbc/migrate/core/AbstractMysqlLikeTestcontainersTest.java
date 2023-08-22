@@ -52,11 +52,11 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
             makeConnectionMono(mappedPort).create(),
             connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
-                  return new Customer(
-                      row.get("id", Long.class),
-                      row.get("first_name", String.class),
-                      row.get("last_name", String.class)
-                  );
+                    return new Customer(
+                        row.get("id", Long.class),
+                        row.get("first_name", String.class),
+                        row.get("last_name", String.class)
+                    );
                 })),
             Connection::close);
 
@@ -77,16 +77,16 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
-                makeConnectionMono(mappedPort).create(),
-                connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
-                        .flatMap(o -> o.map((row, rowMetadata) -> {
-                            return new Customer(
-                                    row.get("id", Long.class),
-                                    row.get("first_name", String.class),
-                                    row.get("last_name", String.class)
-                            );
-                        })),
-                Connection::close);
+            makeConnectionMono(mappedPort).create(),
+            connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new Customer(
+                        row.get("id", Long.class),
+                        row.get("first_name", String.class),
+                        row.get("last_name", String.class)
+                    );
+                })),
+            Connection::close);
 
         Customer client = clientFlux.blockLast();
 
@@ -98,7 +98,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
     @Test
     public void testThatLockIsReleasedAfterError() {
         // create and start a ListAppender
-        try(LogCaptor logCaptor = getStatementsLogger()) {
+        try (LogCaptor logCaptor = getStatementsLogger()) {
 
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
             properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql_error/*.sql"));
@@ -106,11 +106,11 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
             Integer mappedPort = getMappedPort();
 
             RuntimeException thrown = Assertions.assertThrows(
-                    RuntimeException.class,
-                    () -> {
-                        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
-                    },
-                    "Expected exception to throw, but it didn't"
+                RuntimeException.class,
+                () -> {
+                    R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
+                },
+                "Expected exception to throw, but it didn't"
             );
             Assertions.assertTrue(thrown.getMessage().contains("You have an error in your SQL syntax; check the manual that corresponds to your"));
 
@@ -119,15 +119,15 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
 
             // make asserts
             assertTrue(
-                    hasSubList(collect, Arrays.asList(
-                            "By 'Releasing lock after error' 1 rows updated"
-                    )));
+                hasSubList(collect, Arrays.asList(
+                    "By 'Releasing lock after error' 1 rows updated"
+                )));
 
             Mono<Byte> r = Mono.usingWhen(
-                    makeConnectionMono(mappedPort).create(),
-                    connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
-                            .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Byte.class, null)))),
-                    Connection::close);
+                makeConnectionMono(mappedPort).create(),
+                connection -> Mono.from(connection.createStatement("select locked from migrations_lock where id = 1").execute())
+                    .flatMap(o -> Mono.from(o.map(getResultSafely("locked", Byte.class, null)))),
+                Connection::close);
             Byte block = r.block();
             Assertions.assertNotNull(block);
             Assertions.assertEquals((byte) 0, block);
@@ -177,7 +177,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
                         row.get("description", String.class),
                         false,
                         false,
-                            false
+                        false
                     );
                 })),
             Connection::close
@@ -193,7 +193,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
             Connection::close);
         Byte block = r.block();
         Assertions.assertNotNull(block);
-        Assertions.assertEquals((byte)0, block);
+        Assertions.assertEquals((byte) 0, block);
 
     }
 

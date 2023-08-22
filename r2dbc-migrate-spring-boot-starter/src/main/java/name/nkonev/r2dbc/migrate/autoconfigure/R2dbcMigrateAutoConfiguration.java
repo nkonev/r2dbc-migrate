@@ -57,7 +57,7 @@ public class R2dbcMigrateAutoConfiguration {
     @ConfigurationProperties("r2dbc.migrate")
     public static class SpringBootR2dbcMigrateProperties extends R2dbcMigrateProperties {
         public SpringBootR2dbcMigrateProperties() {
-           setResourcesPaths(Collections.singletonList("classpath:/db/migration/*.sql"));
+            setResourcesPaths(Collections.singletonList("classpath:/db/migration/*.sql"));
         }
     }
 
@@ -85,11 +85,11 @@ public class R2dbcMigrateAutoConfiguration {
         public void migrate() {
             LOGGER.info("Starting R2DBC migration");
             R2dbcMigrate.migrate(
-                    connectionFactory,
-                    properties,
-                    resourceReader,
-                    maybeUserSqlQueries,
-                    maybeUserLocker
+                connectionFactory,
+                properties,
+                resourceReader,
+                maybeUserSqlQueries,
+                maybeUserLocker
             ).block();
             LOGGER.info("End of R2DBC migration");
         }
@@ -104,10 +104,10 @@ public class R2dbcMigrateAutoConfiguration {
         @Autowired(required = false) Locker maybeLocker
     ) {
         return new R2dbcMigrateBlockingInvoker(
-                connectionFactory,
-                properties,
-                maybeUserSqlQueries,
-                maybeLocker
+            connectionFactory,
+            properties,
+            maybeUserSqlQueries,
+            maybeLocker
         );
     }
 }
