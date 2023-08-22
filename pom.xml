@@ -1,49 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>name.nkonev.r2dbc-migrate</groupId>
-	<artifactId>r2dbc-migrate-parent</artifactId>
-	<version>2.10.3-SNAPSHOT</version>
-	<name>r2dbc-migrate parent project</name>
-	<description>R2DBC migration tool and library</description>
-	<packaging>pom</packaging>
-	<url>https://github.com/nkonev/r2dbc-migrate</url>
+    <groupId>name.nkonev.r2dbc-migrate</groupId>
+    <artifactId>r2dbc-migrate-parent</artifactId>
+    <version>2.10.3-SNAPSHOT</version>
+    <name>r2dbc-migrate parent project</name>
+    <description>R2DBC migration tool and library</description>
+    <packaging>pom</packaging>
+    <url>https://github.com/nkonev/r2dbc-migrate</url>
 
-	<scm>
-		<connection>scm:git:git://github.com/nkonev/r2dbc-migrate.git</connection>
-		<developerConnection>scm:git:git@github.com:nkonev/r2dbc-migrate.git</developerConnection>
-		<url>https://github.com/nkonev/r2dbc-migrate</url>
-		<tag>HEAD</tag>
-	</scm>
+    <scm>
+        <connection>scm:git:git://github.com/nkonev/r2dbc-migrate.git</connection>
+        <developerConnection>scm:git:git@github.com:nkonev/r2dbc-migrate.git</developerConnection>
+        <url>https://github.com/nkonev/r2dbc-migrate</url>
+        <tag>HEAD</tag>
+    </scm>
 
-	<licenses>
-		<license>
-			<name>Apache License, Version 2.0</name>
-			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
 
-	<developers>
-		<developer>
-			<id>nkonev</id>
-			<name>Nikita Konev</name>
-			<roles>
-				<role>Project lead</role>
-			</roles>
-		</developer>
-	</developers>
+    <developers>
+        <developer>
+            <id>nkonev</id>
+            <name>Nikita Konev</name>
+            <roles>
+                <role>Project lead</role>
+            </roles>
+        </developer>
+    </developers>
 
-	<properties>
-		<java.version>17</java.version>
-		<spring.boot.version>3.1.0</spring.boot.version>
-		<maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
-		<testcontainers.version>1.19.0</testcontainers.version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
-		<maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
-		<maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
+    <properties>
+        <java.version>17</java.version>
+        <spring.boot.version>3.1.0</spring.boot.version>
+        <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
+        <maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
+        <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.4.0</maven.javadoc.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M2</maven.deploy.plugin.version>
@@ -58,34 +59,34 @@
         <junit.version>5.9.3</junit.version>
     </properties>
 
-	<modules>
-		<module>r2dbc-migrate-core</module>
-		<module>r2dbc-migrate-resource-reader-api</module>
-		<module>r2dbc-migrate-resource-reader-reflections</module>
-		<module>r2dbc-migrate-resource-reader-spring</module>
-		<module>r2dbc-migrate-spring-boot-starter</module>
-	</modules>
+    <modules>
+        <module>r2dbc-migrate-core</module>
+        <module>r2dbc-migrate-resource-reader-api</module>
+        <module>r2dbc-migrate-resource-reader-reflections</module>
+        <module>r2dbc-migrate-resource-reader-spring</module>
+        <module>r2dbc-migrate-spring-boot-starter</module>
+    </modules>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>${spring.boot.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-	<repositories>
-		<repository>
-			<id>central</id>
-			<url>https://repo.maven.apache.org/maven2</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <repository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
@@ -94,16 +95,16 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-	</repositories>
+    </repositories>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<id>central</id>
-			<url>https://repo.maven.apache.org/maven2</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
         <pluginRepository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
@@ -112,138 +113,138 @@
                 <enabled>false</enabled>
             </snapshots>
         </pluginRepository>
-	</pluginRepositories>
+    </pluginRepositories>
 
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
-	<build>
-		<plugins>
+    <build>
+        <plugins>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
-				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
-				</configuration>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>${maven.surefire.plugin.version}</version>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>${maven.source.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>attach-sources</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven.source.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>${maven.javadoc.plugin.version}</version>
-				<configuration>
-					<source>${java.version}</source>
-					<encoding>UTF-8</encoding>
-				</configuration>
-				<executions>
-					<execution>
-						<id>attach-javadoc</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.javadoc.plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>${maven.deploy.plugin.version}</version>
-				<configuration>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>${maven.deploy.plugin.version}</version>
+                <configuration>
                     <skip>true</skip>
                 </configuration>
-			</plugin>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<version>${maven.release.plugin.version}</version>
-				<configuration>
-					<localCheckout>true</localCheckout>
-					<pushChanges>true</pushChanges>
-					<mavenExecutorId>forked-path</mavenExecutorId>
-					<arguments>-DskipTests</arguments>
-					<tagNameFormat>@{project.version}</tagNameFormat>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>${nexus.staging.plugin.version}</version>
-				<extensions>true</extensions>
-				<configuration>
-					<serverId>ossrh</serverId>
-					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-					<autoReleaseAfterClose>true</autoReleaseAfterClose>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${maven.release.plugin.version}</version>
+                <configuration>
+                    <localCheckout>true</localCheckout>
+                    <pushChanges>true</pushChanges>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <arguments>-DskipTests</arguments>
+                    <tagNameFormat>@{project.version}</tagNameFormat>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>${nexus.staging.plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
-	<profiles>
-		<!-- GPG Signature on release -->
-		<profile>
-			<id>release-sign-artifacts</id>
-			<activation>
-				<property>
-					<name>performRelease</name>
-					<value>true</value>
-				</property>
-			</activation>
+    <profiles>
+        <!-- GPG Signature on release -->
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
 
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>${maven.gpg.plugin}</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-								<configuration>
-									<executable>gpg2</executable>
-									<gpgArguments>
-										<arg>--pinentry-mode</arg>
-										<arg>loopback</arg>
-									</gpgArguments>
-									<passphrase>${gpg.passphrase}</passphrase>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven.gpg.plugin}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>gpg2</executable>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                    <passphrase>${gpg.passphrase}</passphrase>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

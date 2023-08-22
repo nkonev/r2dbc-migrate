@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>r2dbc-migrate-core</artifactId>
-	<description>R2DBC Migrate Core Library</description>
+    <artifactId>r2dbc-migrate-core</artifactId>
+    <description>R2DBC Migrate Core Library</description>
 
-	<parent>
-		<artifactId>r2dbc-migrate-parent</artifactId>
-		<groupId>name.nkonev.r2dbc-migrate</groupId>
-		<version>2.10.3-SNAPSHOT</version>
-	</parent>
+    <parent>
+        <artifactId>r2dbc-migrate-parent</artifactId>
+        <groupId>name.nkonev.r2dbc-migrate</groupId>
+        <version>2.10.3-SNAPSHOT</version>
+    </parent>
 
     <dependencyManagement>
         <dependencies>
@@ -24,25 +25,25 @@
     </dependencyManagement>
 
     <dependencies>
-		<dependency>
-			<artifactId>r2dbc-migrate-resource-reader-api</artifactId>
-			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>2.10.3-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-spi</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
-			<version>${testcontainers.version}</version>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <artifactId>r2dbc-migrate-resource-reader-api</artifactId>
+            <groupId>name.nkonev.r2dbc-migrate</groupId>
+            <version>2.10.3-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.r2dbc</groupId>
+            <artifactId>r2dbc-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -53,78 +54,78 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-pool</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-mssql</artifactId>
+        <dependency>
+            <groupId>io.r2dbc</groupId>
+            <artifactId>r2dbc-pool</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.r2dbc</groupId>
+            <artifactId>r2dbc-mssql</artifactId>
             <version>${mssql.driver.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>r2dbc-postgresql</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.asyncer</groupId>
-			<artifactId>r2dbc-mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>r2dbc-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.asyncer</groupId>
+            <artifactId>r2dbc-mysql</artifactId>
             <version>${mysql.driver.version}</version>
             <scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.r2dbc</groupId>
-			<artifactId>r2dbc-h2</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mariadb</groupId>
-			<artifactId>r2dbc-mariadb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.r2dbc</groupId>
+            <artifactId>r2dbc-h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb</groupId>
+            <artifactId>r2dbc-mariadb</artifactId>
             <version>${mariadb.driver.version}</version>
-			<scope>test</scope>
-		</dependency>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.github.hakky54</groupId>
             <artifactId>logcaptor</artifactId>
             <version>${logcaptor.version}</version>
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
-			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>2.10.3-SNAPSHOT</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
-			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>2.10.3-SNAPSHOT</version>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
+            <groupId>name.nkonev.r2dbc-migrate</groupId>
+            <version>2.10.3-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
+            <groupId>name.nkonev.r2dbc-migrate</groupId>
+            <version>2.10.3-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>${maven.surefire.plugin.version}</version>
-				<configuration>
-					<argLine>-Xmx256m</argLine>
-					<forkCount>1</forkCount>
-					<parallel>classes</parallel>
-					<reuseForks>false</reuseForks>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+                <configuration>
+                    <argLine>-Xmx256m</argLine>
+                    <forkCount>1</forkCount>
+                    <parallel>classes</parallel>
+                    <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

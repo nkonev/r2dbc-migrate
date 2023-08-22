@@ -1,51 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>r2dbc-migrate-spring-boot-starter</artifactId>
-	<description>R2DBC Migrate Spring Boot Starter</description>
+    <artifactId>r2dbc-migrate-spring-boot-starter</artifactId>
+    <description>R2DBC Migrate Spring Boot Starter</description>
 
-	<parent>
-		<artifactId>r2dbc-migrate-parent</artifactId>
-		<groupId>name.nkonev.r2dbc-migrate</groupId>
-		<version>2.10.3-SNAPSHOT</version>
-	</parent>
+    <parent>
+        <artifactId>r2dbc-migrate-parent</artifactId>
+        <groupId>name.nkonev.r2dbc-migrate</groupId>
+        <version>2.10.3-SNAPSHOT</version>
+    </parent>
 
-	<dependencies>
-		<dependency>
-			<artifactId>r2dbc-migrate-core</artifactId>
-			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>2.10.3-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
-			<groupId>name.nkonev.r2dbc-migrate</groupId>
-			<version>2.10.3-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-logging</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-r2dbc</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>r2dbc-postgresql</artifactId>
-			<scope>test</scope>
-		</dependency>
+    <dependencies>
+        <dependency>
+            <artifactId>r2dbc-migrate-core</artifactId>
+            <groupId>name.nkonev.r2dbc-migrate</groupId>
+            <version>2.10.3-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
+            <groupId>name.nkonev.r2dbc-migrate</groupId>
+            <version>2.10.3-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-r2dbc</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>r2dbc-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
 </project>
