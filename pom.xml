@@ -4,7 +4,7 @@
 
     <groupId>name.nkonev.r2dbc-migrate</groupId>
     <artifactId>r2dbc-migrate-parent</artifactId>
-    <version>2.10.4-SNAPSHOT</version>
+    <version>2.11.0-SNAPSHOT</version>
     <name>r2dbc-migrate parent project</name>
     <description>R2DBC migration tool and library</description>
     <packaging>pom</packaging>
@@ -36,9 +36,8 @@
 
     <properties>
         <java.version>17</java.version>
-        <spring.boot.version>3.1.0</spring.boot.version>
+        <spring.boot.version>3.2.0</spring.boot.version>
         <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
-        <testcontainers.version>1.19.0</testcontainers.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
@@ -55,7 +54,6 @@
         <mysql.driver.version>1.0.1</mysql.driver.version>
         <mariadb.driver.version>1.1.4</mariadb.driver.version>
         <logcaptor.version>2.9.0</logcaptor.version>
-        <junit.version>5.9.3</junit.version>
     </properties>
 
     <modules>
@@ -68,13 +66,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
