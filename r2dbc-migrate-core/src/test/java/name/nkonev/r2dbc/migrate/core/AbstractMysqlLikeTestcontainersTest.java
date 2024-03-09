@@ -173,7 +173,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
             connection -> Flux.from(connection.createStatement("select * from `my scheme`.`my migrations` order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
                     return new MigrationInfo(
-                        row.get("id", Integer.class),
+                        row.get("id", Long.class),
                         row.get("description", String.class),
                         false,
                         false,
