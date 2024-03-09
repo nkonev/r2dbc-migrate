@@ -6,14 +6,14 @@ import java.util.List;
 public abstract class FilenameParser {
 
     public static class MigrationInfo {
-        private int version;
+        private long version;
         private String description;
         private boolean splitByLine;
         private boolean transactional;
 
         private boolean premigration;
 
-        public MigrationInfo(int version, String description, boolean splitByLine, boolean transactional, boolean premigration) {
+        public MigrationInfo(long version, String description, boolean splitByLine, boolean transactional, boolean premigration) {
             this.version = version;
             this.description = description;
             this.splitByLine = splitByLine;
@@ -25,7 +25,7 @@ public abstract class FilenameParser {
             return description;
         }
 
-        public int getVersion() {
+        public long getVersion() {
             return version;
         }
 
@@ -76,9 +76,9 @@ public abstract class FilenameParser {
         }
     }
 
-    private static int getVersion(String vPart) {
+    private static long getVersion(String vPart) {
         String v = vPart.replace("V", "");
-        return Integer.parseInt(v);
+        return Long.parseLong(v);
     }
 
     private static String getDescription(String descriptionPart) {

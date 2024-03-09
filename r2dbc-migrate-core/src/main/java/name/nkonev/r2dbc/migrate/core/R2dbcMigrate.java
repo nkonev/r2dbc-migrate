@@ -220,7 +220,7 @@ public abstract class R2dbcMigrate {
         List<Tuple2<MigrateResource, MigrationInfo>> sortedResources = allResources.stream().sorted((o1, o2) -> {
             MigrationInfo migrationInfo1 = o1.getT2();
             MigrationInfo migrationInvo2 = o2.getT2();
-            return Integer.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
+            return Long.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
         }).peek(objects -> {
             LOGGER.debug("From {} parsed metadata {}", objects.getT1(), objects.getT2());
         }).collect(Collectors.toList());
@@ -343,11 +343,11 @@ public abstract class R2dbcMigrate {
         return transactionalWrap(connection, true, sqlQueries.createInsertMigrationStatement(connection, tt.getT2()).execute(), "Writing metadata version " + tt.getT2().getVersion());
     }
 
-    private static Mono<Integer> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection, R2dbcMigrateProperties properties) {
+    private static Mono<Long> getDatabaseVersionOrZero(SqlQueries sqlQueries, Connection connection, R2dbcMigrateProperties properties) {
 
         return withAutoCommit(connection, connection.createStatement(sqlQueries.getMaxMigration()).execute())
-            .flatMap(o -> Mono.from(o.map(getResultSafely("max", Integer.class, 0))))
-            .switchIfEmpty(Mono.just(0))
+            .flatMap(o -> Mono.from(o.map(getResultSafely("max", Long.class, 0L))))
+            .switchIfEmpty(Mono.just(0L))
             .last();
     }
 

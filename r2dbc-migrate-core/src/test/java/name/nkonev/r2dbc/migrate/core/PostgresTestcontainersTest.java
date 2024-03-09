@@ -101,7 +101,7 @@ public class PostgresTestcontainersTest {
             assertTrue(
                 hasSubList(logCaptor.getDebugLogs(), Arrays.asList(
                     "BEGIN",
-                    "create table if not exists \"migrations\"(id int primary key, description text); create table if not exists \"migrations_lock\"(id int primary key, locked boolean not null); insert into \"migrations_lock\"(id, locked) values (1, false) on conflict (id) do nothing",
+                    "create table if not exists \"migrations\"(id bigint primary key, description text); create table if not exists \"migrations_lock\"(id int primary key, locked boolean not null); insert into \"migrations_lock\"(id, locked) values (1, false) on conflict (id) do nothing",
                     "COMMIT",
                     "BEGIN",
                     "update \"migrations_lock\" set locked = true where id = 1 and locked = false",
@@ -121,6 +121,12 @@ public class PostgresTestcontainersTest {
                     "COMMIT",
                     "BEGIN",
                     "insert into customer(first_name, last_name) values ('Customer', 'Surname 1');; insert into customer(first_name, last_name) values ('Customer', 'Surname 2');; insert into customer(first_name, last_name) values ('Customer', 'Surname 3');; insert into customer(first_name, last_name) values ('Customer', 'Surname 4');",
+                    "COMMIT",
+                    "BEGIN",
+                    "insert into \"migrations\"(id, description) values ($1, $2)",
+                    "COMMIT",
+                    "BEGIN",
+                    "create table example(id serial primary key);\r\n",
                     "COMMIT",
                     "BEGIN",
                     "insert into \"migrations\"(id, description) values ($1, $2)",
@@ -415,7 +421,7 @@ public class PostgresTestcontainersTest {
         @Override
         public List<String> createInternalTables() {
             return List.of(
-                "create table if not exists simple_migrations(id int primary key, description text)"
+                "create table if not exists simple_migrations(id bigint primary key, description text)"
             );
         }
 
@@ -476,7 +482,7 @@ public class PostgresTestcontainersTest {
             assertTrue(
                 hasSubList(logCaptor.getDebugLogs(), Arrays.asList(
                     "BEGIN",
-                    "create table if not exists simple_migrations(id int primary key, description text); create table if not exists simple_migrations_lock(id int primary key, locked boolean not null); insert into simple_migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
+                    "create table if not exists simple_migrations(id bigint primary key, description text); create table if not exists simple_migrations_lock(id int primary key, locked boolean not null); insert into simple_migrations_lock(id, locked) values (1, false) on conflict (id) do nothing",
                     "COMMIT",
                     "BEGIN",
                     "update simple_migrations_lock set locked = true where id = 1 and locked = false",
@@ -496,6 +502,12 @@ public class PostgresTestcontainersTest {
                     "COMMIT",
                     "BEGIN",
                     "insert into customer(first_name, last_name) values ('Customer', 'Surname 1');; insert into customer(first_name, last_name) values ('Customer', 'Surname 2');; insert into customer(first_name, last_name) values ('Customer', 'Surname 3');; insert into customer(first_name, last_name) values ('Customer', 'Surname 4');",
+                    "COMMIT",
+                    "BEGIN",
+                    "insert into simple_migrations(id, description) values ($1, $2)",
+                    "COMMIT",
+                    "BEGIN",
+                    "create table example(id serial primary key);\r\n",
                     "COMMIT",
                     "BEGIN",
                     "insert into simple_migrations(id, description) values ($1, $2)",
