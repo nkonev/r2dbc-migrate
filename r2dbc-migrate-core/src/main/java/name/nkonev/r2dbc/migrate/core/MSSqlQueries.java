@@ -40,13 +40,13 @@ public class MSSqlQueries implements SqlQueries {
         if (schemaIsDefined()) {
             return List.of(
                 String.format("if not exists (select * from sys.tables t join sys.schemas s on (t.schema_id = s.schema_id) where s.name = %s and t.name = %s) ", quoteAsString(migrationsSchema), quoteAsString(migrationsTable))
-                    + String.format("create table %s.%s (id int primary key, description text)", quoteAsObject(migrationsSchema), quoteAsObject(migrationsTable))
+                    + String.format("create table %s.%s (id bigint primary key, description text)", quoteAsObject(migrationsSchema), quoteAsObject(migrationsTable))
 
             );
         } else {
             return List.of(
                 String.format("if not exists (SELECT 1 FROM sys.Tables WHERE Name = N%s AND Type = N'U') ", quoteAsString(migrationsTable))
-                    + String.format("create table %s (id int primary key, description text)", quoteAsObject(migrationsTable))
+                    + String.format("create table %s (id bigint primary key, description text)", quoteAsObject(migrationsTable))
             );
         }
 
