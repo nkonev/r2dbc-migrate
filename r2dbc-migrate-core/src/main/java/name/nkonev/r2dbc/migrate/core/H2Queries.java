@@ -34,7 +34,7 @@ public class H2Queries implements SqlQueries {
     @Override
     public List<String> createInternalTables() {
         return List.of(
-            withMigrationsTable("create table if not exists %s (id int primary key, description text)")
+            withMigrationsTable("create table if not exists %s (id bigint primary key, description text)")
         );
     }
 
