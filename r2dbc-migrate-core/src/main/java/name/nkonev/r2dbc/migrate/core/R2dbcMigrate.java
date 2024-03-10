@@ -210,7 +210,14 @@ public abstract class R2dbcMigrate {
             }
         }
 
-        return allResources;
+        var sortedResources = allResources.stream().sorted((o1, o2) -> {
+            MigrationInfo migrationInfo1 = o1.getT2();
+            MigrationInfo migrationInfo2 = o2.getT2();
+            return Long.compare(migrationInfo1.getVersion(), migrationInfo2.getVersion());
+        }).peek(objects -> {
+            LOGGER.debug("From {} got metadata {}", objects.getT1(), objects.getT2());
+        }).collect(Collectors.toList());
+        return sortedResources;
     }
 
     private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processConventionallyNamedFiles(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
@@ -244,14 +251,7 @@ public abstract class R2dbcMigrate {
 
             readResources.addAll(readResourcesPortion);
         }
-        var sortedResources = readResources.stream().sorted((o1, o2) -> {
-            MigrationInfo migrationInfo1 = o1.getT2();
-            MigrationInfo migrationInfo2 = o2.getT2();
-            return Long.compare(migrationInfo1.getVersion(), migrationInfo2.getVersion());
-        }).peek(objects -> {
-            LOGGER.debug("From {} parsed metadata {}", objects.getT1(), objects.getT2());
-        }).collect(Collectors.toList());
-        return sortedResources;
+        return readResources;
     }
 
     private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processJustFiles(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
