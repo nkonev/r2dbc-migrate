@@ -87,7 +87,7 @@ public class MssqlTestcontainersTest {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
 
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
 
@@ -118,7 +118,7 @@ public class MssqlTestcontainersTest {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
         properties.setValidationQuery("SELECT collation_name as validation_result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
@@ -151,7 +151,7 @@ public class MssqlTestcontainersTest {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
         properties.setValidationQuery("SELECT collation_name as validation_result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
         properties.setMigrationsSchema("my scheme");
@@ -227,14 +227,14 @@ public class MssqlTestcontainersTest {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.MSSQL);
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
         properties.setValidationQuery("SELECT collation_name as validation_result FROM sys.databases WHERE name = N'master'");
         properties.setValidationQueryExpectedResultValue("Cyrillic_General_CI_AS");
 
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
 
         // here we simulate new launch
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql_append/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mssql_append/*.sql");
         // and we assert that we able to add yet another database (nontransactional should work)
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
     }
@@ -247,7 +247,7 @@ public class MssqlTestcontainersTest {
 
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
             properties.setDialect(Dialect.MSSQL);
-            properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql_error/*.sql"));
+            properties.setResourcesPath("classpath:/migrations/mssql_error/*.sql");
 
             Integer mappedPort = container.getMappedPort(MSSQL_PORT);
 

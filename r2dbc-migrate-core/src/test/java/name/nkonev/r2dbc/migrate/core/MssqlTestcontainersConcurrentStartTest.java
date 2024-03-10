@@ -135,7 +135,7 @@ public class MssqlTestcontainersConcurrentStartTest {
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
             properties.setConnectionMaxRetries(1024);
             properties.setDialect(Dialect.MSSQL);
-            properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mssql/*.sql"));
+            properties.setResourcesPath("classpath:/migrations/mssql/*.sql");
             properties.setValidationQuery("SELECT 'ololo' as validation_result");
             properties.setValidationQueryExpectedResultValue("ololo");
             ConnectionFactory connectionFactory = makeConnectionMono(MSSQL_HARDCODED_PORT);

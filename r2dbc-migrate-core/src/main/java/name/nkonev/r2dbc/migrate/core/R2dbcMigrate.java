@@ -2,7 +2,7 @@ package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.*;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Level;
 
 import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
@@ -16,24 +16,18 @@ import reactor.util.Loggers;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import reactor.util.retry.Retry;
 
 import static java.util.Optional.ofNullable;
+import static name.nkonev.r2dbc.migrate.core.FilenameParser.getMigrationInfo;
 
 public abstract class R2dbcMigrate {
 
     private static final Logger LOGGER = Loggers.getLogger(R2dbcMigrate.class);
     private static final String ROWS_UPDATED = "By '{}' {} rows updated";
-
-    private static List<MigrateResource> getResources(String resourcesPath, MigrateResourceReader resourceReader) {
-        return resourceReader.getResources(resourcesPath);
-    }
 
     private static Dialect getSqlDialect(R2dbcMigrateProperties properties, Connection connection) {
         if (properties.getDialect() == null) {
@@ -199,32 +193,87 @@ public abstract class R2dbcMigrate {
         return transactionalWrapUnchecked(connection, true, waitForLock);
     }
 
-    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> getResourcesFromPath(String resourcesPath, MigrateResourceReader resourceReader) {
-        List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> collect = getResources(resourcesPath, resourceReader).stream()
-            .filter(Objects::nonNull)
-            .filter(MigrateResource::isReadable)
-            .map(resource -> {
-                LOGGER.debug("Reading {}", resource);
-                FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(resource.getFilename());
-                return Tuples.of(resource, migrationInfo);
-            })
-            .collect(Collectors.toList());
-        return collect;
-    }
-
     private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> getFileResources(R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
         List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> allResources = new ArrayList<>();
-        for (String resource : properties.getResourcesPaths()) {
-            allResources.addAll(getResourcesFromPath(resource, resourceReader));
+
+        for (var resourceEntry : properties.getResources()) {
+            switch (resourceEntry.getType()) {
+                case CONVENTIONALLY_NAMED_FILES -> {
+                    allResources.addAll(processConventionallyNamedFiles(resourceEntry, resourceReader));
+                }
+                case JUST_FILES -> {
+                    allResources.addAll(processJustFiles(resourceEntry, resourceReader));
+                }
+                default -> {
+                    throw new IllegalArgumentException("Wrong resourceEntry's type " + resourceEntry.getType());
+                }
+            }
         }
-        List<Tuple2<MigrateResource, MigrationInfo>> sortedResources = allResources.stream().sorted((o1, o2) -> {
+
+        return allResources;
+    }
+
+    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processConventionallyNamedFiles(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
+        if (Objects.nonNull(resourceEntry.getVersion())) {
+            LOGGER.warn("For {} set version will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
+        }
+        if (Objects.nonNull(resourceEntry.getDescription())) {
+            LOGGER.warn("For {} set description will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
+        }
+        if (Objects.nonNull(resourceEntry.getSplitByLine())) {
+            LOGGER.warn("For {} set splitByLine will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
+        }
+        if (Objects.nonNull(resourceEntry.getTransactional())) {
+            LOGGER.warn("For {} set transactional will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
+        }
+        if (Objects.nonNull(resourceEntry.getPremigration())) {
+            LOGGER.warn("For {} set premigration will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
+        }
+        List<String> resourcesPaths = resourceEntry.getResourcesPaths();
+        List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> readResources = new ArrayList<>();
+        for (String resourcesPath : resourcesPaths) {
+            var readResourcesPortion = resourceReader.getResources(resourcesPath).stream()
+                .filter(Objects::nonNull)
+                .filter(MigrateResource::isReadable)
+                .map(resource -> {
+                    LOGGER.debug("Reading {}", resource);
+                    FilenameParser.MigrationInfo migrationInfo = getMigrationInfo(resource.getFilename());
+                    return Tuples.of(resource, migrationInfo);
+                })
+                .toList();
+
+            readResources.addAll(readResourcesPortion);
+        }
+        var sortedResources = readResources.stream().sorted((o1, o2) -> {
             MigrationInfo migrationInfo1 = o1.getT2();
-            MigrationInfo migrationInvo2 = o2.getT2();
-            return Long.compare(migrationInfo1.getVersion(), migrationInvo2.getVersion());
+            MigrationInfo migrationInfo2 = o2.getT2();
+            return Long.compare(migrationInfo1.getVersion(), migrationInfo2.getVersion());
         }).peek(objects -> {
             LOGGER.debug("From {} parsed metadata {}", objects.getT1(), objects.getT2());
         }).collect(Collectors.toList());
         return sortedResources;
+    }
+
+    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processJustFiles(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
+        if (Objects.isNull(resourceEntry.getVersion())) {
+            throw new IllegalArgumentException("Missed version for " + resourceEntry);
+        }
+
+        if (resourceEntry.getResourcesPaths().size() != 1) {
+            throw new IllegalArgumentException("For "+resourceEntry+" of type JUST_FILES you cannot provide != 1 resourcesPaths. Consider using several entries with JUST_FILES instead.");
+        }
+        var resourcePath = resourceEntry.getResourcesPaths().get(0);
+        var gotResources = resourceReader.getResources(resourcePath);
+        if (gotResources.size() != 1) {
+            throw new IllegalStateException("ResourceEntry " + resourceEntry + " should provide exactly one file. We got " + gotResources.size());
+        }
+        var gotResource = gotResources.get(0);
+        if (!gotResource.isReadable()) {
+            throw new IllegalStateException("ResourceEntry " + resourceEntry + " should be readable");
+        }
+        FilenameParser.MigrationInfo migrationInfo = getMigrationInfo(resourceEntry.getVersion(), resourceEntry.getDescription(), resourceEntry.getSplitByLine(), resourceEntry.getTransactional(), resourceEntry.getPremigration());
+
+        return Collections.singletonList(Tuples.of(gotResource, migrationInfo));
     }
 
     private static Mono<Void> releaseLock(Connection connection, Locker locker) {

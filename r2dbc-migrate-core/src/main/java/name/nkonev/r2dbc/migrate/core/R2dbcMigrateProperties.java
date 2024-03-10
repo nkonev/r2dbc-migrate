@@ -9,7 +9,7 @@ import java.util.List;
 public class R2dbcMigrateProperties {
     private boolean enable = true;
     private long connectionMaxRetries = 500;
-    private List<String> resourcesPaths;
+    private List<BunchOfResourcesEntry> resources;
     private int chunkSize = 1000;
     private Dialect dialect;
     private String validationQuery = "select '42' as validation_result";
@@ -29,17 +29,19 @@ public class R2dbcMigrateProperties {
     public R2dbcMigrateProperties() {
     }
 
-    public List<String> getResourcesPaths() {
-        return resourcesPaths;
+    public List<BunchOfResourcesEntry> getResources() {
+        return resources;
     }
 
-    public void setResourcesPaths(List<String> resourcesPaths) {
-        this.resourcesPaths = resourcesPaths;
+    public void setResources(List<BunchOfResourcesEntry> resources) {
+        this.resources = resources;
     }
 
-    @Deprecated
     public void setResourcesPath(String resourcesPath) {
-        this.resourcesPaths = Collections.singletonList(resourcesPath);
+        var entry = new BunchOfResourcesEntry();
+        entry.setType(BunchOfResourcesType.CONVENTIONALLY_NAMED_FILES);
+        entry.setResourcesPaths(Collections.singletonList(resourcesPath));
+        this.resources = Collections.singletonList(entry);
     }
 
     public long getConnectionMaxRetries() {
@@ -176,7 +178,7 @@ public class R2dbcMigrateProperties {
         return "R2dbcMigrateProperties{" +
             "enable=" + enable +
             ", connectionMaxRetries=" + connectionMaxRetries +
-            ", resourcesPaths=" + resourcesPaths +
+            ", resources=" + resources +
             ", chunkSize=" + chunkSize +
             ", dialect=" + dialect +
             ", validationQuery='" + validationQuery + '\'' +

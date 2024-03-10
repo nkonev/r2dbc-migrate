@@ -42,7 +42,7 @@ public class H2Test {
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         properties.setDialect(Dialect.H2);
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/h2/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/h2/*.sql");
         R2dbcMigrate.migrate(makeConnectionMono(), properties, springResourceReader, null, null).block();
 
         Flux<Customer> clientFlux = Mono.from(makeConnectionMono().create())

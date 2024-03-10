@@ -45,7 +45,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
         Integer mappedPort = getMappedPort();
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mysql/*.sql");
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
 
         Flux<Customer> clientFlux = Flux.usingWhen(
@@ -72,7 +72,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
         Integer mappedPort = getMappedPort();
 
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mysql/*.sql");
         properties.setPreferDbSpecificLock(false);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
 
@@ -101,7 +101,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
         try (LogCaptor logCaptor = getStatementsLogger()) {
 
             R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-            properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql_error/*.sql"));
+            properties.setResourcesPath("classpath:/migrations/mysql_error/*.sql");
             properties.setPreferDbSpecificLock(false);
             Integer mappedPort = getMappedPort();
 
@@ -142,7 +142,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
         properties.setMigrationsSchema("my scheme");
         properties.setMigrationsTable("my migrations");
         properties.setMigrationsLockTable("my migrations lock");
-        properties.setResourcesPaths(Collections.singletonList("classpath:/migrations/mysql/*.sql"));
+        properties.setResourcesPath("classpath:/migrations/mysql/*.sql");
         properties.setPreferDbSpecificLock(false);
         Integer mappedPort = getMappedPort();
         ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);

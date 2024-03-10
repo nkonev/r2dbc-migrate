@@ -2,6 +2,7 @@ package name.nkonev.r2dbc.migrate.core;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public abstract class FilenameParser {
 
@@ -74,6 +75,16 @@ public abstract class FilenameParser {
         } else {
             throw new RuntimeException("Invalid file name '" + filename + "'");
         }
+    }
+
+    public static MigrationInfo getMigrationInfo(long version, String description, Boolean splitByLine, Boolean transactional, Boolean premigration) {
+        return new MigrationInfo(
+            version,
+            description,
+            Optional.ofNullable(splitByLine).orElse(false),
+            Optional.ofNullable(transactional).orElse(false),
+            Optional.ofNullable(premigration).orElse(false)
+        );
     }
 
     private static long getVersion(String vPart) {
