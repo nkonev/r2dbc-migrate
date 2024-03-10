@@ -32,6 +32,10 @@ public class BunchOfResourcesEntry {
         this.resourcesPaths = Collections.singletonList(resourcePath);
     }
 
+    public String getResourcePath() {
+        return this.resourcesPaths.get(0);
+    }
+
     public BunchOfResourcesType getType() {
         return type;
     }

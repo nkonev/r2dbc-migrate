@@ -262,7 +262,7 @@ public abstract class R2dbcMigrate {
         if (resourceEntry.getResourcesPaths().size() != 1) {
             throw new IllegalArgumentException("For "+resourceEntry+" of type JUST_FILE you cannot provide != 1 resourcesPaths. Consider using several entries with JUST_FILES instead.");
         }
-        var resourcePath = resourceEntry.getResourcesPaths().get(0);
+        var resourcePath = resourceEntry.getResourcePath();
         var gotResources = resourceReader.getResources(resourcePath);
         if (gotResources.size() != 1) {
             throw new IllegalStateException("ResourceEntry " + resourceEntry + " should provide exactly one file. We got " + gotResources.size());
