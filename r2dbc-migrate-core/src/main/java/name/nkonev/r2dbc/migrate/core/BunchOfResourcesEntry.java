@@ -1,6 +1,7 @@
 package name.nkonev.r2dbc.migrate.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BunchOfResourcesEntry {
@@ -25,6 +26,10 @@ public class BunchOfResourcesEntry {
 
     public void setResourcesPaths(List<String> resourcesPaths) {
         this.resourcesPaths = resourcesPaths;
+    }
+
+    public void setResourcePath(String resourcePath) {
+        this.resourcesPaths = Collections.singletonList(resourcePath);
     }
 
     public BunchOfResourcesType getType() {
@@ -87,6 +92,13 @@ public class BunchOfResourcesEntry {
         var e = new BunchOfResourcesEntry();
         e.setType(BunchOfResourcesType.CONVENTIONALLY_NAMED_FILES);
         e.setResourcesPaths(resourcesPaths);
+        return e;
+    }
+
+    public static BunchOfResourcesEntry ofJustFile(long version, String resourcesPath) {
+        var e = new BunchOfResourcesEntry();
+        e.setType(BunchOfResourcesType.JUST_FILE);
+        e.setResourcePath(resourcesPath);
         return e;
     }
 }
