@@ -57,7 +57,7 @@ public class R2dbcMigrateAutoConfiguration {
     @ConfigurationProperties("r2dbc.migrate")
     public static class SpringBootR2dbcMigrateProperties extends R2dbcMigrateProperties {
         public SpringBootR2dbcMigrateProperties() {
-            setResourcesPaths(Collections.singletonList("classpath:/db/migration/*.sql"));
+            setResourcesPath("classpath:/db/migration/*.sql");
         }
     }
 

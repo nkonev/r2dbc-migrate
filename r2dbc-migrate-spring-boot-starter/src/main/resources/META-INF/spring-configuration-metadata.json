@@ -1,111 +1,117 @@
 {"groups": [
   {
     "name": "r2dbc.migrate",
-    "type": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "type": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   }
 ],"properties": [
   {
     "name": "r2dbc.migrate.enable",
     "type": "boolean",
     "description": "Enable or disable migrations",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
-    "name": "r2dbc.migrate.resources-paths",
-    "type": "java.util.List<java.lang.String>",
-    "description": "Paths to migrations. Internally uses \"PathMatchingResourcePatternResolver\" so it should starts from \"file:\" or \"classpath:\" prefix",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "name": "r2dbc.migrate.resources",
+    "type": "java.util.List<name.nkonev.r2dbc.migrate.core.BunchOfResourcesEntry>",
+    "description": "List of entries, containing paths to migrations. Internally uses \"PathMatchingResourcePatternResolver\" so it should starts from \"file:\" or \"classpath:\" prefix",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.resources-path",
+    "type": "java.lang.String",
+    "description": "Shortcut to r2dbc.migrate.resources with type CONVENTIONALLY_NAMED_FILES. Internally uses \"PathMatchingResourcePatternResolver\" so it should starts from \"file:\" or \"classpath:\" prefix",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.dialect",
     "type": "name.nkonev.r2dbc.migrate.core.Dialect",
     "description": "Optional database dialect",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.connection-max-retries",
     "type": "long",
     "description": "Count of retries to connect to database. r2dbc-migrate will retry with fixed interval \"validation-retry-delay\"",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.validation-retry-delay",
     "type": "java.time.Duration",
     "description": "Delay between trying to get success of validation \"validation-query\"",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.validation-query-timeout",
     "type": "java.time.Duration",
     "description": "Timeout for \"validation-query\"",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.validation-query",
     "type": "java.lang.String",
     "description": "Query that used for connection's validation",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.validation-query-expected-result-value",
     "type": "java.lang.String",
     "description": "If set then \"result\" column of validation-query will be used to compare with",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.chunk-size",
     "type": "int",
     "description": "Number of lines which will be passed as batch to the connection. Used with \"splitted\" modifier.",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.file-charset",
     "type": "java.nio.charset.Charset",
     "description": "Charset used to read file.",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.acquire-lock-retry-delay",
     "type": "java.time.Duration",
     "description": "Delay between retries to acquire lock",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.acquire-lock-max-retries",
     "type": "long",
     "description": "Count of retries to acquire lock from \"migrations_lock\" table",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.wait-for-database",
     "type": "boolean",
     "description": "Should we wait for database has been started ? See alse r2dbc.migrate.validation-query",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.migrations-table",
     "type": "java.lang.String",
     "description": "Changes migration table name. It will be written with corresponding wrapping (quotes in case PostgreSQL, backticks in case MySQL).",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.migrations-lock-table",
     "type": "java.lang.String",
     "description": "Changes migration lock table name. It will be written with corresponding wrapping (quotes in case PostgreSQL, backticks in case MySQL). In case prefer-db-specific-lock it's recommended to set the different migrations-lock-table if several migrators (e. g. microservices) use the same database",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.migrations-schema",
     "type": "java.lang.String",
     "description": "Changes migration schema. It will be written with corresponding wrapping (quotes in case PostgreSQL, backticks in case MySQL). Default is null - it means that database's default will be selected (\"public\" for PostgreSQL, \"dbo\" for MsSQL).",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   },
   {
     "name": "r2dbc.migrate.prefer-db-specific-lock",
     "type": "boolean",
     "description": "Use db-specific (advisory lock for PostgreSQL, session lock for MySQL and MariaDB) instead of lock table.",
-    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration.SpringBootR2dbcMigrateProperties"
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   }
 
 ],"hints": [
@@ -123,7 +129,7 @@
     ]
   },
   {
-    "name": "r2dbc.migrate.resources-paths",
+    "name": "r2dbc.migrate.resources-path",
     "values": [
       {
         "value": "classpath:/db/migration/*.sql",
