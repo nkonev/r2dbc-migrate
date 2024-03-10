@@ -10,5 +10,5 @@ public enum BunchOfResourcesType {
      * Arbitrary named files, their versions will be created according their order.
      * This option should be used carefully along with CONVENTIONALLY_NAMED_FILES due to version auto generation.
      */
-    JUST_FILES
+    JUST_FILE
 }

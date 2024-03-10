@@ -9,11 +9,11 @@ public class BunchOfResourcesEntry {
 
     private BunchOfResourcesType type = BunchOfResourcesType.CONVENTIONALLY_NAMED_FILES;
 
-    private Long version; // only for JUST_FILES
-    private String description; // only for JUST_FILES
-    private Boolean splitByLine; // only for JUST_FILES
-    private Boolean transactional; // only for JUST_FILES
-    private Boolean premigration; // only for JUST_FILES
+    private Long version; // only for JUST_FILE
+    private String description; // only for JUST_FILE
+    private Boolean splitByLine; // only for JUST_FILE
+    private Boolean transactional; // only for JUST_FILE
+    private Boolean premigration; // only for JUST_FILE
 
 
     public BunchOfResourcesEntry() {

@@ -201,7 +201,7 @@ public abstract class R2dbcMigrate {
                 case CONVENTIONALLY_NAMED_FILES -> {
                     allResources.addAll(processConventionallyNamedFiles(resourceEntry, resourceReader));
                 }
-                case JUST_FILES -> {
+                case JUST_FILE -> {
                     allResources.addAll(processJustFiles(resourceEntry, resourceReader));
                 }
                 default -> {
@@ -260,7 +260,7 @@ public abstract class R2dbcMigrate {
         }
 
         if (resourceEntry.getResourcesPaths().size() != 1) {
-            throw new IllegalArgumentException("For "+resourceEntry+" of type JUST_FILES you cannot provide != 1 resourcesPaths. Consider using several entries with JUST_FILES instead.");
+            throw new IllegalArgumentException("For "+resourceEntry+" of type JUST_FILE you cannot provide != 1 resourcesPaths. Consider using several entries with JUST_FILES instead.");
         }
         var resourcePath = resourceEntry.getResourcesPaths().get(0);
         var gotResources = resourceReader.getResources(resourcePath);
