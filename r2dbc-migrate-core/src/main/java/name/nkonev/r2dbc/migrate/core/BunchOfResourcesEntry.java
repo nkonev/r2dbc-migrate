@@ -106,7 +106,7 @@ public class BunchOfResourcesEntry {
     public static BunchOfResourcesEntry ofJustFile(long version, String description, String resourcesPath) {
         var e = new BunchOfResourcesEntry();
         e.setVersion(version);
-        e.setType(BunchOfResourcesType.JUST_FILE);
+        // e.setType(BunchOfResourcesType.JUST_FILE); set in setVersion()
         e.setResourcePath(resourcesPath);
         e.setDescription(description);
         return e;
