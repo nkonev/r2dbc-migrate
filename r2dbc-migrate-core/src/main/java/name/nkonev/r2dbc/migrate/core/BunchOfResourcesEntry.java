@@ -103,11 +103,11 @@ public class BunchOfResourcesEntry {
         return e;
     }
 
-    public static BunchOfResourcesEntry ofJustFile(long version, String description, String resourcesPath) {
+    public static BunchOfResourcesEntry ofJustFile(long version, String description, String resourcePath) {
         var e = new BunchOfResourcesEntry();
         e.setVersion(version);
         // e.setType(BunchOfResourcesType.JUST_FILE); set in setVersion()
-        e.setResourcePath(resourcesPath);
+        e.setResourcePath(resourcePath);
         e.setDescription(description);
         return e;
     }
