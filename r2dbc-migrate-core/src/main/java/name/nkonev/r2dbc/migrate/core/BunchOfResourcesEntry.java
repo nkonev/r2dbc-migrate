@@ -61,6 +61,7 @@ public class BunchOfResourcesEntry {
 
     public void setVersion(Long version) {
         this.version = version;
+        this.type = BunchOfResourcesType.JUST_FILE;
     }
 
     public String getDescription() {
