@@ -31,7 +31,7 @@ It supports user-provided dialect. You can pass implementation of `SqlQueries` i
     * index.html-like with explicit paths as in Liquibase - type `JUST_FILE`
     * directories-scanning like as in Flyway - type `CONVENTIONALLY_NAMED_FILES`
 
-See the example in the `two-modes` branch https://github.com/nkonev/r2dbc-migrate-example/tree/two-modes.
+See the example in the `two-modes` branch https://github.com/nkonev/r2dbc-migrate-example/blob/two-modes/src/main/resources/application.yml#L15.
 
 All available configuration options are in [R2dbcMigrateProperties](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-core/src/main/java/name/nkonev/r2dbc/migrate/core/R2dbcMigrateProperties.java) class.
 Their descriptions are available in your IDE Ctrl+Space help or in [spring-configuration-metadata.json](https://github.com/nkonev/r2dbc-migrate/blob/master/r2dbc-migrate-spring-boot-starter/src/main/resources/META-INF/spring-configuration-metadata.json) file.
