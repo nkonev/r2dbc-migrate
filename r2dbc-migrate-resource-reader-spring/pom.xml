@@ -8,14 +8,14 @@
     <parent>
         <artifactId>r2dbc-migrate-parent</artifactId>
         <groupId>name.nkonev.r2dbc-migrate</groupId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.0.1</version>
     </parent>
 
     <dependencies>
         <dependency>
             <artifactId>r2dbc-migrate-resource-reader-api</artifactId>
             <groupId>name.nkonev.r2dbc-migrate</groupId>
-            <version>3.0.1-SNAPSHOT</version>
+            <version>3.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
