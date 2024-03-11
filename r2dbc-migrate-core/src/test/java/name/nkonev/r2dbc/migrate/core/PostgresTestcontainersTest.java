@@ -207,7 +207,7 @@ public class PostgresTestcontainersTest {
     public void testTwoModes() {
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
         var source1 = BunchOfResourcesEntry.ofConventionallyNamedFiles("classpath:/migrations/postgresql/*.sql");
-        var source2 = BunchOfResourcesEntry.ofJustFile(11, "classpath:/migrations/postgresql_append/additional.sql", "An additional one");
+        var source2 = BunchOfResourcesEntry.ofJustFile(11, "An additional one", "classpath:/migrations/postgresql_append/additional.sql");
         properties.setResources(List.of(source1, source2));
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();

@@ -1,6 +1,7 @@
 package name.nkonev.r2dbc.migrate.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -92,18 +93,14 @@ public class BunchOfResourcesEntry {
         this.premigration = premigration;
     }
 
-    public static BunchOfResourcesEntry ofConventionallyNamedFiles(List<String> resourcesPaths) {
+    public static BunchOfResourcesEntry ofConventionallyNamedFiles(String... resourcesPaths) {
         var e = new BunchOfResourcesEntry();
         e.setType(BunchOfResourcesType.CONVENTIONALLY_NAMED_FILES);
-        e.setResourcesPaths(resourcesPaths);
+        e.setResourcesPaths(Arrays.stream(resourcesPaths).toList());
         return e;
     }
 
-    public static BunchOfResourcesEntry ofConventionallyNamedFiles(String resourcesPath) {
-        return ofConventionallyNamedFiles(Collections.singletonList(resourcesPath));
-    }
-
-    public static BunchOfResourcesEntry ofJustFile(long version, String resourcesPath, String description) {
+    public static BunchOfResourcesEntry ofJustFile(long version, String description, String resourcesPath) {
         var e = new BunchOfResourcesEntry();
         e.setVersion(version);
         e.setType(BunchOfResourcesType.JUST_FILE);
