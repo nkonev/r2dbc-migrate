@@ -99,10 +99,16 @@ public class BunchOfResourcesEntry {
         return e;
     }
 
-    public static BunchOfResourcesEntry ofJustFile(long version, String resourcesPath) {
+    public static BunchOfResourcesEntry ofConventionallyNamedFiles(String resourcesPath) {
+        return ofConventionallyNamedFiles(Collections.singletonList(resourcesPath));
+    }
+
+    public static BunchOfResourcesEntry ofJustFile(long version, String resourcesPath, String description) {
         var e = new BunchOfResourcesEntry();
+        e.setVersion(version);
         e.setType(BunchOfResourcesType.JUST_FILE);
         e.setResourcePath(resourcesPath);
+        e.setDescription(description);
         return e;
     }
 }

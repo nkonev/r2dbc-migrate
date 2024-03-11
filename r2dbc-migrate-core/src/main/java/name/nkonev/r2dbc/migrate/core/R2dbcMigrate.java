@@ -258,6 +258,9 @@ public abstract class R2dbcMigrate {
         if (Objects.isNull(resourceEntry.getVersion())) {
             throw new IllegalArgumentException("Missed version for " + resourceEntry);
         }
+        if (Objects.isNull(resourceEntry.getDescription())) {
+            throw new IllegalArgumentException("Missed description for " + resourceEntry);
+        }
 
         if (resourceEntry.getResourcesPaths().size() != 1) {
             throw new IllegalArgumentException("For "+resourceEntry+" of type JUST_FILE you cannot provide != 1 resourcesPaths. Consider using several entries with JUST_FILES instead.");

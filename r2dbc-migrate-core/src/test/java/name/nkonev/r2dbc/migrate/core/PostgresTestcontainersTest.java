@@ -204,6 +204,34 @@ public class PostgresTestcontainersTest {
     }
 
     @Test
+    public void testTwoModes() {
+        R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
+        var source1 = BunchOfResourcesEntry.ofConventionallyNamedFiles("classpath:/migrations/postgresql/*.sql");
+        var source2 = BunchOfResourcesEntry.ofJustFile(11, "classpath:/migrations/postgresql_append/additional.sql", "An additional one");
+        properties.setResources(List.of(source1, source2));
+        Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
+        R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
+
+        ConnectionFactory connectionFactory = makeConnectionMono(mappedPort);
+        Flux<Customer> clientFlux = Flux.usingWhen(
+            connectionFactory.create(),
+            connection -> Flux.from(connection.createStatement("select * from customer order by id").execute())
+                .flatMap(o -> o.map((row, rowMetadata) -> {
+                    return new Customer(
+                        row.get("first_name", String.class),
+                        row.get("last_name", String.class),
+                        row.get("id", Integer.class)
+                    );
+                })),
+            Connection::close
+        );
+        Customer client = clientFlux.blockLast();
+
+        Assertions.assertEquals("Customer", client.firstName);
+        Assertions.assertEquals("Surname 5", client.secondName);
+    }
+
+    @Test
     public void testDatabaseValidationResultFail() {
         RuntimeException thrown = Assertions.assertThrows(
             RuntimeException.class,
