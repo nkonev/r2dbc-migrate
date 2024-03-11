@@ -12,7 +12,7 @@ Inspired by [this](https://spring.io/blog/2020/03/12/spring-boot-2-3-0-m3-availa
 * MySQL
 
 
-It supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/blob/d65c7c49512a598dc4cc664bc33f78cb57ef3c43/r2dbc-migrate-core/src/test/java/name/nkonev/r2dbc/migrate/core/PostgresTestcontainersTest.java#L408).
+It supports user-provided dialect. You can pass implementation of `SqlQueries` interface to the `migrate()` method. If you use Spring Boot, just define a bean of type `SqlQueries`. Example [SimplePostgresqlDialect](https://github.com/nkonev/r2dbc-migrate/blob/73acee24ee2963a0ffbc2f6ae64d07144367ce2f/r2dbc-migrate-core/src/test/java/name/nkonev/r2dbc/migrate/core/PostgresTestcontainersTest.java#L448).
 
 ## Features
 * No need the dedicated JDBC params, r2dbc-migrate reuses your R2DBC `ConnectionFactory` provided by Spring Boot
