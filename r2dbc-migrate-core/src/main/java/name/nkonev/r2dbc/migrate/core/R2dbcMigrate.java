@@ -263,7 +263,7 @@ public abstract class R2dbcMigrate {
         }
 
         if (resourceEntry.getResourcesPaths().size() != 1) {
-            throw new IllegalArgumentException("For "+resourceEntry+" of type JUST_FILE you cannot provide != 1 resourcesPaths. Consider using several entries with JUST_FILES instead.");
+            throw new IllegalArgumentException("For "+resourceEntry+" of type JUST_FILE you cannot provide != 1 resourcesPaths. Consider using several entries with JUST_FILE instead.");
         }
         var resourcePath = resourceEntry.getResourcePath();
         var gotResources = resourceReader.getResources(resourcePath);
