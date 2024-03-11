@@ -202,7 +202,7 @@ public abstract class R2dbcMigrate {
                     allResources.addAll(processConventionallyNamedFiles(resourceEntry, resourceReader));
                 }
                 case JUST_FILE -> {
-                    allResources.addAll(processJustFiles(resourceEntry, resourceReader));
+                    allResources.addAll(processJustFile(resourceEntry, resourceReader));
                 }
                 default -> {
                     throw new IllegalArgumentException("Wrong resourceEntry's type " + resourceEntry.getType());
@@ -254,7 +254,7 @@ public abstract class R2dbcMigrate {
         return readResources;
     }
 
-    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processJustFiles(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
+    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processJustFile(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
         if (Objects.isNull(resourceEntry.getVersion())) {
             throw new IllegalArgumentException("Missed version for " + resourceEntry);
         }
@@ -272,7 +272,7 @@ public abstract class R2dbcMigrate {
         }
         var gotResource = gotResources.get(0);
         if (!gotResource.isReadable()) {
-            throw new IllegalStateException("ResourceEntry " + resourceEntry + " should be readable");
+            throw new IllegalStateException("Resource " + gotResource + " should be readable");
         }
         FilenameParser.MigrationInfo migrationInfo = getMigrationInfo(resourceEntry.getVersion(), resourceEntry.getDescription(), resourceEntry.getSplitByLine(), resourceEntry.getTransactional(), resourceEntry.getPremigration());
 
