@@ -29,10 +29,12 @@ public class BunchOfResourcesEntry {
         this.resourcesPaths = resourcesPaths;
     }
 
+    // only for JUST_FILE
     public void setResourcePath(String resourcePath) {
         this.resourcesPaths = Collections.singletonList(resourcePath);
     }
 
+    // only for JUST_FILE
     public String getResourcePath() {
         return this.resourcesPaths.get(0);
     }
