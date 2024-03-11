@@ -1,4 +1,4 @@
-# R2DBC migration tool
+# R2DBC migration library
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/name.nkonev.r2dbc-migrate/r2dbc-migrate-spring-boot-starter/badge.svg)](https://central.sonatype.com/namespace/name.nkonev.r2dbc-migrate)
 [![Build Status](https://github.com/nkonev/r2dbc-migrate/workflows/Java%20CI%20with%20Maven/badge.svg)](https://github.com/nkonev/r2dbc-migrate/actions)
 
