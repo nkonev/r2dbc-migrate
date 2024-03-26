@@ -3,13 +3,14 @@ package name.nkonev.r2dbc.migrate.core;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class R2dbcMigrateProperties {
     private boolean enable = true;
     private long connectionMaxRetries = 500;
-    private List<BunchOfResourcesEntry> resources;
+    private List<BunchOfResourcesEntry> resources = new ArrayList<>();
     private int chunkSize = 1000;
     private Dialect dialect;
     private String validationQuery = "select '42' as validation_result";
@@ -178,7 +179,7 @@ public class R2dbcMigrateProperties {
         return "R2dbcMigrateProperties{" +
             "enable=" + enable +
             ", connectionMaxRetries=" + connectionMaxRetries +
-            ", resources=" + resources +
+            ", resources.size=" + resources.size() +
             ", chunkSize=" + chunkSize +
             ", dialect=" + dialect +
             ", validationQuery='" + validationQuery + '\'' +
