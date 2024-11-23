@@ -4,7 +4,7 @@
 
     <groupId>name.nkonev.r2dbc-migrate</groupId>
     <artifactId>r2dbc-migrate-parent</artifactId>
-    <version>3.1.2-SNAPSHOT</version>
+    <version>3.1.2</version>
     <name>r2dbc-migrate parent project</name>
     <description>R2DBC migration tool and library</description>
     <packaging>pom</packaging>
@@ -14,7 +14,7 @@
         <connection>scm:git:git://github.com/nkonev/r2dbc-migrate.git</connection>
         <developerConnection>scm:git:git@github.com:nkonev/r2dbc-migrate.git</developerConnection>
         <url>https://github.com/nkonev/r2dbc-migrate</url>
-        <tag>HEAD</tag>
+        <tag>3.1.2</tag>
     </scm>
 
     <licenses>
