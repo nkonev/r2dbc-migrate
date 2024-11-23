@@ -26,8 +26,8 @@ public class MariadbTestcontainersTest extends AbstractMysqlLikeTestcontainersTe
     @BeforeEach
     public void beforeEach() {
         container = new GenericContainer("mariadb:10.5.8-focal")
-            .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
-            .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
+            .withClasspathResourceMapping("/docker/mariadb/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
+            .withClasspathResourceMapping("/docker/mariadb/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
             .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
             .withExposedPorts(MYSQL_PORT)
             .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));

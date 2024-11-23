@@ -22,16 +22,16 @@ public class MysqlTestcontainersTest extends AbstractMysqlLikeTestcontainersTest
 
     private GenericContainer container;
 
-    final static String user = "mysql-user";
-    final static String password = "mysql-password";
+    final static String user = "root";
+    final static String password = "my-secret-pw";
 
     @BeforeEach
     public void beforeEach() {
-        container = new GenericContainer("mysql:5.7")
-            .withClasspathResourceMapping("/docker/mysql/etc/mysql/conf.d", "/etc/mysql/conf.d", BindMode.READ_ONLY)
+        container = new GenericContainer("mysql:8.4.3")
             .withClasspathResourceMapping("/docker/mysql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)
-            .withEnv("MYSQL_ALLOW_EMPTY_PASSWORD", "true")
+            .withEnv("MYSQL_ROOT_PASSWORD", password)
             .withExposedPorts(MYSQL_PORT)
+            .withCommand("--character-set-server=utf8", "--collation-server=utf8_unicode_ci", "--mysql-native-password=ON")
             .withStartupTimeout(Duration.ofSeconds(waitTestcontainersSeconds));
 
         container.start();

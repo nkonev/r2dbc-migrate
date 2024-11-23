@@ -43,7 +43,7 @@ public class PostgresTestcontainersTest {
 
     @BeforeEach
     public void beforeEach() {
-        container = new GenericContainer("postgres:13.4")
+        container = new GenericContainer("postgres:14.1-alpine3.14")
             .withExposedPorts(POSTGRESQL_PORT)
             .withEnv("POSTGRES_PASSWORD", "postgresqlPassword")
             .withClasspathResourceMapping("/docker/postgresql/docker-entrypoint-initdb.d", "/docker-entrypoint-initdb.d", BindMode.READ_ONLY)

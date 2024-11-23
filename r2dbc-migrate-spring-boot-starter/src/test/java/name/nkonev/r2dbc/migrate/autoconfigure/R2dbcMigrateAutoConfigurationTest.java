@@ -38,7 +38,7 @@ public class R2dbcMigrateAutoConfigurationTest {
 
     @BeforeEach
     public void beforeEach() {
-        container = new GenericContainer("postgres:13.4")
+        container = new GenericContainer("postgres:14.1-alpine3.14")
             .withExposedPorts(POSTGRESQL_PORT)
             .withEnv("POSTGRES_PASSWORD", POSTGRESQL_PASSWORD)
             .waitingFor(new LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s")

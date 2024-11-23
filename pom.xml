@@ -36,7 +36,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <spring.boot.version>3.2.0</spring.boot.version>
+        <spring.boot.version>3.4.0</spring.boot.version>
         <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -50,9 +50,6 @@
         <central.publishing.maven.plugin.version>0.3.0</central.publishing.maven.plugin.version>
         <maven.gpg.plugin>3.0.1</maven.gpg.plugin>
         <reflections.version>0.10.2</reflections.version>
-        <mssql.driver.version>1.0.1.RELEASE</mssql.driver.version>
-        <mysql.driver.version>1.0.1</mysql.driver.version>
-        <mariadb.driver.version>1.1.4</mariadb.driver.version>
         <logcaptor.version>2.9.0</logcaptor.version>
     </properties>
 

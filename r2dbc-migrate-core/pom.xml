@@ -48,7 +48,6 @@
         <dependency>
             <groupId>io.r2dbc</groupId>
             <artifactId>r2dbc-mssql</artifactId>
-            <version>${mssql.driver.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -59,7 +58,6 @@
         <dependency>
             <groupId>io.asyncer</groupId>
             <artifactId>r2dbc-mysql</artifactId>
-            <version>${mysql.driver.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -75,7 +73,6 @@
         <dependency>
             <groupId>org.mariadb</groupId>
             <artifactId>r2dbc-mariadb</artifactId>
-            <version>${mariadb.driver.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
