@@ -5,9 +5,10 @@ import io.r2dbc.spi.*;
 import java.util.*;
 import java.util.logging.Level;
 
-import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.MigrateResource;
 import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
+import org.apache.commons.text.StringSubstitutor;
+import org.apache.commons.text.lookup.StringLookupFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 import reactor.util.retry.Retry;
 
 import static java.util.Optional.ofNullable;
-import static name.nkonev.r2dbc.migrate.core.FilenameParser.getMigrationInfo;
+import static name.nkonev.r2dbc.migrate.core.MigrationMetadataFactory.getMigrationMetadata;
 
 public abstract class R2dbcMigrate {
 
@@ -157,11 +158,11 @@ public abstract class R2dbcMigrate {
             return Mono.empty();
         }
 
-        List<Tuple2<MigrateResource, MigrationInfo>> allFileResources = getFileResources(properties, resourceReader);
+        List<Tuple2<MigrateResource, MigrationMetadata>> allFileResources = getFileResources(properties, resourceReader);
         LOGGER.info("Found {} sql scripts, see details below", allFileResources.size());
-        List<Tuple2<MigrateResource, MigrationInfo>> premigrationResources = allFileResources.stream().filter(objects -> objects.getT2().isPremigration()).collect(Collectors.toList());
+        List<Tuple2<MigrateResource, MigrationMetadata>> premigrationResources = allFileResources.stream().filter(objects -> objects.getT2().isPremigration()).collect(Collectors.toList());
         LOGGER.info("Found {} premigration sql scripts", premigrationResources.size());
-        List<Tuple2<MigrateResource, MigrationInfo>> migrationResources = allFileResources.stream().filter(objects -> !objects.getT2().isPremigration()).collect(Collectors.toList());
+        List<Tuple2<MigrateResource, MigrationMetadata>> migrationResources = allFileResources.stream().filter(objects -> !objects.getT2().isPremigration()).collect(Collectors.toList());
         LOGGER.info("Found {} migration sql scripts", migrationResources.size());
 
         return waitForDatabase(connectionFactory, properties)
@@ -193,8 +194,8 @@ public abstract class R2dbcMigrate {
         return transactionalWrapUnchecked(connection, true, waitForLock);
     }
 
-    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> getFileResources(R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
-        List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> allResources = new ArrayList<>();
+    private static List<Tuple2<MigrateResource, MigrationMetadata>> getFileResources(R2dbcMigrateProperties properties, MigrateResourceReader resourceReader) {
+        List<Tuple2<MigrateResource, MigrationMetadata>> allResources = new ArrayList<>();
 
         for (var resourceEntry : properties.getResources()) {
             switch (resourceEntry.getType()) {
@@ -211,16 +212,16 @@ public abstract class R2dbcMigrate {
         }
 
         var sortedResources = allResources.stream().sorted((o1, o2) -> {
-            MigrationInfo migrationInfo1 = o1.getT2();
-            MigrationInfo migrationInfo2 = o2.getT2();
-            return Long.compare(migrationInfo1.getVersion(), migrationInfo2.getVersion());
+            MigrationMetadata migrationMetadata1 = o1.getT2();
+            MigrationMetadata migrationMetadata2 = o2.getT2();
+            return Long.compare(migrationMetadata1.getVersion(), migrationMetadata2.getVersion());
         }).peek(objects -> {
             LOGGER.debug("From {} got metadata {}", objects.getT1(), objects.getT2());
         }).collect(Collectors.toList());
         return sortedResources;
     }
 
-    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processConventionallyNamedFiles(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
+    private static List<Tuple2<MigrateResource, MigrationMetadata>> processConventionallyNamedFiles(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
         if (Objects.nonNull(resourceEntry.getVersion())) {
             LOGGER.warn("For {} set version will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
         }
@@ -236,16 +237,19 @@ public abstract class R2dbcMigrate {
         if (Objects.nonNull(resourceEntry.getPremigration())) {
             LOGGER.warn("For {} set premigration will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
         }
+        if (Objects.nonNull(resourceEntry.getSubstitute())) {
+            LOGGER.warn("For {} set substitute will be ignored because you cannot set it for type CONVENTIONALLY_NAMED_FILES", resourceEntry);
+        }
         List<String> resourcesPaths = resourceEntry.getResourcesPaths();
-        List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> readResources = new ArrayList<>();
+        List<Tuple2<MigrateResource, MigrationMetadata>> readResources = new ArrayList<>();
         for (String resourcesPath : resourcesPaths) {
             var readResourcesPortion = resourceReader.getResources(resourcesPath).stream()
                 .filter(Objects::nonNull)
                 .filter(MigrateResource::isReadable)
                 .map(resource -> {
                     LOGGER.debug("Reading {}", resource);
-                    FilenameParser.MigrationInfo migrationInfo = getMigrationInfo(resource.getFilename());
-                    return Tuples.of(resource, migrationInfo);
+                    MigrationMetadata migrationMetadata = MigrationMetadataFactory.getMigrationMetadata(resource.getFilename());
+                    return Tuples.of(resource, migrationMetadata);
                 })
                 .toList();
 
@@ -254,7 +258,7 @@ public abstract class R2dbcMigrate {
         return readResources;
     }
 
-    private static List<Tuple2<MigrateResource, FilenameParser.MigrationInfo>> processJustFile(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
+    private static List<Tuple2<MigrateResource, MigrationMetadata>> processJustFile(BunchOfResourcesEntry resourceEntry, MigrateResourceReader resourceReader) {
         if (Objects.isNull(resourceEntry.getVersion())) {
             throw new IllegalArgumentException("Missed version for " + resourceEntry);
         }
@@ -274,9 +278,9 @@ public abstract class R2dbcMigrate {
         if (!gotResource.isReadable()) {
             throw new IllegalStateException("Resource " + gotResource + " should be readable");
         }
-        FilenameParser.MigrationInfo migrationInfo = getMigrationInfo(resourceEntry.getVersion(), resourceEntry.getDescription(), resourceEntry.getSplitByLine(), resourceEntry.getTransactional(), resourceEntry.getPremigration());
+        MigrationMetadata migrationMetadata = getMigrationMetadata(resourceEntry.getVersion(), resourceEntry.getDescription(), resourceEntry.getSplitByLine(), resourceEntry.getTransactional(), resourceEntry.getPremigration(), resourceEntry.getSubstitute());
 
-        return Collections.singletonList(Tuples.of(gotResource, migrationInfo));
+        return Collections.singletonList(Tuples.of(gotResource, migrationMetadata));
     }
 
     private static Mono<Void> releaseLock(Connection connection, Locker locker) {
@@ -296,7 +300,7 @@ public abstract class R2dbcMigrate {
         );
     }
 
-    private static Mono<Void> premigrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> premigrationResources) {
+    private static Mono<Void> premigrate(ConnectionFactory connectionFactory, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationMetadata>> premigrationResources) {
         if (premigrationResources.isEmpty()) {
             return Mono.empty();
         }
@@ -314,7 +318,7 @@ public abstract class R2dbcMigrate {
             }).log("R2dbcMigrateCreatingPreMigrationConnection", Level.FINE);
     }
 
-    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationInfo>> migrationResources, SqlQueries maybeUserSqlQueries, Locker maybeLocker) {
+    private static Mono<Void> doWork(Connection connection, R2dbcMigrateProperties properties, List<Tuple2<MigrateResource, MigrationMetadata>> migrationResources, SqlQueries maybeUserSqlQueries, Locker maybeLocker) {
         Dialect sqlDialect = getSqlDialect(properties, connection);
         SqlQueries sqlQueries = getUserOrDeterminedSqlQueries(sqlDialect, properties, maybeUserSqlQueries);
         Locker locker = getUserOrDeterminedLocker(sqlDialect, properties, maybeLocker);
@@ -386,12 +390,12 @@ public abstract class R2dbcMigrate {
         return locker;
     }
 
-    private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<MigrateResource, FilenameParser.MigrationInfo> tt) {
+    private static Mono<Void> makeMigration(Connection connection, R2dbcMigrateProperties properties, Tuple2<MigrateResource, MigrationMetadata> tt) {
         LOGGER.info("Applying {}", tt.getT2());
         return transactionalWrap(connection, tt.getT2().isTransactional(), getMigrateResultPublisher(properties, connection, tt.getT1(), tt.getT2()), tt.getT2().toString());
     }
 
-    private static Mono<Void> writeMigrationMetadata(Connection connection, SqlQueries sqlQueries, Tuple2<MigrateResource, FilenameParser.MigrationInfo> tt) {
+    private static Mono<Void> writeMigrationMetadata(Connection connection, SqlQueries sqlQueries, Tuple2<MigrateResource, MigrationMetadata> tt) {
         return transactionalWrap(connection, true, sqlQueries.createInsertMigrationStatement(connection, tt.getT2()).execute(), "Writing metadata version " + tt.getT2().getVersion());
     }
 
@@ -422,19 +426,37 @@ public abstract class R2dbcMigrate {
 
     private static Publisher<? extends Result> getMigrateResultPublisher(R2dbcMigrateProperties properties,
                                                                          Connection connection, MigrateResource resource,
-                                                                         FilenameParser.MigrationInfo migrationInfo) {
-        if (migrationInfo.isSplitByLine()) {
+                                                                         MigrationMetadata migrationMetadata) {
+        if (migrationMetadata.isSplitByLine()) {
             Flux<? extends Result> sequentFlux = FileReader
                 .readChunked(resource, properties.getFileCharset())
                 .buffer(properties.getChunkSize())
                 .concatMap(strings -> {
-                    LOGGER.debug("Creating batch - for {} processing {} strings", migrationInfo, strings.size());
-                    return makeBatch(connection, strings).execute();
+                    LOGGER.debug("Creating batch - for {} processing {} strings", migrationMetadata, strings.size());
+                    var substituted = strings.stream().map(s -> substituteIfNeed(properties, migrationMetadata, s)).toList();
+                    return makeBatch(connection, substituted).execute();
                 }, 1);
             return sequentFlux;
         } else {
-            return connection.createStatement(FileReader.read(resource, properties.getFileCharset())).execute();
+            var s = FileReader.read(resource, properties.getFileCharset());
+            var substituted = substituteIfNeed(properties, migrationMetadata, s);
+            return connection.createStatement(substituted).execute();
         }
     }
 
+    private static String substituteIfNeed(R2dbcMigrateProperties properties, MigrationMetadata migrationMetadata, String input) {
+        String t = input;
+        if (migrationMetadata.isSubstitute()) {
+            if (properties.isUseEnvironmentSubstitutor()) {
+                var environmentSubstitutor = new StringSubstitutor(StringLookupFactory.INSTANCE.environmentVariableStringLookup());
+                t = environmentSubstitutor.replace(t);
+            }
+
+            if (properties.isUseSystemPropertiesSubstitutor()) {
+                var systemPropertiesSubstitutor = new StringSubstitutor(StringLookupFactory.INSTANCE.systemPropertyStringLookup());
+                t = systemPropertiesSubstitutor.replace(t);
+            }
+        }
+        return t;
+    }
 }

@@ -1,7 +1,6 @@
 package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.*;
-import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.ReflectionsClasspathResourceReader;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import nl.altindag.log.LogCaptor;
@@ -22,11 +21,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.r2dbc.spi.ConnectionFactoryOptions.*;
@@ -204,10 +203,12 @@ public class PostgresTestcontainersTest {
     }
 
     @Test
-    public void testTwoModes() {
+    public void testTwoModesWithSubstitution() {
+        System.setProperty("REPLACEMENT", "D");
+
         R2dbcMigrateProperties properties = new R2dbcMigrateProperties();
-        var source1 = BunchOfResourcesEntry.ofConventionallyNamedFiles("classpath:/migrations/postgresql/*.sql");
-        var source2 = BunchOfResourcesEntry.ofJustFile(11, "An additional one", "classpath:/migrations/postgresql_append/additional.sql");
+        var source1 = BunchOfResourcesEntry.ofConventionallyNamedFiles("classpath:/migrations/postgresql_substitute/*.sql");
+        var source2 = BunchOfResourcesEntry.ofJustFile(11, "An additional one", "classpath:/migrations/postgresql_substitute_append/additional.sql", true);
         properties.setResources(List.of(source1, source2));
         Integer mappedPort = container.getMappedPort(POSTGRESQL_PORT);
         R2dbcMigrate.migrate(makeConnectionMono(mappedPort), properties, springResourceReader, null, null).block();
@@ -225,10 +226,13 @@ public class PostgresTestcontainersTest {
                 })),
             Connection::close
         );
-        Customer client = clientFlux.blockLast();
+        List<Customer> clients = clientFlux.collectList().block();
 
-        Assertions.assertEquals("Customer", client.firstName);
-        Assertions.assertEquals("Surname 5", client.secondName);
+        Assertions.assertTrue(clients.stream().anyMatch(client -> client.firstName.equals("Customer P") && client.secondName.equals("Johnny D")));
+        Assertions.assertTrue(clients.stream().anyMatch(client -> {
+            var sn = client.secondName.toLowerCase();
+            return client.firstName.equals("Customer OS") && Set.of("linux", "mac", "windows").stream().anyMatch(sn::contains);
+        }));
     }
 
     @Test
@@ -329,13 +333,14 @@ public class PostgresTestcontainersTest {
         Assertions.assertEquals("Surname 4", client.secondName);
 
 
-        Flux<MigrationInfo> miFlux = Flux.usingWhen(
+        Flux<MigrationMetadata> miFlux = Flux.usingWhen(
             connectionFactory.create(),
             connection -> Flux.from(connection.createStatement("select * from \"my scheme\".\"my migrations\" order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
-                    return new MigrationInfo(
+                    return new MigrationMetadata(
                         row.get("id", Integer.class),
                         row.get("description", String.class),
+                        false,
                         false,
                         false,
                         false
@@ -343,7 +348,7 @@ public class PostgresTestcontainersTest {
                 })),
             Connection::close
         );
-        List<MigrationInfo> migrationInfos = miFlux.collectList().block();
+        List<MigrationMetadata> migrationInfos = miFlux.collectList().block();
         Assertions.assertFalse(migrationInfos.isEmpty());
         Assertions.assertEquals("create customers", migrationInfos.get(0).getDescription());
 
@@ -388,13 +393,14 @@ public class PostgresTestcontainersTest {
         Assertions.assertEquals("Surname 4", client.secondName);
 
 
-        Flux<MigrationInfo> miFlux = Flux.usingWhen(
+        Flux<MigrationMetadata> miFlux = Flux.usingWhen(
             connectionFactory.create(),
             connection -> Flux.from(connection.createStatement("select * from \"my premigrable scheme\".\"my migrations\" order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
-                    return new MigrationInfo(
+                    return new MigrationMetadata(
                         row.get("id", Integer.class),
                         row.get("description", String.class),
+                        false,
                         false,
                         false,
                         false
@@ -402,7 +408,7 @@ public class PostgresTestcontainersTest {
                 })),
             Connection::close
         );
-        List<MigrationInfo> migrationInfos = miFlux.collectList().block();
+        List<MigrationMetadata> migrationInfos = miFlux.collectList().block();
         Assertions.assertFalse(migrationInfos.isEmpty());
         Assertions.assertEquals("create customers", migrationInfos.get(0).getDescription());
 
@@ -463,7 +469,7 @@ public class PostgresTestcontainersTest {
         }
 
         @Override
-        public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
+        public Statement createInsertMigrationStatement(Connection connection, MigrationMetadata migrationInfo) {
             return connection
                 .createStatement(insertMigration())
                 .bind("$1", migrationInfo.getVersion())

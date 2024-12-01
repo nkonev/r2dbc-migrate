@@ -48,7 +48,7 @@ public class PostgreSqlQueries implements SqlQueries {
     }
 
     @Override
-    public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
+    public Statement createInsertMigrationStatement(Connection connection, MigrationMetadata migrationInfo) {
         return connection
             .createStatement(insertMigration())
             .bind("$1", migrationInfo.getVersion())

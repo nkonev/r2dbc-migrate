@@ -2,7 +2,6 @@ package name.nkonev.r2dbc.migrate.core;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
-import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
@@ -13,7 +12,6 @@ import reactor.core.publisher.Mono;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -168,13 +166,14 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
         Assertions.assertEquals(6, client.id);
 
 
-        Flux<MigrationInfo> miFlux = Flux.usingWhen(
+        Flux<MigrationMetadata> miFlux = Flux.usingWhen(
             connectionFactory.create(),
             connection -> Flux.from(connection.createStatement("select * from `my scheme`.`my migrations` order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
-                    return new MigrationInfo(
+                    return new MigrationMetadata(
                         row.get("id", Long.class),
                         row.get("description", String.class),
+                        false,
                         false,
                         false,
                         false
@@ -182,7 +181,7 @@ public abstract class AbstractMysqlLikeTestcontainersTest {
                 })),
             Connection::close
         );
-        List<MigrationInfo> migrationInfos = miFlux.collectList().block();
+        List<MigrationMetadata> migrationInfos = miFlux.collectList().block();
         Assertions.assertFalse(migrationInfos.isEmpty());
         Assertions.assertEquals("create customers", migrationInfos.get(0).getDescription());
 

@@ -4,12 +4,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 
-class FilenameParserTest {
+class MigrationMetadataFactoryTest {
 
     @Test
     void testSplit() {
         String s = "V5__create_customers__split.sql";
-        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        MigrationMetadata migrationInfo = MigrationMetadataFactory.getMigrationMetadata(s);
         Assertions.assertEquals(5, migrationInfo.getVersion());
         Assertions.assertEquals("create customers", migrationInfo.getDescription());
         Assertions.assertTrue(migrationInfo.isSplitByLine());
@@ -19,7 +19,7 @@ class FilenameParserTest {
     @Test
     void testSplitNontransactional() {
         String s = "V5__create_customers__split,nontransactional.sql";
-        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        MigrationMetadata migrationInfo = MigrationMetadataFactory.getMigrationMetadata(s);
         Assertions.assertEquals(5, migrationInfo.getVersion());
         Assertions.assertEquals("create customers", migrationInfo.getDescription());
         Assertions.assertTrue(migrationInfo.isSplitByLine());
@@ -29,7 +29,7 @@ class FilenameParserTest {
     @Test
     void testNontransactional() {
         String s = "V5__create_customers__nontransactional.sql";
-        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        MigrationMetadata migrationInfo = MigrationMetadataFactory.getMigrationMetadata(s);
         Assertions.assertEquals(5, migrationInfo.getVersion());
         Assertions.assertEquals("create customers", migrationInfo.getDescription());
         Assertions.assertFalse(migrationInfo.isSplitByLine());
@@ -39,7 +39,7 @@ class FilenameParserTest {
     @Test
     void testPremigrateNontransactional() {
         String s = "V-1__create_schemas__premigration,nontransactional.sql";
-        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        MigrationMetadata migrationInfo = MigrationMetadataFactory.getMigrationMetadata(s);
         Assertions.assertEquals(-1, migrationInfo.getVersion());
         Assertions.assertEquals("create schemas", migrationInfo.getDescription());
         Assertions.assertFalse(migrationInfo.isSplitByLine());
@@ -50,7 +50,7 @@ class FilenameParserTest {
     @Test
     void test() {
         String s = "V5__create_customers.sql";
-        FilenameParser.MigrationInfo migrationInfo = FilenameParser.getMigrationInfo(s);
+        MigrationMetadata migrationInfo = MigrationMetadataFactory.getMigrationMetadata(s);
         Assertions.assertEquals(5, migrationInfo.getVersion());
         Assertions.assertEquals("create customers", migrationInfo.getDescription());
         Assertions.assertFalse(migrationInfo.isSplitByLine());

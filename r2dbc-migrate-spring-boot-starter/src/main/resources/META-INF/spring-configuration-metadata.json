@@ -112,6 +112,18 @@
     "type": "boolean",
     "description": "Use db-specific (advisory lock for PostgreSQL, session lock for MySQL and MariaDB) instead of lock table.",
     "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.use-environment-substitutor",
+    "type": "boolean",
+    "description": "Use EnvironmentSubstitutor from commons-text to substitute `${mystring}` in SQL. Requires enablement `substitute` in the particular BunchOfResourcesEntry.",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
+  },
+  {
+    "name": "r2dbc.migrate.use-system-properties-substitutor",
+    "type": "boolean",
+    "description": "Use eSystemPropertiesSubstitutor from commons-text to substitute `${mystring}` in SQL. Requires enablement `substitute` in the particular BunchOfResourcesEntry.",
+    "sourceType": "name.nkonev.r2dbc.migrate.autoconfigure.R2dbcMigrateAutoConfiguration$SpringBootR2dbcMigrateProperties"
   }
 
 ],"hints": [
@@ -236,6 +248,32 @@
   },
   {
     "name": "r2dbc.migrate.prefer-db-specific-lock",
+    "values": [
+      {
+        "value": "true",
+        "description": "Enable"
+      },
+      {
+        "value": "false",
+        "description": "Disable"
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.use-environment-substitutor",
+    "values": [
+      {
+        "value": "true",
+        "description": "Enable"
+      },
+      {
+        "value": "false",
+        "description": "Disable"
+      }
+    ]
+  },
+  {
+    "name": "r2dbc.migrate.use-system-properties-substitutor",
     "values": [
       {
         "value": "true",

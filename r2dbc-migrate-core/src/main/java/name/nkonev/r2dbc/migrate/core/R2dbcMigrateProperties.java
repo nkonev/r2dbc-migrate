@@ -27,6 +27,9 @@ public class R2dbcMigrateProperties {
     private String migrationsLockTable = "migrations_lock";
     private boolean preferDbSpecificLock = true;
 
+    private boolean useEnvironmentSubstitutor = true;
+    private boolean useSystemPropertiesSubstitutor = true;
+
     public R2dbcMigrateProperties() {
     }
 
@@ -174,6 +177,22 @@ public class R2dbcMigrateProperties {
         this.preferDbSpecificLock = preferDbSpecificLock;
     }
 
+    public boolean isUseEnvironmentSubstitutor() {
+        return useEnvironmentSubstitutor;
+    }
+
+    public void setUseEnvironmentSubstitutor(boolean useEnvironmentSubstitutor) {
+        this.useEnvironmentSubstitutor = useEnvironmentSubstitutor;
+    }
+
+    public boolean isUseSystemPropertiesSubstitutor() {
+        return useSystemPropertiesSubstitutor;
+    }
+
+    public void setUseSystemPropertiesSubstitutor(boolean useSystemPropertiesSubstitutor) {
+        this.useSystemPropertiesSubstitutor = useSystemPropertiesSubstitutor;
+    }
+
     @Override
     public String toString() {
         return "R2dbcMigrateProperties{" +
@@ -194,6 +213,8 @@ public class R2dbcMigrateProperties {
             ", migrationsTable='" + migrationsTable + '\'' +
             ", migrationsLockTable='" + migrationsLockTable + '\'' +
             ", preferDbSpecificLock='" + preferDbSpecificLock + '\'' +
+            ", useEnvironmentSubstitutor='" + useEnvironmentSubstitutor + '\'' +
+            ", useSystemPropertiesSubstitutor='" + useSystemPropertiesSubstitutor + '\'' +
             '}';
     }
 }

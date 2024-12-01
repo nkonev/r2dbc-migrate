@@ -11,6 +11,6 @@ public interface SqlQueries {
 
     String getMaxMigration();
 
-    Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo);
+    Statement createInsertMigrationStatement(Connection connection, MigrationMetadata migrationInfo);
 
 }

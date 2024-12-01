@@ -4,7 +4,6 @@ import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
-import name.nkonev.r2dbc.migrate.core.FilenameParser.MigrationInfo;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.AfterEach;
@@ -192,13 +191,14 @@ public class MssqlTestcontainersTest {
         Assertions.assertEquals(9999999, client.estimatedMoney);
 
 
-        Flux<MigrationInfo> miFlux = Flux.usingWhen(
+        Flux<MigrationMetadata> miFlux = Flux.usingWhen(
             connectionFactory.create(),
             connection -> Flux.from(connection.createStatement("select * from \"my scheme\".\"my migrations\" order by id").execute())
                 .flatMap(o -> o.map((row, rowMetadata) -> {
-                    return new MigrationInfo(
+                    return new MigrationMetadata(
                         row.get("id", Integer.class),
                         row.get("description", String.class),
+                        false,
                         false,
                         false,
                         false
@@ -206,7 +206,7 @@ public class MssqlTestcontainersTest {
                 })),
             Connection::close
         );
-        List<MigrationInfo> migrationInfos = miFlux.collectList().block();
+        List<MigrationMetadata> migrationInfos = miFlux.collectList().block();
         Assertions.assertFalse(migrationInfos.isEmpty());
         Assertions.assertEquals("my db", migrationInfos.get(0).getDescription());
 

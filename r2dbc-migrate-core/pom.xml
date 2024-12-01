@@ -8,14 +8,14 @@
     <parent>
         <artifactId>r2dbc-migrate-parent</artifactId>
         <groupId>name.nkonev.r2dbc-migrate</groupId>
-        <version>3.1.3-SNAPSHOT</version>
+        <version>3.2.0-SNAPSHOT</version>
     </parent>
 
     <dependencies>
         <dependency>
             <artifactId>r2dbc-migrate-resource-reader-api</artifactId>
             <groupId>name.nkonev.r2dbc-migrate</groupId>
-            <version>3.1.3-SNAPSHOT</version>
+            <version>3.2.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.r2dbc</groupId>
@@ -25,6 +25,12 @@
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>${commons.text.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
@@ -84,13 +90,13 @@
         <dependency>
             <artifactId>r2dbc-migrate-resource-reader-reflections</artifactId>
             <groupId>name.nkonev.r2dbc-migrate</groupId>
-            <version>3.1.3-SNAPSHOT</version>
+            <version>3.2.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
             <groupId>name.nkonev.r2dbc-migrate</groupId>
-            <version>3.1.3-SNAPSHOT</version>
+            <version>3.2.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
 

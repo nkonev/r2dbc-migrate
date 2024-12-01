@@ -16,7 +16,7 @@ public class BunchOfResourcesEntry {
     private Boolean splitByLine; // only for JUST_FILE
     private Boolean transactional; // only for JUST_FILE
     private Boolean premigration; // only for JUST_FILE
-
+    private Boolean substitute; // only for JUST_FILE
 
     public BunchOfResourcesEntry() {
     }
@@ -45,6 +45,15 @@ public class BunchOfResourcesEntry {
 
     public void setType(BunchOfResourcesType type) {
         this.type = type;
+    }
+
+    // only for JUST_FILE
+    public Boolean getSubstitute() {
+        return substitute;
+    }
+
+    public void setSubstitute(Boolean substitute) {
+        this.substitute = substitute;
     }
 
     @Override
@@ -103,12 +112,13 @@ public class BunchOfResourcesEntry {
         return e;
     }
 
-    public static BunchOfResourcesEntry ofJustFile(long version, String description, String resourcePath) {
+    public static BunchOfResourcesEntry ofJustFile(long version, String description, String resourcePath, boolean substitute) {
         var e = new BunchOfResourcesEntry();
         e.setVersion(version);
         // e.setType(BunchOfResourcesType.JUST_FILE); set in setVersion()
         e.setResourcePath(resourcePath);
         e.setDescription(description);
+        e.setSubstitute(substitute);
         return e;
     }
 }

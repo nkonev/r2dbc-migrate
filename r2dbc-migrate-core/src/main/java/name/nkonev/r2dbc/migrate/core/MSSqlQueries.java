@@ -62,7 +62,7 @@ public class MSSqlQueries implements SqlQueries {
     }
 
     @Override
-    public Statement createInsertMigrationStatement(Connection connection, FilenameParser.MigrationInfo migrationInfo) {
+    public Statement createInsertMigrationStatement(Connection connection, MigrationMetadata migrationInfo) {
         return connection
             .createStatement(insertMigration())
             .bind("@id", migrationInfo.getVersion())
