@@ -8,19 +8,19 @@
     <parent>
         <artifactId>r2dbc-migrate-parent</artifactId>
         <groupId>name.nkonev.r2dbc-migrate</groupId>
-        <version>3.3.0</version>
+        <version>3.3.1-SNAPSHOT</version>
     </parent>
 
     <dependencies>
         <dependency>
             <artifactId>r2dbc-migrate-core</artifactId>
             <groupId>name.nkonev.r2dbc-migrate</groupId>
-            <version>3.3.0</version>
+            <version>3.3.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
             <groupId>name.nkonev.r2dbc-migrate</groupId>
-            <version>3.3.0</version>
+            <version>3.3.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
