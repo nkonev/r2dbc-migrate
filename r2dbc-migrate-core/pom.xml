@@ -4,6 +4,7 @@
 
     <artifactId>r2dbc-migrate-core</artifactId>
     <description>R2DBC Migrate Core Library</description>
+    <name>r2dbc-migrate-core project</name>
 
     <parent>
         <artifactId>r2dbc-migrate-parent</artifactId>

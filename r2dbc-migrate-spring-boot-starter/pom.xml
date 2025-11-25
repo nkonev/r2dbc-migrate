@@ -4,6 +4,7 @@
 
     <artifactId>r2dbc-migrate-spring-boot-starter</artifactId>
     <description>R2DBC Migrate Spring Boot Starter</description>
+    <name>r2dbc-migrate-spring-boot-starter project</name>
 
     <parent>
         <artifactId>r2dbc-migrate-parent</artifactId>

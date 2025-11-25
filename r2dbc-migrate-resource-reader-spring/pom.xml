@@ -4,6 +4,7 @@
 
     <artifactId>r2dbc-migrate-resource-reader-spring</artifactId>
     <description>R2DBC Migrate Reader API Spring implementation</description>
+    <name>r2dbc-migrate-resource-reader-spring project</name>
 
     <parent>
         <artifactId>r2dbc-migrate-parent</artifactId>
