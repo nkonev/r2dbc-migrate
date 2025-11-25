@@ -9,18 +9,16 @@ import name.nkonev.r2dbc.migrate.core.SqlQueries;
 import name.nkonev.r2dbc.migrate.reader.MigrateResourceReader;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 
-import java.util.Collections;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AbstractDependsOnBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.*;
-import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration;
-import org.springframework.boot.autoconfigure.sql.init.SqlR2dbcScriptDatabaseInitializer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.r2dbc.autoconfigure.ApplicationR2dbcScriptDatabaseInitializer;
+import org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.r2dbc.core.DatabaseClient;
@@ -50,7 +48,7 @@ public class R2dbcMigrateAutoConfiguration {
     public static class R2dbcMigrateDependsOnBeanFactoryPostProcessor extends AbstractDependsOnBeanFactoryPostProcessor {
 
         protected R2dbcMigrateDependsOnBeanFactoryPostProcessor() {
-            super(R2dbcMigrateBlockingInvoker.class, SqlR2dbcScriptDatabaseInitializer.class);
+            super(R2dbcMigrateBlockingInvoker.class, ApplicationR2dbcScriptDatabaseInitializer.class);
         }
     }
 
