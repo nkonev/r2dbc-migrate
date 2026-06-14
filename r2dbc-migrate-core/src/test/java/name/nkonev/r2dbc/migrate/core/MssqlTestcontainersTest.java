@@ -6,10 +6,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import name.nkonev.r2dbc.migrate.reader.SpringResourceReader;
 import nl.altindag.log.LogCaptor;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import reactor.core.publisher.Flux;
@@ -26,6 +23,7 @@ import static name.nkonev.r2dbc.migrate.core.R2dbcMigrate.getResultSafely;
 import static name.nkonev.r2dbc.migrate.core.TestConstants.waitTestcontainersSeconds;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled("https://github.com/r2dbc/r2dbc-mssql/issues/315")
 public class MssqlTestcontainersTest {
 
     final static int MSSQL_PORT = 1433;
